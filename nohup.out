@@ -1,0 +1,2 @@
+
+(polkit-gnome-authentication-agent-1:314439): Gtk-WARNING **: 12:53:34.807: Theme parsing error: gtk-contained-dark.css:2871:228: Missing closing bracket for :not()

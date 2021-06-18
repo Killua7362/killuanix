@@ -1,3 +1,9 @@
 [submodule "DotFiles"]
 	path = DotFiles
 	url = https://github.com/Killua7362/DotFiles.git
+[submodule "scripts/archlinux-nix"]
+	path = scripts/archlinux-nix
+	url = https://github.com/asppsa/archlinux-nix.git
+[submodule "scripts/pacmanfile"]
+	path = scripts/pacmanfile
+	url = https://github.com/mastertinner/pacmanfile.git

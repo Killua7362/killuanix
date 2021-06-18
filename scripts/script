@@ -1,0 +1,7 @@
+bash install-dreymar-xmod.sh -n "4n us us"
+gpg --keyserver hkps://keys.openpgp.org --recv-keys EBE41E90F6F12F6D
+sudo chsh -s $HOME/.nix-profile/bin/zsh
+git clone BigBagKbdTrixXKB and install
+nix --experimental-features 'flakes nix-command' build .#homeManagerConfigurations.killua.activationPackage
+./result/activate
+sudo gpasswd -a $USER input
