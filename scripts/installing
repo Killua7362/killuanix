@@ -1,0 +1,4 @@
+install neovim from lunarvim
+configure nvidia
+configure nix 
+change default shell to zsh
