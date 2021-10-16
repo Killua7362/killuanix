@@ -1,6 +1,4 @@
 { pkgs, config, ... }:
-
-
 {
 
   xdg.configFile =
@@ -29,11 +27,60 @@
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/wezterm.lua;
           recursive = true;
         };
-        "/home/killua/.config/nvim" =
+        "nvim" =
         {
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/nvim;
           recursive = true;
         };
-
+        "picom" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/picom;
+          recursive = true;
+        };
+        "/home/killua/.zprofile" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/.zprofile;
+        };
+        "/home/killua/.zshrc" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/.zshrc;
+        };
+        "qutebrowser" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/qutebrowser;
+          recursive = true;
+        };
+        "mpv" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/mpv;
+          recursive = true;
+        };
+        "ranger" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/ranger;
+          recursive = true;
+        };
+        "/home/killua/.tmux.conf.local" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/.tmux/.tmux.conf.local;
+        };
+        "/home/killua/.tmux.conf" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/.tmux/.tmux.conf;
+        };
+        "alacritty" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/alacritty;
+          recursive = true;
+        };
+	"kitty"=
+	{
+	source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/kitty;
+	recursive = true;
+	};
+	"/home/killua/.zsh/agnoster.zsh" =
+	{
+	source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/.zsh/agnoster.zsh;
+	};
     };
 }

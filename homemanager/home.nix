@@ -11,6 +11,7 @@
     ./users/commands.nix
   ];
   home.packages = with pkgs; [
+    discord-canary
     brave
     pcmanfm
     unetbootin
@@ -39,6 +40,7 @@
     vscodium
     zathura
     file
+    dmenu
   ];
 
   services.lorri.enable = true;

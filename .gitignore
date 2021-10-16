@@ -1,2 +1,11 @@
 result/
 homemanager/result/
+
+projects/cpp/test1.cpp
+scripts/fzf/fzf-scripts/
+scripts/fzf/fzf-scripts-1/
+scripts/fzf/fzf-scripts-2/
+scripts/fzf/.fzf-tmux
+scripts/cheat.sh
+scripts/example-tmux
+result

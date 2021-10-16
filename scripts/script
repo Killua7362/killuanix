@@ -5,3 +5,4 @@ git clone BigBagKbdTrixXKB and install
 nix --experimental-features 'flakes nix-command' build .#homeManagerConfigurations.killua.activationPackage
 ./result/activate
 sudo gpasswd -a $USER input
+xdg-mime default Thunar.desktop inode/directory
