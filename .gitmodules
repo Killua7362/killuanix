@@ -4,9 +4,6 @@
 [submodule "scripts/pacmanfile"]
 	path = scripts/pacmanfile
 	url = https://github.com/mastertinner/pacmanfile.git
-[submodule "wallpapers"]
-	path = wallpapers
-	url = https://github.com/Killua7362/wallpapers.git
 [submodule "DotFiles"]
 	path = DotFiles
 	url = https://github.com/Killua7362/DotFiles.git
