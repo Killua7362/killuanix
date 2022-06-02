@@ -6,3 +6,10 @@ nix --experimental-features 'flakes nix-command' build .#homeManagerConfiguratio
 ./result/activate
 sudo gpasswd -a $USER input
 xdg-mime default Thunar.desktop inode/directory
+
+
+ nix --extra-experimental-features 'flakes nix-command' build .#darwinConfigurations.bootstrap-x86.system
+ ./result/sw/bin/darwin-rebuild switch --flake .#bootstrap-x86
+
+
+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
