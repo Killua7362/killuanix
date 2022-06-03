@@ -57,22 +57,74 @@
       nixDarwinCommonModules = attrValues self.darwinModules ++ [
         home-manager.darwinModules.home-manager
         ({ config, ... }: {
-          nixpkgs = nixpkgsConfig;
-          nix.nixPath = { nixpkgs = "${inputs.nixpkgs-unstable}"; };
-          users.users."killua" = {home = "/Users/killua";
-        };
-          home-manager.useGlobalPkgs = true;
-                    home-manager.useUserPackages = true;
-
-          home-manager.users."killua" = {
-            imports = attrValues self.commonhomeModules ++ [
-              ./macnix/home.nix
-            ];
-          };
-          nix.registry.my.flake = self;
+          users.users."killua".home = "/Users/killua";
+       
         })
       ];
 
+
+##starting
+      darwinFlakeOutput = mk-darwin-system.mkDarwinSystem.m1 {
+
+        # Provide your nix modules to enable configurations on your system.
+        #
+        modules =attrValues self.darwinModules ++ [
+            ./macnix/settings.nix
+
+            ({ pkgs, lib, ... }: {
+              environment.systemPackages = with pkgs; [ 
+                wget
+                 exa
+                  nixfmt 
+                  niv
+                ];
+            })
+
+            { services.nix-daemon.enable = true; }
+            {
+              networking.computerName = "killua";
+              networking.hostName = "killua";
+              networking.knownNetworkServices = [ "Wi-Fi" "USB 10/100 LAN" ];
+            }
+     
+
+          # User module
+          ({ pkgs, lib, ... }: {
+                      nixpkgs = nixpkgsConfig;
+          nix.nixPath = { nixpkgs = "${inputs.nixpkgs-unstable}"; };
+          nix.registry.my.flake = self;
+
+                      home-manager.useGlobalPkgs = true;
+
+            home-manager.users."killua" = {
+            imports = attrValues self.commonhomeModules ++ [
+              ./macnix/home.nix
+            ];
+            };
+          })
+
+          ({ lib, ... }: {
+            nixpkgs.overlays = let nivSources = import ./macnix/niv/sources.nix;
+            in [
+              (new: old: {
+                # You can provide an overlay for packages not available or that fail to compile on arm.
+                inherit (lib.mds.intelPkgs) niv;
+
+                # Provide apps managed by niv
+                KeyttyApp = lib.mds.installNivDmg {
+                  name = "Keytty";
+                  src = nivSources.KeyttyApp;
+                };
+
+              })
+            ];
+          })
+
+        ];
+      };
+
+
+##ending
 
 
       homeManagerConfigurations = {
@@ -110,38 +162,9 @@
     in {
 
       darwinConfigurations = rec {
-        macnix = darwinSystem {
-          system = "aarch64-darwin";
-          modules = nixDarwinCommonModules ++ [
-            ./macnix/packages/pam.nix
-                        ./macnix/packages/nix-index.nix
-            ./macnix/settings.nix
-            ./macnix/brew.nix
- 
-            ({ pkgs, lib, ... }: {
-              nix = {
-              extraOptions = ''
-                system = aarch64-darwin
-                extra-platforms = aarch64-darwin x86_64-darwin
-                experimental-features = nix-command flakes
-                build-users-group = nixbld
-              '';
-            };
-              environment.systemPackages = with pkgs; [ 
-                wget
-                 exa
-                  nixfmt 
-                  niv
-                ];
-            })
+     
+                macnix = darwinFlakeOutput.darwinConfiguration.aarch64-darwin;
 
-            {
-              networking.computerName = "killua";
-              networking.hostName = "killua";
-              networking.knownNetworkServices = [ "Wi-Fi" "USB 10/100 LAN" ];
-            }
-          ];
-        };
       };
     
       overlays = {

@@ -8,8 +8,9 @@ sudo gpasswd -a $USER input
 xdg-mime default Thunar.desktop inode/directory
 
 
- nix --extra-experimental-features 'flakes nix-command' build .#darwinConfigurations.bootstrap-x86.system
- ./result/sw/bin/darwin-rebuild switch --flake .#bootstrap-x86
+nix --extra-experimental-features 'flakes nix-command' build .#darwinConfigurations.macnix.system
+./result/sw/bin/darwin-rebuild switch --flake .#macnix
 
 
-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
+
+/etc/profiles/per-user/killua/bin:/nix/var/nix/profiles/system/sw/bin:/Users/killua/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/bin:/bin:/usr/sbin:/sbin
