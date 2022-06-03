@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-if ! [ ! -x "$(command -v nix)" ]; then
+if ! [ -x "$(command -v nix)" ]; then
   echo 'Nix is not installed start installing' >&2
   if [[ "$(uname)" == "Darwin" ]]; then
 	sh <(curl -L https://nixos.org/nix/install) --darwin-use-unencrypted-nix-store-volume --daemon
