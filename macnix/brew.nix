@@ -5,15 +5,22 @@
     if [[ ! -d "/opt/homebrew/bin" ]]; then
       /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
-    #install oh-my-zsh if not exist
-    if [[ ! -d "/Users/killua/.oh-my-zsh" ]]; then
-        /bin/bash -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+    if [[ ! -d "/Users/killua/zgen" ]]; then
+      git clone https://github.com/tarjoilija/zgen.git "${HOME}/.zgen"
+    fi
+
+    if [[ ! -f "/Users/killua/antigen.zsh" ]]; then
+        curl -L git.io/antigen-nightly > /Users/killua/antigen.zsh
+    fi
+    if [[ ! -f "/Users/killua/.iterm2_shell_integration.zsh" ]]; then
+        curl -L https://iterm2.com/shell_integration/install_shell_integration.sh | bash
     fi
   '';
   homebrew = {
     brewPrefix = "/opt/homebrew/bin";
     enable = true;
-    autoUpdate = true;
+    autoUpdate = false;
     cleanup = "zap";
     global = {
       brewfile = true;
@@ -70,10 +77,12 @@
           brew "webarchiver"
           brew "koekeishiya/formulae/skhd"
           brew "koekeishiya/formulae/yabai"
+          brew "antigen"
           brew "mpv"
           brew "php"
           brew "tree-sitter"
           brew "lazygit"
+          lua-language-server luarocks pyright 
 
     '';
   };

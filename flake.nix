@@ -62,14 +62,13 @@
           users.users."killua" = {home = "/Users/killua";
         };
           home-manager.useGlobalPkgs = true;
-                    home-manager.useUserPackages = true;
+          home-manager.useUserPackages = true;
 
           home-manager.users."killua" = {
             imports = attrValues self.commonhomeModules ++ [
               ./macnix/home.nix
             ];
           };
-          nix.registry.my.flake = self;
         })
       ];
 
