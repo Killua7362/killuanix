@@ -1,6 +1,11 @@
 { pkgs, ... }: {
 
   system.activationScripts.postUserActivation.text = ''
+	#install cheatsheet globally
+    if [[ ! -f "/usr/local/bin/cheat.sh" ]]; then
+	    curl -s https://cht.sh/:cht.sh | sudo tee /usr/local/bin/cheat.sh && sudo chmod +x /usr/local/bin/cheat.sh
+    fi
+
     # Install homebrew if it isn't there 
     if [[ ! -d "/opt/homebrew/bin" ]]; then
       arch -arm64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -45,9 +50,12 @@
       "homebrew/cask"
       "homebrew/cask-fonts"
       "dart-lang/dart"
+      "yqrashawn/goku"
+      
 
     ];
     casks = [
+    "hiddenbar"
     "next"
       "alt-tab"
       "android-studio"
@@ -91,8 +99,8 @@
           brew "zegervdv/zathura/zathura"
           brew "zegervdv/zathura/zathura-pdf-mupdf"
           brew "webarchiver"
-          brew "koekeishiya/formulae/skhd"
-          brew "koekeishiya/formulae/yabai"
+          brew "koekeishiya/formulae/skhd",restart_service:true
+          brew "koekeishiya/formulae/yabai",restart_service:true
           brew "antigen"
           brew "dart"
           brew "mpv"
@@ -102,9 +110,11 @@
           brew "lua-language-server"
             brew "luarocks"
           brew "pyright"
+	  brew "dmenu-mac"
 	  brew "jq"
-            
-
+	  brew "noti"
+	  brew "ranger"
+	  brew "yqrashawn/goku/goku",restart_service:true
     '';
   };
 }
