@@ -46,5 +46,15 @@
           source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/karabiner;
           recursive = true;
         };
+          "/Users/killua/.config/yabai" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/yabai;
+          recursive = true;
+        };
+          "/Users/killua/.config/skhd" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/skhd;
+          recursive = true;
+        };
     };
 }

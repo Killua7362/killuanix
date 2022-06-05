@@ -51,18 +51,26 @@
               enableKeyMapping = true;
               swapLeftCommandAndLeftAlt = true;
             };
-  system.defaults = {
+system.defaults = {
+	dock = {
+expose-animation-duration="0";
+		};
       alf = {
     globalstate = 1;
     allowsignedenabled = 1;
     allowdownloadsignedenabled = 1;
     stealthenabled = 1;
   };
-NSGlobalDomain = {AppleKeyboardUIMode=3;
+NSGlobalDomain =
+{
+	NSWindowResizeTime="0.001";
+	NSScrollAnimationEnabled=false;
+	AppleKeyboardUIMode=3;
     _HIHideMenuBar = false;
        InitialKeyRepeat = 15;
     KeyRepeat = 2;
 };
+
   };
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog

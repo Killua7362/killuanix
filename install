@@ -1,11 +1,14 @@
 #!/bin/bash
-
-
 if ! [ -x "$(command -v nix)" ]; then
   echo 'Nix is not installed start installing' >&2
   if [[ "$(uname)" == "Darwin" ]]; then
+	xcode-select --install
+	if [[ "$(uname -m)" == "arm64" ]]; then
+		softwareupdate --install-rosetta --agree-to-license
+	fi
 	sh <(curl -L https://nixos.org/nix/install) --darwin-use-unencrypted-nix-store-volume --daemon
 	echo "source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" > ~/.bashrc
+	source ~/.bashrc
 	if ! [ -x "$(command -v git)" ]; then
 		echo "git is not installed."
 	else

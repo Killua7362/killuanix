@@ -202,6 +202,7 @@
           pkgs-master
           pkgs-stable
           apple-silicon
+          prefmanager
         ];
       };
     });
