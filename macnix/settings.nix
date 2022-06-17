@@ -4,7 +4,7 @@
 
   nix.binaryCaches = [
     "https://cache.nixos.org/"
- 
+
   ];
   nix.binaryCachePublicKeys = [
     "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
@@ -26,50 +26,51 @@
   '';
 
   # Auto upgrade nix package and the daemon service.
+
   services.nix-daemon.enable = true;
-  
-              security.pam.enableSudoTouchIdAuth = true;
+  security.pam.enableSudoTouchIdAuth = true;
+
   # Shells -----------------------------------------------------------------------------------------
 
   # Add shells installed by nix to /etc/shells file
   environment.shells = with pkgs; [
-    
+
     zsh
   ];
 
   # Make Fish the default shell
-    programs.nix-index.enable = true;
+  programs.nix-index.enable = true;
   programs.zsh.enable = true;
-      programs.zsh.interactiveShellInit = ''
-      source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
-    '';
+  programs.zsh.interactiveShellInit = ''
+    source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
+  '';
   # Needed to address bug where $PATH is not properly set for fish:
   # https://github.com/LnL7/nix-darwin/issues/122
 
   environment.variables.SHELL = "${pkgs.zsh}/bin/zsh";
-   system.keyboard = {
-              enableKeyMapping = true;
-              swapLeftCommandAndLeftAlt = true;
-            };
-system.defaults = {
-	dock = {
-expose-animation-duration="0";
-		};
-      alf = {
-    globalstate = 1;
-    allowsignedenabled = 1;
-    allowdownloadsignedenabled = 1;
-    stealthenabled = 1;
+  system.keyboard = {
+    enableKeyMapping = true;
+    swapLeftCommandAndLeftAlt = true;
   };
-NSGlobalDomain =
-{
-	NSWindowResizeTime="0.001";
-	NSScrollAnimationEnabled=false;
-	AppleKeyboardUIMode=3;
-    _HIHideMenuBar = false;
-       InitialKeyRepeat = 15;
-    KeyRepeat = 2;
-};
+  system.defaults = {
+    dock = {
+      expose-animation-duration = "0";
+    };
+    alf = {
+      globalstate = 1;
+      allowsignedenabled = 1;
+      allowdownloadsignedenabled = 1;
+      stealthenabled = 1;
+    };
+    NSGlobalDomain =
+      {
+        /* NSWindowResizeTime = "0.001";
+        NSScrollAnimationEnabled = false; */
+        AppleKeyboardUIMode = 3;
+        /* _HIHideMenuBar = false; */
+        /* InitialKeyRepeat = 15;
+        KeyRepeat = 2; */
+      };
 
   };
   # Used for backwards compatibility, please read the changelog before changing.

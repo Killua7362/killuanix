@@ -7,7 +7,11 @@
   ];
       home.packages = with pkgs; [
           fd
+	  skim
+	  fzf
+	  tldr
             antigen
+           rnix-lsp 
 	    prefmanager
       ];
 

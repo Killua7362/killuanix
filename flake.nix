@@ -1,4 +1,4 @@
-{
+{ 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
@@ -40,15 +40,28 @@
     spacebar.url = "github:cmacrae/spacebar/v1.3.0";
   };
 
-  outputs = { self, flake-utils, home-manager, nixpkgs, neovim-nightly, nur
-    , emacs, mach-nix, darwin, mk-darwin-system, ... }@inputs:
+  outputs =
+    { self
+    , flake-utils
+    , home-manager
+    , nixpkgs
+    , neovim-nightly
+    , nur
+    , emacs
+    , mach-nix
+    , darwin
+    , mk-darwin-system
+    , ...
+    }@inputs:
     let
       inherit (darwin.lib) darwinSystem;
       inherit (inputs.nixpkgs-unstable.lib)
-      attrValues makeOverridable optionalAttrs singleton;
+        attrValues makeOverridable optionalAttrs singleton;
       nixpkgsConfig = {
-        config = { allowUnfree = true; };
-        overlays = attrValues self.overlays  ++ singleton (final: prev:
+        config = { allowUnfree = true;
+	/* allowUnsupportedSystem = true; */
+	};
+        overlays = attrValues self.overlays ++ singleton (final: prev:
           (optionalAttrs (prev.stdenv.system == "aarch64-darwin") {
             inherit (final.pkgs-x86) idris2;
           }));
@@ -59,8 +72,9 @@
         ({ config, ... }: {
           nixpkgs = nixpkgsConfig;
           nix.nixPath = { nixpkgs = "${inputs.nixpkgs-unstable}"; };
-          users.users."killua" = {home = "/Users/killua";
-        };
+          users.users."killua" = {
+            home = "/Users/killua";
+          };
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
 
@@ -79,7 +93,7 @@
           configuration = { pkgs, lib, ... }: {
             imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
             nixpkgs = {
-              overlays =  attrValues self.commonoverlay ++ [
+              overlays = attrValues self.commonoverlay ++ [
                 neovim-nightly.overlay
                 nur.overlay
                 self.overlay
@@ -106,32 +120,33 @@
 
         };
       };
-    in {
+    in
+    {
 
       darwinConfigurations = rec {
         macnix = darwinSystem {
           system = "aarch64-darwin";
           modules = nixDarwinCommonModules ++ [
             ./macnix/packages/pam.nix
-                        ./macnix/packages/nix-index.nix
+            ./macnix/packages/nix-index.nix
             ./macnix/settings.nix
             ./macnix/brew.nix
- 
+
             ({ pkgs, lib, ... }: {
               nix = {
-              extraOptions = ''
-                system = aarch64-darwin
-                extra-platforms = aarch64-darwin x86_64-darwin
-                experimental-features = nix-command flakes
-                build-users-group = nixbld
-              '';
-            };
-              environment.systemPackages = with pkgs; [ 
+                extraOptions = ''
+                  system = aarch64-darwin
+                  extra-platforms = aarch64-darwin x86_64-darwin
+                  experimental-features = nix-command flakes
+                  build-users-group = nixbld
+                '';
+              };
+              environment.systemPackages = with pkgs; [
                 wget
-                 exa
-                  nixfmt 
-                  niv
-                ];
+                exa
+                nixfmt
+                niv
+              ];
             })
 
             {
@@ -142,17 +157,17 @@
           ];
         };
       };
-    
+
       overlays = {
-        neovim =  neovim-nightly.overlay;
-    
+        neovim = neovim-nightly.overlay;
+
         pkgs-master = final: prev: {
           pkgs-master = import inputs.nixpkgs-master {
             inherit (prev.stdenv) system;
             inherit (nixpkgsConfig) config;
           };
         };
-   
+
         pkgs-stable = _: prev: {
           pkgs-stable = import inputs.nixpkgs-stable {
             inherit (prev.stdenv) system;
@@ -183,11 +198,9 @@
 
       };
 
-      darwinModules = {
+      darwinModules = { };
 
-      };
-
-      commonhomeModules = { 
+      commonhomeModules = {
         git = import ./common/git.nix;
         packages = import ./common/packages.nix;
 
@@ -207,4 +220,4 @@
       };
     });
 
-}
+ }

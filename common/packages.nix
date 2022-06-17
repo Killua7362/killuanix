@@ -5,5 +5,7 @@
           neovim-nightly
            (pkgs.nerdfonts.override { fonts = [ "JetBrainsMono"  ]; })     
            tmux
+	   ripgrep
+	   skim
       ];
 }
