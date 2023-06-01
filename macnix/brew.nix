@@ -47,18 +47,19 @@
     };
     taps = [
       "homebrew/core"
+      "mongodb/brew"
       "homebrew/cask"
       "homebrew/cask-fonts"
       "dart-lang/dart"
       "yqrashawn/goku"
-
-
     ];
     casks = [
-    "visual-studio-code"
+      "android-platform-tools"
+      "visual-studio-code"
       "hiddenbar"
-      "firefox-nightly"
+      "firefox-developer-edition"
       "brave-browser"
+      "libreoffice"
       "quitter"
       "betterdummy"
       "lulu"
@@ -93,44 +94,52 @@
     ];
     # REMOVED: brew "xorpse/formulae/yabai", args: ["HEAD"]
     extraConfig = ''
-            brew "handbrake"
-            brew "anime-downloader"
-	    brew "anime-downloader",args:["HEAD"]
-		    brew "choose-gui"
-		brew "git"
+                              brew "handbrake"
+                              brew "anime-downloader"
+                  	    brew "anime-downloader",args:["HEAD"]
+                  		    brew "choose-gui"
+                  		brew "git"
 
-		brew "coreutils"
-		brew "ffmpeg"
-		brew "imagemagick"
-		brew "khanhas/tap/spicetify-cli"
-		brew "youtube-dl"
-		brew "zegervdv/zathura/zathura"
-		brew "zegervdv/zathura/zathura-pdf-mupdf"
-		brew "webarchiver"
-		brew "koekeishiya/formulae/skhd"
-		brew "koekeishiya/formulae/yabai"
-		brew "antigen"
-		brew "dart"
-		brew "mpv"
-		brew "php"
-		brew "tree-sitter"
-		brew "lazygit"
-		brew "lua-language-server"
-		  brew "luarocks"
-		brew "pyright"
-      	  brew "jq"
-      	  brew "noti"
-      	  brew "rust"
-	  brew "zplug"
-	  brew "rename"
-	
-	  "docker-compose"
-      	  brew "ranger"
-      	  brew "wallpaper"
-      	  brew "yqrashawn/goku/goku",restart_service:true
+                  		brew "coreutils"
+                  		brew "ffmpeg"
+                  		brew "imagemagick"
+                  		brew "khanhas/tap/spicetify-cli"
+                  		brew "youtube-dl"
+                  		brew "zegervdv/zathura/zathura"
+                  		brew "zegervdv/zathura/zathura-pdf-mupdf"
+                  		brew "webarchiver"
+                  		brew "koekeishiya/formulae/skhd"
+                  		brew "koekeishiya/formulae/yabai"
+                  		brew "antigen"
+                  		brew "dart"
+                  		brew "mpv"
+                  		brew "php"
+                  		brew "tree-sitter"
+                  		brew "lazygit"
+                  		brew "lua-language-server"
+                  		  brew "luarocks"
+                  		brew "pyright"
+                        	  brew "jq"
+                        	  brew "noti"
+                        	  brew "rust"
+            		  brew "ldid"
+                  	  brew "zplug"
+      		  brew "python-tk"
+      		  brew "antidote"
+            	  brew "scrcpy"
+                  	  brew "rename"
+                  	
+                  	  brew "docker-compose"
 
-	  brew "stylua"
-	  brew "prettier"
+                        	  brew "ranger"
+                        	  brew "wallpaper"
+                        	  brew "yqrashawn/goku/goku",restart_service:true
+            		  brew "jupyterlab"
+
+            brew "dwm"
+                  	  brew "stylua"
+                  	  brew "prettier"
+                  	  brew "mongodb-community"
     '';
   };
 }

@@ -41,10 +41,9 @@
         {
           source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/.tmux/.tmux.conf;
         };
-          "/Users/killua/.config/karabiner" =
+          "/Users/killua/.config/karabiner.edn" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/karabiner;
-          recursive = true;
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/karabiner/karabiner.edn;
         };
           "/Users/killua/.config/yabai" =
         {
