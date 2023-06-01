@@ -126,6 +126,7 @@
                   	  brew "zplug"
       		  brew "python-tk"
       		  brew "antidote"
+      		  brew "tmux"
             	  brew "scrcpy"
                   	  brew "rename"
                   	
