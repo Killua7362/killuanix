@@ -4,7 +4,6 @@
 
   programs.zsh.enable = true;
 
-
   nix.binaryCaches = [
     "https://cache.nixos.org/"
 

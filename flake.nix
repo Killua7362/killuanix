@@ -1,4 +1,4 @@
-{ 
+{
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
@@ -58,166 +58,168 @@
       inherit (inputs.nixpkgs-unstable.lib)
         attrValues makeOverridable optionalAttrs singleton;
       nixpkgsConfig = {
-        config = { allowUnfree = true;
-	/* allowUnsupportedSystem = true; */
-	};
-        overlays = attrValues self.overlays ++ singleton (final: prev:
-          (optionalAttrs (prev.stdenv.system == "aarch64-darwin") {
-            inherit (final.pkgs-x86) idris2;
-          }));
-      };
+        config = {
+          allowUnfree = true;
+          allowBroken = true;
+            /* allowUnsupportedSystem = true; */
+            };
+          overlays = attrValues self.overlays ++ singleton (final: prev:
+            (optionalAttrs (prev.stdenv.system == "aarch64-darwin") {
+              inherit (final.pkgs-x86) idris2;
+            }));
+        };
 
-      nixDarwinCommonModules = attrValues self.darwinModules ++ [
-        home-manager.darwinModules.home-manager
-        ({ config, ... }: {
-          nixpkgs = nixpkgsConfig;
-          nix.nixPath = { nixpkgs = "${inputs.nixpkgs-unstable}"; };
-          users.users."killua" = {
-            home = "/Users/killua";
-          };
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
+        nixDarwinCommonModules = attrValues self.darwinModules ++ [
+          home-manager.darwinModules.home-manager
+          ({ config, ... }: {
+            nixpkgs = nixpkgsConfig;
+            nix.nixPath = { nixpkgs = "${inputs.nixpkgs-unstable}"; };
+            users.users."killua" = {
+              home = "/Users/killua";
+            };
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
 
-          home-manager.users."killua" = {
-            imports = attrValues self.commonhomeModules ++ [
-              ./macnix/home.nix
-            ];
-          };
-        })
-      ];
-
-
-
-      homeManagerConfigurations = {
-        archnix = inputs.home-manager.lib.homeManagerConfiguration {
-          configuration = { pkgs, lib, ... }: {
-            imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
-            nixpkgs = {
-              overlays = attrValues self.commonoverlay ++ [
-                neovim-nightly.overlay
-                nur.overlay
-                self.overlay
-                emacs.overlay
-                self.overrides
-                (final: prev: {
-                  comma = import inputs.comma {
-                    pkgs = nixpkgs.legacyPackages."${prev.system}";
-                  };
-                  mach-nix = inputs.mach-nix.packages.${prev.system}.mach-nix;
-                })
+            home-manager.users."killua" = {
+              imports = attrValues self.commonhomeModules ++ [
+                ./macnix/home.nix
               ];
-              config = {
-                allowUnfree = true;
-                cudaSupport = false;
-                keep-derivations = true;
-                keep-outputs = true;
+            };
+          })
+        ];
+
+
+
+        homeManagerConfigurations = {
+          archnix = inputs.home-manager.lib.homeManagerConfiguration {
+            configuration = { pkgs, lib, ... }: {
+              imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
+              nixpkgs = {
+                overlays = attrValues self.commonoverlay ++ [
+                  neovim-nightly.overlay
+                  nur.overlay
+                  self.overlay
+                  emacs.overlay
+                  self.overrides
+                  (final: prev: {
+                    comma = import inputs.comma {
+                      pkgs = nixpkgs.legacyPackages."${prev.system}";
+                    };
+                    mach-nix = inputs.mach-nix.packages.${prev.system}.mach-nix;
+                  })
+                ];
+                config = {
+                  allowUnfree = true;
+                  cudaSupport = false;
+                  keep-derivations = true;
+                  keep-outputs = true;
+                };
               };
             };
+            system = "x86_64-linux";
+            homeDirectory = "/home/killua";
+            username = "killua";
+
           };
-          system = "x86_64-linux";
-          homeDirectory = "/home/killua";
-          username = "killua";
-
         };
-      };
-    in
-    {
+        in
+        {
 
-      darwinConfigurations = rec {
-        macnix = darwinSystem {
-          system = "aarch64-darwin";
-          modules = nixDarwinCommonModules ++ [
-            ./macnix/packages/pam.nix
-            ./macnix/packages/nix-index.nix
-            ./macnix/settings.nix
-            ./macnix/brew.nix
+        darwinConfigurations = rec {
+          macnix = darwinSystem {
+            system = "aarch64-darwin";
+            modules = nixDarwinCommonModules ++ [
+              ./macnix/packages/pam.nix
+              ./macnix/packages/nix-index.nix
+              ./macnix/settings.nix
+              ./macnix/brew.nix
 
-            ({ pkgs, lib, ... }: {
-              nix = {
-                extraOptions = ''
-                  system = aarch64-darwin
-                  extra-platforms = aarch64-darwin x86_64-darwin
-                  experimental-features = nix-command flakes
-                  build-users-group = nixbld
-                '';
-              };
-              environment.systemPackages = with pkgs; [
-                wget
-                exa
-                nixfmt
-                niv
-              ];
-            })
+              ({ pkgs, lib, ... }: {
+                nix = {
+                  extraOptions = ''
+                    system = aarch64-darwin
+                    extra-platforms = aarch64-darwin x86_64-darwin
+                    experimental-features = nix-command flakes
+                    build-users-group = nixbld
+                  '';
+                };
+                environment.systemPackages = with pkgs; [
+                  wget
+                  exa
+                  nixfmt
+                  niv
+                ];
+              })
 
-            {
-              networking.computerName = "killua";
-              networking.hostName = "killua";
-              networking.knownNetworkServices = [ "Wi-Fi" "USB 10/100 LAN" ];
-            }
-          ];
-        };
-      };
-
-      overlays = {
-        neovim = neovim-nightly.overlay;
-
-        pkgs-master = final: prev: {
-          pkgs-master = import inputs.nixpkgs-master {
-            inherit (prev.stdenv) system;
-            inherit (nixpkgsConfig) config;
+              {
+                networking.computerName = "killua";
+                networking.hostName = "killua";
+                networking.knownNetworkServices = [ "Wi-Fi" "USB 10/100 LAN" ];
+              }
+            ];
           };
         };
 
-        pkgs-stable = _: prev: {
-          pkgs-stable = import inputs.nixpkgs-stable {
-            inherit (prev.stdenv) system;
-            inherit (nixpkgsConfig) config;
-          };
-        };
-        pkgs-unstable = _: prev: {
-          pkgs-unstable = import inputs.nixpkgs-unstable {
-            inherit (prev.stdenv) system;
-            inherit (nixpkgsConfig) config;
-          };
-        };
+        overlays = {
+          neovim = neovim-nightly.overlay;
 
-        prefmanager = _: prev: {
-          prefmanager =
-            inputs.prefmanager.packages.${prev.stdenv.system}.default;
-        };
-
-        # Overlay useful on Macs with Apple Silicon
-        apple-silicon = _: prev:
-          optionalAttrs (prev.stdenv.system == "aarch64-darwin") {
-            # Add access to x86 packages system is running Apple Silicon
-            pkgs-x86 = import inputs.nixpkgs-unstable {
-              system = "x86_64-darwin";
+          pkgs-master = final: prev: {
+            pkgs-master = import inputs.nixpkgs-master {
+              inherit (prev.stdenv) system;
               inherit (nixpkgsConfig) config;
             };
           };
 
-      };
+          pkgs-stable = _: prev: {
+            pkgs-stable = import inputs.nixpkgs-stable {
+              inherit (prev.stdenv) system;
+              inherit (nixpkgsConfig) config;
+            };
+          };
+          pkgs-unstable = _: prev: {
+            pkgs-unstable = import inputs.nixpkgs-unstable {
+              inherit (prev.stdenv) system;
+              inherit (nixpkgsConfig) config;
+            };
+          };
 
-      darwinModules = { };
+          prefmanager = _: prev: {
+            prefmanager =
+              inputs.prefmanager.packages.${prev.stdenv.system}.default;
+          };
 
-      commonhomeModules = {
-        git = import ./common/git.nix;
-        packages = import ./common/packages.nix;
+          # Overlay useful on Macs with Apple Silicon
+          apple-silicon = _: prev:
+            optionalAttrs (prev.stdenv.system == "aarch64-darwin") {
+              # Add access to x86 packages system is running Apple Silicon
+              pkgs-x86 = import inputs.nixpkgs-unstable {
+                system = "x86_64-darwin";
+                inherit (nixpkgsConfig) config;
+              };
+            };
 
-      };
+        };
+
+        darwinModules = { };
+
+        commonhomeModules = {
+          git = import ./common/git.nix;
+          packages = import ./common/packages.nix;
+
+        };
 
 
-    } // flake-utils.lib.eachDefaultSystem (system: {
-      legacyPackages = import inputs.nixpkgs-unstable {
-        inherit system;
-        inherit (nixpkgsConfig) config;
-        overlays = with self.overlays; [
-          pkgs-master
-          pkgs-stable
-          apple-silicon
-          prefmanager
-        ];
-      };
-    });
+      } // flake-utils.lib.eachDefaultSystem (system: {
+        legacyPackages = import inputs.nixpkgs-unstable {
+          inherit system;
+          inherit (nixpkgsConfig) config;
+          overlays = with self.overlays; [
+            pkgs-master
+            pkgs-stable
+            apple-silicon
+            prefmanager
+          ];
+        };
+      });
 
- }
+      }

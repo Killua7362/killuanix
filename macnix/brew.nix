@@ -44,12 +44,18 @@
       noLock = true;
     };
     taps = [
+      "zegervdv/zathura"
       "homebrew/core"
       "mongodb/brew"
       "homebrew/cask"
       "homebrew/cask-fonts"
       "dart-lang/dart"
       "yqrashawn/goku"
+      "khanhas/tap"
+      "candid82/brew"
+      "homebrew/cask-versions"
+      "koekeishiya/formulae"
+      "homebrew/services"
     ];
     casks = [
       "android-platform-tools"
@@ -137,8 +143,6 @@
                               	  brew "wallpaper"
                               	  brew "yqrashawn/goku/goku",restart_service:true
                   		  brew "jupyterlab"
-      			  brew "delta"
-      			  brew "ms-jpq/sad/sad"
 
                   brew "dwm"
                         	  brew "stylua"
@@ -147,4 +151,5 @@
     '';
   };
 }
-
+#				  brew "delta"
+#      				  brew "ms-jpq/sad/sad"
