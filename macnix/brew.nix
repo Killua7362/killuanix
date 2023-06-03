@@ -22,9 +22,7 @@
         if [[ ! -f "/Users/killua/antigen.zsh" ]]; then
             curl -L git.io/antigen-nightly > /Users/killua/antigen.zsh
         fi
-        if [[ ! -f "/Users/killua/.iterm2_shell_integration.zsh" ]]; then
-            curl -L https://iterm2.com/shell_integration/install_shell_integration.sh | bash
-        fi
+
         if [[ ! -d "/Users/killua/miniconda3" ]]; then
     	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh
     	sh Miniconda3-latest-MacOSX-arm64
@@ -94,53 +92,59 @@
     ];
     # REMOVED: brew "xorpse/formulae/yabai", args: ["HEAD"]
     extraConfig = ''
-                              brew "handbrake"
-                              brew "anime-downloader"
-                  	    brew "anime-downloader",args:["HEAD"]
-                  		    brew "choose-gui"
-                  		brew "git"
+                                    brew "handbrake"
+                                    brew "anime-downloader"
+                        	    brew "anime-downloader",args:["HEAD"]
+                        	    brew "neovim",args:["HEAD"]
+                        		    brew "choose-gui"
+                        		brew "git"
 
-                  		brew "coreutils"
-                  		brew "ffmpeg"
-                  		brew "imagemagick"
-                  		brew "khanhas/tap/spicetify-cli"
-                  		brew "youtube-dl"
-                  		brew "zegervdv/zathura/zathura"
-                  		brew "zegervdv/zathura/zathura-pdf-mupdf"
-                  		brew "webarchiver"
-                  		brew "koekeishiya/formulae/skhd"
-                  		brew "koekeishiya/formulae/yabai"
-                  		brew "antigen"
-                  		brew "dart"
-                  		brew "mpv"
-                  		brew "php"
-                  		brew "tree-sitter"
-                  		brew "lazygit"
-                  		brew "lua-language-server"
-                  		  brew "luarocks"
-                  		brew "pyright"
-                        	  brew "jq"
-                        	  brew "noti"
-                        	  brew "rust"
-            		  brew "ldid"
-                  	  brew "zplug"
-      		  brew "python-tk"
-      		  brew "antidote"
-      		  brew "tmux"
-            	  brew "scrcpy"
-                  	  brew "rename"
-                  	
-                  	  brew "docker-compose"
+                        		brew "coreutils"
+                        		brew "ffmpeg"
+                        		brew "imagemagick"
+                        		brew "khanhas/tap/spicetify-cli"
+                        		brew "youtube-dl"
+                        		brew "zegervdv/zathura/zathura"
+                        		brew "zegervdv/zathura/zathura-pdf-mupdf"
+                        		brew "webarchiver"
+                        		brew "koekeishiya/formulae/skhd",args:["HEAD"]
+                        		brew "koekeishiya/formulae/yabai",args:["HEAD"]
+                        		brew "antigen"
+                        		brew "dart"
+                        		brew "mpv"
+                        		brew "php"
+                        		brew "tree-sitter"
+                        		brew "lazygit"
+                        		brew "lua-language-server"
+                        		  brew "luarocks"
+                        		brew "pyright"
+                              	  brew "jq"
+                              	  brew "noti"
+                              	  brew "rust"
+                  		  brew "ldid"
+                        	  brew "zplug"
+            		  brew "python-tk"
+            		  brew "antidote"
+            		  brew "tmux",args:["HEAD"]
+                  	  brew "scrcpy"
+                  	  brew "fzf"
+      		  brew "tree-sitter"
+                        	  brew "rename"
+                        	
+                        	  brew "docker-compose"
 
-                        	  brew "ranger"
-                        	  brew "wallpaper"
-                        	  brew "yqrashawn/goku/goku",restart_service:true
-            		  brew "jupyterlab"
+                              	  brew "ranger"
+                              	  brew "wallpaper"
+                              	  brew "yqrashawn/goku/goku",restart_service:true
+                  		  brew "jupyterlab"
+      			  brew "delta"
+      			  brew "ms-jpq/sad/sad"
 
-            brew "dwm"
-                  	  brew "stylua"
-                  	  brew "prettier"
-                  	  brew "mongodb-community"
+                  brew "dwm"
+                        	  brew "stylua"
+                        	  brew "prettier"
+                        	  brew "mongodb-community"
     '';
   };
 }
+

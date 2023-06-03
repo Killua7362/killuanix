@@ -2,6 +2,9 @@
 {
   # Nix configuration ------------------------------------------------------------------------------
 
+  programs.zsh.enable = true;
+
+
   nix.binaryCaches = [
     "https://cache.nixos.org/"
 
@@ -34,13 +37,11 @@
 
   # Add shells installed by nix to /etc/shells file
   environment.shells = with pkgs; [
-
     zsh
   ];
 
   # Make Fish the default shell
   programs.nix-index.enable = true;
-  programs.zsh.enable = true;
   programs.zsh.interactiveShellInit = ''
     source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
   '';
@@ -65,11 +66,11 @@
     NSGlobalDomain =
       {
         /* NSWindowResizeTime = "0.001";
-        NSScrollAnimationEnabled = false; */
+          NSScrollAnimationEnabled = false; */
         AppleKeyboardUIMode = 3;
         /* _HIHideMenuBar = false; */
         /* InitialKeyRepeat = 15;
-        KeyRepeat = 2; */
+          KeyRepeat = 2; */
       };
 
   };

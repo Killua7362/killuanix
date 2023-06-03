@@ -2,3 +2,4 @@ install neovim from lunarvim
 configure nvidia
 configure nix 
 change default shell to zsh
+to integrate fzf with iterm run this command "/usr/local/opt/fzf/install"
