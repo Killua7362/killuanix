@@ -25,3 +25,4 @@
 #            sudo ln -sfn $genProfilePath/home-path/Applications/ "/Applications/HomeManagerApps"
 #          '';
 #        };
+   # nodePackages.alfred-incognito-browser
