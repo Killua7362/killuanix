@@ -167,6 +167,7 @@
                   				  brew "trash"
             				  brew "ruby"
       				  brew "asdf",args:["HEAD"]
+                brew "ollama",args:["HEAD"]
     '';
   };
 }
