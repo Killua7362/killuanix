@@ -124,7 +124,6 @@
         };
         in
         {
-
         darwinConfigurations = rec {
           macnix = darwinSystem {
             system = "aarch64-darwin";

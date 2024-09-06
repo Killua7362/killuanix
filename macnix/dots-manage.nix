@@ -60,7 +60,15 @@
           source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/kitty;
           recursive = true;
         };
-
-
+      "/Users/killua/.config/borders" = 
+      {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/borders;
+          recursive = true;
+      };
+      "/Users/killua/.aerospace.toml" = 
+      {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/.aerospace.toml;
+          recursive = true;
+      };
     };
 }

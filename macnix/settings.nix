@@ -48,11 +48,13 @@
   # https://github.com/LnL7/nix-darwin/issues/122
 
   environment.variables.SHELL = "${pkgs.zsh}/bin/zsh";
+
   system.keyboard = {
     enableKeyMapping = true;
     swapLeftCommandAndLeftAlt = true;
   };
   system.defaults = {
+    NSGlobalDomain.NSAutomaticWindowAnimationsEnabled= true;
     dock = {
       expose-animation-duration = "0";
     };
@@ -72,6 +74,12 @@
           KeyRepeat = 2; */
       };
 
+  };
+
+  programs.direnv = {
+    enable = true;
+    enableZshIntegration = true; # see note on other shells below
+    nix-direnv.enable = true;
   };
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
