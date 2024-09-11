@@ -3,9 +3,9 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-22.05-darwin";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.05-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixos-stable.url = "github:NixOS/nixpkgs/nixos-22.05";
+    nixos-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
 
     home-manager = {
       url = "github:rycee/home-manager/master";
@@ -128,7 +128,7 @@
           macnix = darwinSystem {
             system = "aarch64-darwin";
             modules = nixDarwinCommonModules ++ [
-              ./macnix/packages/pam.nix
+              ##./macnix/packages/pam.nix
               ./macnix/packages/nix-index.nix
               ./macnix/settings.nix
               ./macnix/brew.nix
@@ -144,8 +144,8 @@
                 };
                 environment.systemPackages = with pkgs; [
                   wget
-                  exa
-                  nixfmt
+                  eza
+                  nixfmt-classic
                   niv
                 ];
               })
@@ -160,7 +160,6 @@
         };
 
         overlays = {
-          neovim = neovim-nightly.overlay;
 
           pkgs-master = final: prev: {
             pkgs-master = import inputs.nixpkgs-master {

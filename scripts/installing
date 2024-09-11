@@ -3,3 +3,15 @@ configure nvidia
 configure nix 
 change default shell to zsh
 to integrate fzf with iterm run this command "/usr/local/opt/fzf/install"
+
+
+
+# mac installation guide
+
+https://github.com/DeterminateSystems/nix-installer
+https://github.com/LnL7/nix-darwin?tab=readme-ov-file#flakes
+then use flake to install refer zshrc
+
+
+#important stuff
+https://jvns.ca/blog/2023/11/11/notes-on-nix-flakes/

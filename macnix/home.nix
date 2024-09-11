@@ -10,10 +10,21 @@
     fzf
     tldr
     antigen
-    rnix-lsp
+   # rnix-lsp
     prefmanager
+    cht-sh
   ];
+home.stateVersion = "24.05";
 
+    programs = {
+    direnv = {
+      enable = true;
+      enableZshIntegration = true; # see note on other shells below
+      nix-direnv.enable = true;
+    };
+
+    # zsh.enable = true; # see note on other shells below
+  };
 
   home.sessionVariables = {
     TERMINFO_DIRS = "${pkgs.kitty.terminfo.outPath}/share/terminfo";

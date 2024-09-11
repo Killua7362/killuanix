@@ -37,14 +37,17 @@
   homebrew = {
     brewPrefix = "/opt/homebrew/bin";
     enable = true;
-    autoUpdate = false;
-    cleanup = "none";
+    onActivation = {
+      cleanup = "none";
+      autoUpdate = false;
+      upgrade = false;
+    };
     global = {
       brewfile = true;
-      noLock = true;
+      lockfiles = true;
     };
     taps = [
-
+"josephpage/jetpack-io"
       "FelixKratz/formulae"
       "oven-sh/bun"
       "zegervdv/zathura"
@@ -138,8 +141,10 @@
                           brew "python-tk"
                           brew "antidote"
                           brew "tmux",args:["HEAD"]
+                          brew "yazi",args:["HEAD"]
                           brew "scrcpy"
                           brew "fzf"
+                          brew "less"
                           brew "rename"
                           brew "ranger"
                           brew "wallpaper"
@@ -167,6 +172,7 @@
       				  brew "asdf",args:["HEAD"]
                 brew "borders"
                 brew "joshmedeski/sesh/sesh"
+                brew "devbox"
     '';
   };
 }

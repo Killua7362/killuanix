@@ -23,6 +23,16 @@
           source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/.zshrc;
         };
 
+      "/Users/killua/.lesskey" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/.lesskey;
+        };
+      "/Users/killua/.zsh_plugins" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/zsh_plugins;
+          recursive = true;
+        };
+
       "/Users/killua/.config/mpv" =
         {
           source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/mpv;
@@ -68,6 +78,11 @@
       "/Users/killua/.aerospace.toml" = 
       {
           source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/.aerospace.toml;
+          recursive = true;
+      };
+      "/Users/killua/.config/wezterm" = 
+      {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/wezterm;
           recursive = true;
       };
     };

@@ -4,17 +4,17 @@
 
   programs.zsh.enable = true;
 
-  nix.binaryCaches = [
+  nix.settings.substituters = [
     "https://cache.nixos.org/"
 
   ];
-  nix.binaryCachePublicKeys = [
+  nix.settings.trusted-public-keys= [
     "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
   ];
-  nix.trustedUsers = [
+  nix.settings.trusted-users = [
     "@admin"
   ];
-  users.nix.configureBuildUsers = true;
+nix.configureBuildUsers = true;
 
   # Enable experimental nix command and flakes
   # nix.package = pkgs.nixUnstable;
@@ -39,7 +39,7 @@
     zsh
   ];
 
-  # Make Fish the default shell
+  # Make zsh the default shell
   programs.nix-index.enable = true;
   programs.zsh.interactiveShellInit = ''
     source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
@@ -56,7 +56,7 @@
   system.defaults = {
     NSGlobalDomain.NSAutomaticWindowAnimationsEnabled= true;
     dock = {
-      expose-animation-duration = "0";
+      expose-animation-duration = 0.0;
     };
     alf = {
       globalstate = 1;
@@ -76,11 +76,6 @@
 
   };
 
-  programs.direnv = {
-    enable = true;
-    enableZshIntegration = true; # see note on other shells below
-    nix-direnv.enable = true;
-  };
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
   #system.stateVersion = 4;
