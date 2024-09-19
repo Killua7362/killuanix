@@ -145,6 +145,7 @@
                           brew "scrcpy"
                           brew "fzf"
                           brew "less"
+                          brew "zoxide"
                           brew "rename"
                           brew "ranger"
                           brew "wallpaper"
@@ -166,6 +167,7 @@
                           brew "thefuck"
                           brew "gh"
                           brew "tree"
+                          brew "sk"
                           brew "cheat"
                           brew "trash"
                           brew "ruby"
@@ -173,6 +175,7 @@
                 brew "borders"
                 brew "joshmedeski/sesh/sesh"
                 brew "devbox"
+brew "uutils-coreutils"
     '';
   };
 }
