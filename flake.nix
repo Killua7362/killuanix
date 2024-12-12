@@ -3,9 +3,9 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.05-darwin";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixos-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixos-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
 
     home-manager = {
       url = "github:rycee/home-manager/master";
@@ -88,15 +88,13 @@
           })
         ];
 
-
-
         homeManagerConfigurations = {
           archnix = inputs.home-manager.lib.homeManagerConfiguration {
             configuration = { pkgs, lib, ... }: {
               imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
               nixpkgs = {
                 overlays = attrValues self.commonoverlay ++ [
-                  neovim-nightly.overlay
+                  neovim-nightly.overlays.default
                   nur.overlay
                   self.overlay
                   emacs.overlay

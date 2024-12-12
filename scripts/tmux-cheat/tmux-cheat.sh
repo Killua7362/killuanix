@@ -10,7 +10,7 @@ read -p "Enter Query: " query
 
 if grep -qs "$selected" ~/killuanix/scripts/tmux-cheat/tmux-cht-languages; then
     query=`echo $query | tr ' ' '+'`
-    tmux neww bash -c "cht.sh $selected/$query | less -R"
+    tmux neww bash -c "cht.sh $selected/$query | nvim +Man!"
 else
-    tmux neww bash -c "cht.sh $selected~$query | less -R"
+    tmux neww bash -c "cht.sh $selected~$query | nvim +Man!"
 fi

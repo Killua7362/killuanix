@@ -85,5 +85,14 @@
           source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/wezterm;
           recursive = true;
       };
+      "/Users/killua/.config/yazi" = 
+      {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/yazi;
+          recursive = true;
+      };
+      "/Users/killua/.config/lazygit.yml" = 
+      {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/lazygit.yml;
+      };
     };
 }

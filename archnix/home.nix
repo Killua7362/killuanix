@@ -12,8 +12,6 @@
   ];
 
   home.packages = with pkgs; [
-    discord-canary
-    brave
     pcmanfm
     unetbootin
     qbittorrent
@@ -49,6 +47,6 @@
   xdg.enable = true;
   xdg.mime.enable = true;
   targets.genericLinux.enable = true;
-systemd.user.startServices = true;
-systemd.user.systemctlPath = "/bin/systemctl";
+  systemd.user.startServices = true;
+  systemd.user.systemctlPath = "/bin/systemctl";
 }

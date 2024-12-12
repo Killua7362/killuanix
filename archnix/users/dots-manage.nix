@@ -3,84 +3,77 @@
 
   xdg.configFile =
     {
-      "/home/killua/.alacritty.yml" =
+      "/home/killua/.config/awesome" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/alacritty.yml;
-        };
-#      "/home/killua/.mozilla" =
-#        {
-#          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/Personal-Dots/mozilla;
-#          recursive = true;
-#        };
-      "awesome" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/awesome;
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/awesome;
           recursive = true;
         };
-      "zathura" =
+      "/home/killua/.config/zathura" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/zathura;
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/zathura;
           recursive = true;
         };
-        "/home/killua/.wezterm.lua" =
+      "/home/killua/.config/nvim" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/wezterm.lua;
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/nvim;
           recursive = true;
         };
-        "nvim" =
+
+      "/home/killua/.zprofile" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/nvim;
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/.zprofile;
+        };
+      "/home/killua/.zshrc" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/.zshrc;
+        };
+
+      "/home/killua/.lesskey" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/.lesskey;
+        };
+      "/home/killua/.zsh_plugins" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/zsh_plugins;
           recursive = true;
         };
-        "picom" =
+
+      "/home/killua/.config/mpv" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/picom;
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/mpv;
           recursive = true;
         };
-        "/home/killua/.zprofile" =
+      "/home/killua/.config/ranger" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/archnix/.zprofile;
-        };
-        "/home/killua/.zshrc" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/archnix/.zshrc;
-        };
-        "qutebrowser" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/qutebrowser;
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/ranger;
           recursive = true;
         };
-        "mpv" =
+      "/home/killua/.tmux.conf.local" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/mpv;
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/.tmux/.tmux.conf.local;
+        };
+      "/home/killua/.tmux.conf" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/.tmux/.tmux.conf;
+        };
+      "/home/killua/.config/kitty" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/kitty;
           recursive = true;
         };
-        "ranger" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/ranger;
+      "/home/killua/.config/wezterm" = 
+      {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/wezterm;
           recursive = true;
-        };
-        "/home/killua/.tmux.conf.local" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/.tmux/.tmux.conf.local;
-        };
-        "/home/killua/.tmux.conf" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/.tmux/.tmux.conf;
-        };
-        "alacritty" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/alacritty;
+      };
+      "/home/killua/.config/yazi" = 
+      {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/yazi;
           recursive = true;
-        };
-	"kitty"=
-	{
-	source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/kitty;
-	recursive = true;
-	};
-	"/home/killua/.zsh/agnoster.zsh" =
-	{
-	source = config.lib.file.mkOutOfStoreSymlink /home/killua/archnix/DotFiles/.zsh/agnoster.zsh;
-	};
+      };
+      "/home/killua/.config/lazygit.yml" = 
+      {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/lazygit.yml;
+      };
     };
 }

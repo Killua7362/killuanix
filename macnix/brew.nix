@@ -140,7 +140,6 @@
                           brew "zplug"
                           brew "python-tk"
                           brew "antidote"
-                          brew "tmux",args:["HEAD"]
                           brew "yazi",args:["HEAD"]
                           brew "scrcpy"
                           brew "fzf"
@@ -168,9 +167,12 @@
                           brew "gh"
                           brew "tree"
                           brew "sk"
+                          brew "neovim-remote"
                           brew "cheat"
                           brew "trash"
+                          brew "google-authenticator-libpam"
                           brew "ruby"
+                          brew "pnpm"
       				  brew "asdf",args:["HEAD"]
                 brew "borders"
                 brew "joshmedeski/sesh/sesh"
@@ -190,3 +192,4 @@ brew "uutils-coreutils"
                 #           brew "anime-downloader",args:["HEAD"]
                 #           brew "antigen"
                 # brew "sketchybar"
+                          # brew "tmux",args:["HEAD"]
