@@ -38,10 +38,12 @@
     flake-utils.url = "github:numtide/flake-utils";
     mk-darwin-system.url = "github:vic/mk-darwin-system/main";
     spacebar.url = "github:cmacrae/spacebar/v1.3.0";
+    wezterm.url = "github:wez/wezterm?dir=nix"; 
   };
 
   outputs =
-    { self
+    inputs @ {
+       self
     , flake-utils
     , home-manager
     , nixpkgs
@@ -52,7 +54,7 @@
     , darwin
     , mk-darwin-system
     , ...
-    }@inputs:
+    }:
     let
       inherit (darwin.lib) darwinSystem;
       inherit (inputs.nixpkgs-unstable.lib)
@@ -90,34 +92,33 @@
 
         homeManagerConfigurations = {
           archnix = inputs.home-manager.lib.homeManagerConfiguration {
-            configuration = { pkgs, lib, ... }: {
-              imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
-              nixpkgs = {
-                overlays = attrValues self.commonoverlay ++ [
-                  neovim-nightly.overlays.default
-                  nur.overlay
-                  self.overlay
-                  emacs.overlay
-                  self.overrides
-                  (final: prev: {
-                    comma = import inputs.comma {
-                      pkgs = nixpkgs.legacyPackages."${prev.system}";
-                    };
-                    mach-nix = inputs.mach-nix.packages.${prev.system}.mach-nix;
-                  })
-                ];
-                config = {
-                  allowUnfree = true;
-                  cudaSupport = false;
-                  keep-derivations = true;
-                  keep-outputs = true;
+            pkgs = nixpkgs.legacyPackages.x86_64-linux;
+            extraSpecialArgs = { inherit inputs; };
+            modules = [
+              {
+                home = {
+                  username = "killua";
+                  homeDirectory = "/home/killua";
+                  stateVersion = "23.11";
                 };
-              };
-            };
-            system = "x86_64-linux";
-            homeDirectory = "/home/killua";
-            username = "killua";
-
+              }
+              ({ pkgs, lib, ... }: {
+                imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
+                nixpkgs = {
+                  overlays = attrValues self.overlays ++ [
+                    neovim-nightly.overlays.default
+                    nur.overlay
+                    emacs.overlay
+                  ];
+                  config = {
+                    allowUnfree = true;
+                    cudaSupport = false;
+                    keep-derivations = true;
+                    keep-outputs = true;
+                  };
+                };
+              })
+            ];
           };
         };
         in
@@ -157,6 +158,8 @@
           };
         };
 
+        inherit homeManagerConfigurations;
+        
         overlays = {
 
           pkgs-master = final: prev: {

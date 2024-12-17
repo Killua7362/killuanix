@@ -3,7 +3,7 @@
   home.username = "killua";
   home.homeDirectory = "/home/killua";
   programs.home-manager.enable = true;
-  programs.home-manager.path = https://github.com/nix-community/home-manager/archive/master.tar.gz;
+  #programs.home-manager.path = https://github.com/nix-community/home-manager/archive/master.tar.gz;
 
   imports = [
     ./users/dots-manage.nix
@@ -18,7 +18,6 @@
     sublime3
     hakuneko
     fontpreview
-    mach-nix
     okular
     arandr
     bottom
@@ -40,6 +39,16 @@
     zathura
     file
     dmenu
+    neovim
+    fd
+    tmux
+    delta
+    zplug
+    direnv
+    thefuck
+    zoxide
+    eza
+    fzf
   ];
 
   services.lorri.enable = true;

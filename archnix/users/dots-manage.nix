@@ -25,7 +25,7 @@
         };
       "/home/killua/.zshrc" =
         {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/.zshrc;
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/.zshrc;
         };
 
       "/home/killua/.lesskey" =
