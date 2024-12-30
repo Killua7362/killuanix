@@ -14,6 +14,11 @@
           recursive = true;
         };
 
+      "/Users/killua/.config/ghostty" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/ghostty;
+          recursive = true;
+        };
       "/Users/killua/.zprofile" =
         {
           source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/macnix/.zprofile;

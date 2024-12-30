@@ -69,7 +69,8 @@
       "gitkraken-cli"
       "macforge"
       "vimr"
-                "shortcat"
+      "ghostty"
+      "shortcat"
       "wezterm"
       "raycast"
       "nikitabobko/tap/aerospace"
@@ -119,7 +120,6 @@
                           brew "neovim",args:["HEAD"]
                           brew "choose-gui"
                           brew "git"
-                          brew "coreutils"
                           brew "ffmpeg"
                           brew "imagemagick"
                           brew "spicetify-cli"
@@ -149,6 +149,7 @@
                           brew "ranger"
                           brew "wallpaper"
                           brew "yqrashawn/goku/goku",restart_service:true
+                          brew "mas"
                           brew "jupyterlab"
                           brew "dwm"
                           brew "stylua"
