@@ -14,3 +14,7 @@ nix --extra-experimental-features 'flakes nix-command' build .#darwinConfigurati
 
 
 /etc/profiles/per-user/killua/bin:/nix/var/nix/profiles/system/sw/bin:/Users/killua/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
+
+nix --experimental-features 'flakes nix-command' build .#homeManagerConfigurations.killua.activationPackage
+./result/activate
