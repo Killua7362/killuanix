@@ -99,6 +99,7 @@
                 };
               }
               ({ pkgs, lib,inputs, ... }: {
+                                  users.users."killua".shell = pkgs.zsh;
                 imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
                 nixpkgs = {
                   overlays = attrValues self.overlays ++ [

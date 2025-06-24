@@ -3,8 +3,6 @@
   programs.home-manager.enable = true;
   #programs.home-manager.path = https://github.com/nix-community/home-manager/archive/master.tar.gz;
 
-
-  users.users."killua".shell = pkgs.zsh;
   imports = [
     ./users/dots-manage.nix
     ./users/theme.nix
