@@ -2,6 +2,8 @@
 
 
 {
+	environment.shells = with pkgs; [ zsh ];
+
   programs.zsh = {
     enable = true;
     autosuggestion.enable = true;
