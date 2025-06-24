@@ -23,21 +23,10 @@
         {
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/.zprofile;
         };
-      "/home/killua/.zshrc" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/.zshrc;
-        };
-
       "/home/killua/.lesskey" =
         {
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/.lesskey;
         };
-      "/home/killua/.zsh_plugins" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/zsh_plugins;
-          recursive = true;
-        };
-
       "/home/killua/.config/mpv" =
         {
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/mpv;
