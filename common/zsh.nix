@@ -35,7 +35,7 @@
       LESS = "~/.lesskey";
       MANPAGER="nvim +Man!";
       MANWIDTH="999";
-      XDG_CONFIG_HOME="$HOME/.config";
+
       LG_CONFIG_FILE="$HOME/.config/lazygit.yml";
       ENHANCD_FILTER = "fzf --height=60% --border --margin=1 --padding=1";
       FZF_DEFAULT_COMMAND="fd --type f --hidden --follow";
