@@ -39,7 +39,6 @@
     zathura
     file
     dmenu
-    neovim
     fd
     tmux
     delta
@@ -49,6 +48,7 @@
     zoxide
     eza
     fzf
+    nix-search-cli
   ];
 
   services.lorri.enable = true;

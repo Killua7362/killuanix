@@ -5,13 +5,11 @@
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixos-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
-
     home-manager = {
       url = "github:rycee/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    neovim-nightly.url = "github:nix-community/neovim-nightly-overlay";
+    # neovim-nightly.url = "github:nix-community/neovim-nightly-overlay";
     comma = {
       url = "github:Shopify/comma";
       flake = false;
@@ -30,7 +28,6 @@
     prefmanager.inputs.flake-compat.follows = "flake-compat";
     prefmanager.inputs.flake-utils.follows = "flake-utils";
 
-    mach-nix.url = "github:DavHau/mach-nix";
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
@@ -47,10 +44,9 @@
     , flake-utils
     , home-manager
     , nixpkgs
-    , neovim-nightly
+    # , neovim-nightly
     , nur
     , emacs
-    , mach-nix
     , darwin
     , mk-darwin-system
     , ...
@@ -92,21 +88,21 @@
 
         homeManagerConfigurations = {
           archnix = inputs.home-manager.lib.homeManagerConfiguration {
-            pkgs = nixpkgs.legacyPackages.x86_64-linux;
+            pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
             extraSpecialArgs = { inherit inputs; };
             modules = [
               {
                 home = {
                   username = "killua";
                   homeDirectory = "/home/killua";
-                  stateVersion = "23.11";
+                  stateVersion = "24.11";
                 };
               }
-              ({ pkgs, lib, ... }: {
+              ({ pkgs, lib,inputs, ... }: {
                 imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
                 nixpkgs = {
                   overlays = attrValues self.overlays ++ [
-                    neovim-nightly.overlays.default
+                    # neovim-nightly.overlays.default
                     nur.overlay
                     emacs.overlay
                   ];
@@ -169,13 +165,13 @@
             };
           };
 
-          pkgs-stable = _: prev: {
+          pkgs-stable = final: prev: {
             pkgs-stable = import inputs.nixpkgs-stable {
               inherit (prev.stdenv) system;
               inherit (nixpkgsConfig) config;
             };
           };
-          pkgs-unstable = _: prev: {
+          pkgs-unstable = final: prev: {
             pkgs-unstable = import inputs.nixpkgs-unstable {
               inherit (prev.stdenv) system;
               inherit (nixpkgsConfig) config;
@@ -204,21 +200,9 @@
         commonhomeModules = {
           git = import ./common/git.nix;
           packages = import ./common/packages.nix;
-
         };
 
 
-      } // flake-utils.lib.eachDefaultSystem (system: {
-        legacyPackages = import inputs.nixpkgs-unstable {
-          inherit system;
-          inherit (nixpkgsConfig) config;
-          overlays = with self.overlays; [
-            pkgs-master
-            pkgs-stable
-            apple-silicon
-            prefmanager
-          ];
-        };
-      });
+      };
 
       }

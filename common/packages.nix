@@ -2,7 +2,7 @@
 {
   home.packages = with pkgs; [
     #neovim-nightly
-    (pkgs.nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+    pkgs.nerd-fonts.jetbrains-mono
     #tmux
     ripgrep
     skim
