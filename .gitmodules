@@ -1,10 +1,7 @@
-[submodule "scripts/archlinux-nix"]
-	path = scripts/archlinux-nix
-	url = https://github.com/asppsa/archlinux-nix.git
-[submodule "scripts/pacmanfile"]
-	path = scripts/pacmanfile
-	url = https://github.com/mastertinner/pacmanfile.git
 [submodule "DotFiles"]
 	path = DotFiles
 	url = https://github.com/Killua7362/DotFiles.git
 	branch = master
+[submodule "archnix/aconfmgr"]
+	path = archnix/aconfmgr
+	url = https://github.com/Killua7362/aconfmgr.git
