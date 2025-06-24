@@ -90,8 +90,6 @@
           archnix = inputs.home-manager.lib.homeManagerConfiguration {
             pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
             extraSpecialArgs = { inherit inputs; };
-            useUserPackages=true;
-            useGlobalPkgs=true;
             modules = [
               {
                 home = {
