@@ -200,6 +200,7 @@
         commonhomeModules = {
           git = import ./common/git.nix;
           packages = import ./common/packages.nix;
+          zsh = import ./common/zsh.nix;
         };
 
 
