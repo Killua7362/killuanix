@@ -10,6 +10,7 @@
   ];
 
   home.packages = with pkgs; [
+    inputs.neovim-nightly-overlay.packages.${pkgs.system}.default
     pcmanfm
     unetbootin
     qbittorrent
@@ -47,6 +48,7 @@
     eza
     fzf
     nix-search-cli
+    nixgl.nixGLIntel
   ];
 
   services.lorri.enable = true;

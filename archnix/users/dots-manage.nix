@@ -18,11 +18,6 @@
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/nvim;
           recursive = true;
         };
-
-      "/home/killua/.zprofile" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/.zprofile;
-        };
       "/home/killua/.lesskey" =
         {
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/.lesskey;
@@ -68,6 +63,12 @@
       "/home/killua/.config/ghostty" =
         {
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/ghostty;
+          recursive = true;
+        };
+        
+      "/home/killua/.config/aconfmgr" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/aconfmgr;
           recursive = true;
         };
     };

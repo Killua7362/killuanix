@@ -9,7 +9,7 @@
       url = "github:rycee/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # neovim-nightly.url = "github:nix-community/neovim-nightly-overlay";
+    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     comma = {
       url = "github:Shopify/comma";
       flake = false;
@@ -35,7 +35,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     mk-darwin-system.url = "github:vic/mk-darwin-system/main";
     spacebar.url = "github:cmacrae/spacebar/v1.3.0";
-    wezterm.url = "github:wez/wezterm?dir=nix"; 
+    nixgl.url = "github:nix-community/nixGL";
   };
 
   outputs =
@@ -44,11 +44,12 @@
     , flake-utils
     , home-manager
     , nixpkgs
-    # , neovim-nightly
+    , neovim-nightly-overlay
     , nur
     , emacs
     , darwin
     , mk-darwin-system
+    , nixgl
     , ...
     }:
     let
@@ -99,13 +100,14 @@
                 };
               }
               ({ pkgs, lib,inputs, ... }: {
-                                  users.users."killua".shell = pkgs.zsh;
+              
                 imports = attrValues self.commonhomeModules ++ [ ./archnix/home.nix ];
                 nixpkgs = {
                   overlays = attrValues self.overlays ++ [
                     # neovim-nightly.overlays.default
                     nur.overlay
                     emacs.overlay
+                    nixgl.overlay
                   ];
                   config = {
                     allowUnfree = true;

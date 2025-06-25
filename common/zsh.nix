@@ -7,14 +7,23 @@
     enable = true;
     autosuggestion.enable = true;
     enableCompletion = true;
-
+    zplug = {
+    enable = true;
+    plugins = [
+      { name = "zsh-users/zsh-syntax-highlighting"; } # Simple plugin installation
+      { name = "zsh-users/zsh-autosuggestions"; } # Simple plugin installation
+      { name = "b4b4r07/enhancd"; } # Simple plugin installation
+      { name = "Bhupesh-V/ugit"; } # Simple plugin installation
+      { name = "romkatv/powerlevel10k"; tags = [ as:theme depth:1 ]; } # Installations with additional options. For the list of options, please refer to Zplug README.
+    ];
+  };
     plugins = [
       # Vi keybindings
-      {
-        name = "zsh-vi-mode";
-        file = "./share/zsh-vi-mode/zsh-vi-mode.plugin.zsh";
-        src = pkgs.zsh-vi-mode;
-      }
+     # {
+     #   name = "zsh-vi-mode";
+    #    file = "./share/zsh-vi-mode/zsh-vi-mode.plugin.zsh";
+     #   src = pkgs.zsh-vi-mode;
+     # }
     ];
 
     history = {
@@ -41,12 +50,11 @@
       ENHANCD_FILTER = "fzf --height=60% --border --margin=1 --padding=1";
       FZF_DEFAULT_COMMAND="fd --type f --hidden --follow";
       FZF_DEFAULT_OPTS=" --preview '~/killuanix/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672";
-	FZF_CTRL_T_OPTS="";
-	FZF_COMPLETION_OPTS="--height=60% --border --margin=1 --padding=1";
-	FZF_TMUX="1";
-	XDG_CONFIG_HOME="$HOME/.config";
-	XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS";
-	PATH="$HOME/killuanix/archnix/aconfmgr:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH";
+    	FZF_CTRL_T_OPTS="";
+    	FZF_COMPLETION_OPTS="--height=60% --border --margin=1 --padding=1";
+    	FZF_TMUX="1";
+    	XDG_CONFIG_HOME="$HOME/.config";
+    	XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS";
    };
 
     shellAliases = rec {
@@ -143,14 +151,43 @@
 
       ## VERY IMPORTANT!!!!
       unset RPS1 RPROMPT
-      
+      export PATH="$HOME/java-8/jdk1.8.0_291/bin:$HOME/killuanix/archnix/aconfmgr:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+      export JAVA_HOME="$HOME/java-8/jdk1.8.0_291"
+      export JBOSS_HOME="~/jboss"
+      export JBOSS_ROOT="~/jboss"
+      export EAR_LOC="~/jboss/data/EAR"
+      export ATG_HOME=/home/killua/ATG/ATG11.3.2
+      export ATG_ROOT=/home/killua/ATG/ATG11.3.2
+      export DYNAMO_HOME=/home/killua/ATG/ATG11.3.2/home
+      export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
       nix_switch()
-	{
-	  pushd ~/killuanix/
-	  env TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
-	  env TERM=xterm-256color ./result/activate
-	  popd
-	}
+      	{
+      	  pushd ~/killuanix/
+      	  env TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
+      	  env TERM=xterm-256color ./result/activate
+      	  popd
+      	}
+
+        pacsave(){
+            pushd ~/killuanix/archnix/aconfmgr/
+            ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes save
+            popd
+        }
+
+        pacapply(){
+            pushd ~/killuanix/archnix/aconfmgr/
+            ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes apply
+            popd
+        }
+
+        function boeing-db {
+          case "$1" in 
+              start)   VBoxManage startvm "oracle-19c-vagrant" --type headless ;;
+              stop)    VBoxManage controlvm "oracle-19c-vagrant" poweroff ;;
+              *) echo "usage: $0 start|stop" >&2
+                 ;;
+          esac
+        }
     '';
   };
 }

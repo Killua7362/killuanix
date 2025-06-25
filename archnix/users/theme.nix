@@ -3,12 +3,20 @@
   fonts.fontconfig.enable = true;
   gtk = {
     enable = true;
-    font.name = "JetBrainsMono Nerd Font";
-    iconTheme = {
-      name = "ePapirus-Dark";
+    font = {
+      name = "JetBrainsMono Nerd Font";
+      package = pkgs.nerd-fonts.jetbrains-mono;
     };
     theme = {
-      name = "Adapta-Nokto-Eta";
+      name = "adw-gtk3-dark";
+      package = pkgs.adw-gtk3;
     };
+    iconTheme = {
+      name = "Adwaita";
+      package = pkgs.adwaita-icon-theme;
+    };  
   };
+      qt = {
+        enable = true;
+    };
 }
