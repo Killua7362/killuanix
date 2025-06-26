@@ -5,6 +5,6 @@
   programs.bat.config.style = "numbers,changes,header";
 
   #lsd
-  programs.lsd.enable = true;
-  programs.lsd.enableAliases = false;
+  # programs.lsd.enable = true;
+  # programs.lsd.enableAliases = false;
 }

@@ -41,11 +41,11 @@
       COLORTERM = "truecolor";
       TERM = "xterm-256color";
       EDITOR = "nvim";
-      ZVM_VI_ESCAPE_BINDKEY = "kl";
+      #ZVM_VI_ESCAPE_BINDKEY = "kl";
       LESS = "~/.lesskey";
       MANPAGER="nvim +Man!";
       MANWIDTH="999";
-
+      KEYTIMEOUT = "1";  # Add this line - reduces escape key delay to 10ms
       LG_CONFIG_FILE="$HOME/.config/lazygit.yml";
       ENHANCD_FILTER = "fzf --height=60% --border --margin=1 --padding=1";
       FZF_DEFAULT_COMMAND="fd --type f --hidden --follow";
@@ -113,14 +113,14 @@
       WORDCHARS=''${WORDCHARS//\/[&.;]}                                 # Don't consider certain characters part of the word
     '';
 
-    initExtra = ''
+    initContent = ''
       # Reload fzf binds after vi mode
       ## Keybindings section
       # vi movement keys on home row
-      bindkey -M vicmd j vi-backward-char
-      bindkey -M vicmd k vi-down-line-or-history
-      bindkey -M vicmd l vi-up-line-or-history
-      bindkey -M vicmd \; vi-forward-char
+      #bindkey -M vicmd j vi-backward-char
+      #bindkey -M vicmd k vi-down-line-or-history
+      #bindkey -M vicmd l vi-up-line-or-history
+      #bindkey -M vicmd \; vi-forward-char
       bindkey -e
       bindkey '^[[7~' beginning-of-line                               # Home key
       bindkey '^[[H' beginning-of-line                                # Home key
@@ -153,13 +153,15 @@
       unset RPS1 RPROMPT
       export PATH="$HOME/java-8/jdk1.8.0_291/bin:$HOME/killuanix/archnix/aconfmgr:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
       export JAVA_HOME="$HOME/java-8/jdk1.8.0_291"
-      export JBOSS_HOME="~/jboss"
-      export JBOSS_ROOT="~/jboss"
-      export EAR_LOC="~/jboss/data/EAR"
+      export JBOSS_HOME="/home/killua/jboss"
+      export JBOSS_ROOT="/home/killua/jboss"
+      export EAR_LOC="/home/killua/jboss/data/EAR"
       export ATG_HOME=/home/killua/ATG/ATG11.3.2
       export ATG_ROOT=/home/killua/ATG/ATG11.3.2
       export DYNAMO_HOME=/home/killua/ATG/ATG11.3.2/home
       export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+      export LC_ALL=en_US.UTF-8
+      export LANG=en_US.UTF-8
       nix_switch()
       	{
       	  pushd ~/killuanix/

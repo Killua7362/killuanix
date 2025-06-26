@@ -71,5 +71,10 @@
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/aconfmgr;
           recursive = true;
         };
+      "/home/killua/.config/hypr" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/hypr;
+          recursive = true;
+        };
     };
 }
