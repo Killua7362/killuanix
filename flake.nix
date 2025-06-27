@@ -36,6 +36,7 @@
     mk-darwin-system.url = "github:vic/mk-darwin-system/main";
     spacebar.url = "github:cmacrae/spacebar/v1.3.0";
     nixgl.url = "github:nix-community/nixGL";
+
   };
 
   outputs =

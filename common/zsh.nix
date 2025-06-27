@@ -160,8 +160,9 @@
       export ATG_ROOT=/home/killua/ATG/ATG11.3.2
       export DYNAMO_HOME=/home/killua/ATG/ATG11.3.2/home
       export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
-      export LC_ALL=en_US.UTF-8
       export LANG=en_US.UTF-8
+      LC_CTYPE=en_US.UTF-8
+      export LC_ALL=en_US.UTF-8
       nix_switch()
       	{
       	  pushd ~/killuanix/

@@ -76,5 +76,15 @@
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/hypr;
           recursive = true;
         };
+      "/home/killua/.config/ueli" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/ueli;
+          recursive = true;
+        };
+      "/home/killua/.config/handlr" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/handlr;
+          recursive = true;
+        };
     };
 }
