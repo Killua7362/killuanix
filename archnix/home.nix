@@ -18,14 +18,12 @@ i18n.inputMethod = {
     pcmanfm
     unetbootin
     qbittorrent
-    sublime3
     hakuneko
     fontpreview
     arandr
     bottom
     cachix
     comma
-    flameshot
     git-crypt
     lazygit
     luarocks-nix

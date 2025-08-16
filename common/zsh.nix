@@ -15,6 +15,7 @@
       { name = "b4b4r07/enhancd"; } # Simple plugin installation
       { name = "Bhupesh-V/ugit"; } # Simple plugin installation
       { name = "romkatv/powerlevel10k"; tags = [ as:theme depth:1 ]; } # Installations with additional options. For the list of options, please refer to Zplug README.
+      {name = "Aloxaf/fzf-tab";}
     ];
   };
     plugins = [
@@ -47,12 +48,6 @@
       MANWIDTH="999";
       KEYTIMEOUT = "1";  # Add this line - reduces escape key delay to 10ms
       LG_CONFIG_FILE="$HOME/.config/lazygit.yml";
-      ENHANCD_FILTER = "fzf --height=60% --border --margin=1 --padding=1";
-      FZF_DEFAULT_COMMAND="fd --type f --hidden --follow";
-      FZF_DEFAULT_OPTS=" --preview '~/killuanix/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672";
-    	FZF_CTRL_T_OPTS="";
-    	FZF_COMPLETION_OPTS="--height=60% --border --margin=1 --padding=1";
-    	FZF_TMUX="1";
     	XDG_CONFIG_HOME="$HOME/.config";
     	XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS";
    };
@@ -84,6 +79,7 @@
 	 td="tmux kill-session -t \$1";
 	 tn="tmux new-session";
 	 ts="~/killuanix/scripts/tmux-sessionizer.sh";
+      ovpn-connect="sudo openvpn --config vpn/goutam-pivotree.ovpn --auth-retry interact";
     };
 
     profileExtra = ''
@@ -109,7 +105,7 @@
       zstyle ':completion:*' use-cache on
       mkdir -p "$(dirname ${config.xdg.cacheHome}/zsh/completion-cache)"
       zstyle ':completion:*' cache-path "${config.xdg.cacheHome}/zsh/completion-cache"
-      zstyle ':completion:*' menu select
+      zstyle ':completion:*' menu no
       WORDCHARS=''${WORDCHARS//\/[&.;]}                                 # Don't consider certain characters part of the word
     '';
 
@@ -151,18 +147,36 @@
 
       ## VERY IMPORTANT!!!!
       unset RPS1 RPROMPT
-      export PATH="$HOME/java-8/jdk1.8.0_291/bin:$HOME/killuanix/archnix/aconfmgr:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+
+      export PATH="/usr/share/sway-contrib:$HOME/java-8/jdk1.8.0_291/bin:$HOME/killuanix/archnix/aconfmgr:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
       export JAVA_HOME="$HOME/java-8/jdk1.8.0_291"
       export JBOSS_HOME="/home/killua/jboss"
       export JBOSS_ROOT="/home/killua/jboss"
       export EAR_LOC="/home/killua/jboss/data/EAR"
-      export ATG_HOME=/home/killua/ATG/ATG11.3.2
-      export ATG_ROOT=/home/killua/ATG/ATG11.3.2
-      export DYNAMO_HOME=/home/killua/ATG/ATG11.3.2/home
+      export ATG_HOME="/home/killua/ATG/ATG11.3.2"
+      export ATG_ROOT="/home/killua/ATG/ATG11.3.2"
+      export DYNAMO_HOME="/home/killua/ATG/ATG11.3.2/home"
+
       export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
-      export LANG=en_US.UTF-8
-      LC_CTYPE=en_US.UTF-8
+      export LANGUAGE=en_US.UTF-8
       export LC_ALL=en_US.UTF-8
+      export LANG=en_US.UTF-8
+      export LC_CTYPE=en_US.UTF-8
+      export ENHANCD_FILTER="fzf --height=60% --border --margin=1 --padding=1"
+      export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow"
+      export FZF_DEFAULT_OPTS=" --preview '~/killuanix/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672"
+    	export FZF_CTRL_T_OPTS=""
+    	export FZF_COMPLETION_OPTS="--height=60% --border --margin=1 --padding=1"
+    	export FZF_TMUX="1"
+        zstyle ':completion:*:git-checkout:*' sort false
+        zstyle ':completion:*:descriptions' format '[%d]'
+        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+        zstyle ':fzf-tab:*' fzf-flags --color=fg:1,fg+:2 --bind=tab:accept
+        zstyle ':fzf-tab:*' use-fzf-default-opts yes
+        zstyle ':fzf-tab:*' switch-group '<' '>'
+        zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+
+      source <(fzf --zsh)
       nix_switch()
       	{
       	  pushd ~/killuanix/

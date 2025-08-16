@@ -106,7 +106,7 @@
                 nixpkgs = {
                   overlays = attrValues self.overlays ++ [
                     # neovim-nightly.overlays.default
-                    nur.overlay
+                    nur.overlays.default
                     emacs.overlay
                     nixgl.overlay
                   ];
