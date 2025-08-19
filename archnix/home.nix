@@ -8,11 +8,11 @@
     ./users/theme.nix
     ./users/commands.nix
   ];
-i18n.inputMethod = {
-  enable = true;
-  type = "fcitx5";
-  fcitx5.addons = with pkgs; [ fcitx5-mozc fcitx5-gtk ];
-};
+# i18n.inputMethod = {
+#   enable = true;
+#   type = "fcitx5";
+#   fcitx5.addons = with pkgs; [ fcitx5-mozc fcitx5-gtk ];
+# };
   home.packages = with pkgs; [
     inputs.neovim-nightly-overlay.packages.${pkgs.system}.default
     pcmanfm

@@ -1,22 +1,53 @@
 #!/bin/bash
-if ! [ -x "$(command -v nix)" ]; then
-  echo 'Nix is not installed start installing' >&2
-  if [[ "$(uname)" == "Darwin" ]]; then
-	xcode-select --install
-	if [[ "$(uname -m)" == "arm64" ]]; then
-		softwareupdate --install-rosetta --agree-to-license
-	fi
-	sh <(curl -L https://nixos.org/nix/install) --darwin-use-unencrypted-nix-store-volume --daemon
-	echo "source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" > ~/.bashrc
-	source ~/.bashrc
-	if ! [ -x "$(command -v git)" ]; then
-		echo "git is not installed."
-	else
-		git clone --recurse-submodules --remote-submodules https://github.com/Killua7362/killuanix.git
-		cd killuanix
-		nix --extra-experimental-features 'flakes nix-command' build .#darwinConfigurations.macnix.system
-		./result/sw/bin/darwin-rebuild switch --flake .#macnix
-	fi
+
+REPO_DIRECTORY="$HOME/killuanix"
+
+if [ ! -d "$REPO_DIRECTORY" ]; then
+  git clone --recurse-submodules --remote-submodules https://github.com/Killua7362/killuanix.git "$REPO_DIRECTORY"
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  if ! command -v nix >/dev/null 2>&1; then
+    echo 'Nix is not installed, starting installation...' >&2
+    if [[ "$(uname)" == "Darwin" ]]; then
+      xcode-select --install
+      if [[ "$(uname -m)" == "arm64" ]]; then
+        softwareupdate --install-rosetta --agree-to-license
+      fi
+      sh <(curl -L https://nixos.org/nix/install) --darwin-use-unencrypted-nix-store-volume --daemon
+      echo "source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" >> ~/.bashrc
+      source ~/.bashrc
+      if ! command -v git >/dev/null 2>&1; then
+        echo "git is not installed."
+      else
+        cd "$REPO_DIRECTORY"
+        nix --extra-experimental-features 'flakes nix-command' build .#darwinConfigurations.macnix.system
+        ./result/sw/bin/darwin-rebuild switch --flake .#macnix
+      fi
+    fi
+    exit 0
   fi
-  exit 1
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  if ! command -v nix >/dev/null 2>&1; then
+    # install nix
+    curl -sSf -L https://install.lix.systems/lix | sh -s -- install
+  fi
+
+  cd "$REPO_DIRECTORY" || exit 1
+
+  source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+  # Activate nix flakes build
+  nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
+  ./result/activate
+
+  if ! command -v yay >/dev/null 2>&1; then
+    sudo pacman -S --needed git base-devel
+    git clone https://aur.archlinux.org/yay.git
+    cd yay && makepkg -si
+  fi
+
+  pushd "$REPO_DIRECTORY/archnix/aconfmgr/" || exit 1
+  ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes save
+  popd
 fi
