@@ -36,7 +36,6 @@
     mk-darwin-system.url = "github:vic/mk-darwin-system/main";
     spacebar.url = "github:cmacrae/spacebar/v1.3.0";
     nixgl.url = "github:nix-community/nixGL";
-
   };
 
   outputs =
@@ -91,7 +90,10 @@
         homeManagerConfigurations = {
           archnix = inputs.home-manager.lib.homeManagerConfiguration {
             pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
-            extraSpecialArgs = { inherit inputs; };
+            extraSpecialArgs = {
+            inherit inputs;
+            nixgl = nixgl;
+          };
             modules = [
               {
                 home = {

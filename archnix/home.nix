@@ -1,4 +1,4 @@
-{ pkgs, config, inputs, libs, ... }:
+{ pkgs, config, inputs,nixgl, libs, ... }:
 {
   programs.home-manager.enable = true;
   #programs.home-manager.path = https://github.com/nix-community/home-manager/archive/master.tar.gz;
@@ -48,7 +48,7 @@
     eza
     fzf
     nix-search-cli
-    nixgl.nixGLIntel
+    foot
   ];
 
   services.lorri.enable = true;
