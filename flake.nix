@@ -36,6 +36,7 @@
     mk-darwin-system.url = "github:vic/mk-darwin-system/main";
     spacebar.url = "github:cmacrae/spacebar/v1.3.0";
     nixgl.url = "github:nix-community/nixGL";
+    nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
   };
 
   outputs =
@@ -50,6 +51,7 @@
     , darwin
     , mk-darwin-system
     , nixgl
+    , nix-flatpak
     , ...
     }:
     let
@@ -95,6 +97,7 @@
             nixgl = nixgl;
           };
             modules = [
+            nix-flatpak.homeManagerModules.nix-flatpak
               {
                 home = {
                   username = "killua";

@@ -58,4 +58,14 @@
   targets.genericLinux.enable = true;
   systemd.user.startServices = true;
   systemd.user.systemctlPath = "/bin/systemctl";
+
+  services.flatpak = {
+    enable = true;
+    packages = [
+        "com.logseq.Logseq"
+        "com.github.tchx84.Flatseal"
+        "com.usebottles.bottles"
+      "com.heroicgameslauncher.hgl"
+      ];
+  };
 }

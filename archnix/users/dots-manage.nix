@@ -100,5 +100,20 @@
         {
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/ideavimrc;
         };
+      "/home/killua/.config/sway" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/sway;
+          recursive = true;
+        };
+      "/home/killua/.config/kanshi" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/kanshi;
+          recursive = true;
+        };
+      "/home/killua/.config/ags" =
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/ags;
+          recursive = true;
+        };
     };
 }
