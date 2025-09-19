@@ -177,18 +177,14 @@
         zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 
       source <(fzf --zsh)
-     if [[ "$(tty)" == "/dev/tty4" ]]; then
-       exec uwsm start hyprland-uwsm.desktop
-     fi
-
-     if [[ "$(tty)" == "/dev/tty2" ]]; then
-       exec uwsm start sway-uwsm.desktop
+     if [[ "$(tty)" == "/dev/tty5" ]]; then
+        reboot
      fi
 
       nix_switch()
       	{
       	  pushd ~/killuanix/
-      	  env TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage' --extra-deprecated-features url-literals
+      	  env TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
       	  env TERM=xterm-256color ./result/activate
       	  popd
       	}
