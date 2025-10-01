@@ -7,7 +7,28 @@
     ./users/dots-manage.nix
     ./users/theme.nix
     ./users/commands.nix
+    ./users/appimages.nix
   ];
+
+  myAppImages = {
+    enable = true;
+
+    apps = {
+      "PrismLauncher" = {
+        repoOwner = "Diegiwg";
+        repoName = "PrismLauncher-Cracked";
+        releaseTag = "9.4";
+        fileName = "PrismLauncher-Linux-x86_64.AppImage";
+      };
+      "Anymex" = {
+        repoOwner = "RyanYuuki";
+        repoName = "AnymeX";
+        releaseTag = "v3.0.1";
+        fileName = "AnymeX-Linux.AppImage";
+      };
+    };
+  };
+
 # i18n.inputMethod = {
 #   enable = true;
 #   type = "fcitx5";
@@ -65,7 +86,9 @@
         "com.logseq.Logseq"
         "com.github.tchx84.Flatseal"
         "com.usebottles.bottles"
-      "com.heroicgameslauncher.hgl"
+        "io.missioncenter.MissionCenter"
+      "io.github.limo_app.limo"
+      "io.github.fastrizwaan.WineZGUI"
       ];
   };
 }

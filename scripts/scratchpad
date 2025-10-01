@@ -1,9 +1,0 @@
-#!/bin/zsh
-
-#creates temp file
-
-tempPath="${HOME}/.tmp"
-mkdir -p "${tempPath}"
-tmpfile=$(mktemp --tmpdir=${tempPath})
-echo "${tmpfile}" | pbcopy
-tmux neww zsh -c "nvim '${tmpfile}'"

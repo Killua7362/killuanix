@@ -148,11 +148,11 @@
       ## VERY IMPORTANT!!!!
       unset RPS1 RPROMPT
 
-      export PATH="/usr/share/sway-contrib:$HOME/java-8/jdk1.8.0_291/bin:$HOME/killuanix/archnix/aconfmgr:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
-      export JAVA_HOME="$HOME/java-8/jdk1.8.0_291"
-      export JBOSS_HOME="/home/killua/jboss"
-      export JBOSS_ROOT="/home/killua/jboss"
-      export EAR_LOC="/home/killua/jboss/data/EAR"
+      export PATH="/usr/share/sway-contrib:$HOME/Documents/Boeing/java/jdk1.8.0_291/bin:$HOME/killuanix/archnix/aconfmgr:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+      export JAVA_HOME="$HOME/Documents/Boeing/java/jdk1.8.0_291"
+      export JBOSS_HOME="/home/killua/Documents/Boeing/jboss-eap-7.2"
+      export JBOSS_ROOT="/home/killua/Documents/Boeing/jboss-eap-7.2"
+      export EAR_LOC="/home/killua/Documents/Boeing/jboss-eap-7.2/data/EAR"
       export ATG_HOME="/home/killua/ATG/ATG11.3.2"
       export ATG_ROOT="/home/killua/ATG/ATG11.3.2"
       export DYNAMO_HOME="/home/killua/ATG/ATG11.3.2/home"
