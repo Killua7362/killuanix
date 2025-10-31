@@ -87,8 +87,10 @@
         "com.github.tchx84.Flatseal"
         "com.usebottles.bottles"
         "io.missioncenter.MissionCenter"
-      "io.github.limo_app.limo"
-      "io.github.fastrizwaan.WineZGUI"
+        "io.github.limo_app.limo"
+        "io.github.fastrizwaan.WineZGUI"
+        "com.jetbrains.CLion"
+        "org.vinegarhq.Sober"
       ];
   };
 }

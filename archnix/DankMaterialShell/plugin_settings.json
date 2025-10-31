@@ -1,0 +1,43 @@
+{
+  "dankHooks": {
+    "enabled": true
+  },
+  "dankActions": {
+    "enabled": true,
+    "variants": [
+      {
+        "icon": "terminal",
+        "displayText": "uwsm",
+        "displayCommand": "systemctl --user show --type=service,scope,socket,target --all --no-pager --property=Id,UnitFileState | grep -B1 'UnitFileState=transient' | grep '^Id='  | wc -l",
+        "clickCommand": "uuctl",
+        "middleClickCommand": "",
+        "rightClickCommand": "",
+        "updateInterval": 5,
+        "showIcon": true,
+        "showText": true,
+        "id": "variant_1760858990934",
+        "name": "uwsm"
+      },
+      {
+        "icon": "⌨️",
+        "displayText": "",
+        "displayCommand": "",
+        "clickCommand": "sh ~/killuanix/DotFiles/scripts/wvkbd-toggle.sh",
+        "middleClickCommand": "",
+        "rightClickCommand": "",
+        "updateInterval": 0,
+        "showIcon": true,
+        "showText": true,
+        "id": "variant_1761040750907",
+        "name": "On screen keyboard"
+      }
+    ]
+  },
+  "dankPomodoroTimer": {
+    "enabled": true
+  },
+  "powerUsagePlugin": {
+    "enabled": true,
+    "refreshInterval": 5
+  }
+}

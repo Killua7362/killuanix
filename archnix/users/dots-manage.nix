@@ -115,5 +115,43 @@
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/ags;
           recursive = true;
         };
+        "/home/killua/.config/DankMaterialShell"
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/DankMaterialShell;
+          recursive = true;
+        }
+        "/home/killua/.config/matugen"
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/matugen;
+          recursive = true;
+        }
+        "/home/killua/.config/niri"
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/niri;
+          recursive = true;
+        }
+        "/home/killua/.config/quickshell"
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/quickshell;
+          recursive = true;
+        }
+        "/home/killua/.config/walker"
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/walker;
+          recursive = true;
+        }
+        "/home/killua/.config/zellij"
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/zellij;
+          recursive = true;
+        }
+        "/home/killua/.gitconfig"
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/gitconfig;
+        }
+        "/home/killua/.gitignore_global"
+        {
+          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/gitignore_global;
+        }
     };
 }
