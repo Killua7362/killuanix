@@ -5,7 +5,7 @@
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    home-manager = {
+    homemanager = {
       url = "github:rycee/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -37,12 +37,19 @@
     spacebar.url = "github:cmacrae/spacebar/v1.3.0";
     nixgl.url = "github:nix-community/nixGL";
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+
+    # nixos specific packages
+    nixospkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixospkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    home-manager.url = "github:nix-community/home-manager/release-23.11";
+    home-manager.inputs.nixpkgs.follows = "nixospkgs";
   };
 
   outputs =
     inputs @ {
        self
     , flake-utils
+    , homemanager
     , home-manager
     , nixpkgs
     , neovim-nightly-overlay
@@ -52,6 +59,7 @@
     , mk-darwin-system
     , nixgl
     , nix-flatpak
+    , nixospkgs
     , ...
     }:
     let
@@ -70,8 +78,17 @@
             }));
         };
 
+        systems = [
+          "aarch64-linux"
+          "i686-linux"
+          "x86_64-linux"
+          "aarch64-darwin"
+          "x86_64-darwin"
+        ];
+        forAllSystems = nixpkgs.lib.genAttrs systems;
+
         nixDarwinCommonModules = attrValues self.darwinModules ++ [
-          home-manager.darwinModules.home-manager
+          homemanager.darwinModules.home-manager
           ({ config, ... }: {
             nixpkgs = nixpkgsConfig;
             nix.nixPath = { nixpkgs = "${inputs.nixpkgs-unstable}"; };
@@ -90,7 +107,7 @@
         ];
 
         homeManagerConfigurations = {
-          archnix = inputs.home-manager.lib.homeManagerConfiguration {
+          archnix = home-manager.lib.homeManagerConfiguration {
             pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
             extraSpecialArgs = {
             inherit inputs;
@@ -128,6 +145,21 @@
         };
         in
         {
+        packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
+        formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+        overlays = import ./overlays {inherit inputs;};
+        nixosModules = import ./modules/nixos;
+        homeManagerModules = import ./modules/home-manager;
+        nixosConfigurations = {
+          killua = nixpkgs.lib.nixosSystem {
+            specialArgs = {inherit inputs;};
+            modules = [
+              # > Our main nixos configuration file <
+              ./nixos/configuration.nix
+            ];
+          };
+        };
+
         darwinConfigurations = rec {
           macnix = darwinSystem {
             system = "aarch64-darwin";
