@@ -91,6 +91,7 @@
         "io.github.fastrizwaan.WineZGUI"
         "com.jetbrains.CLion"
         "org.vinegarhq.Sober"
+        "io.github.nozwock.Packet"
       ];
   };
 }
