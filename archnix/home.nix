@@ -10,6 +10,11 @@
     ./users/appimages.nix
   ];
 
+    home = {
+      username = "killua";
+      homeDirectory = "/home/killua";
+      stateVersion = "24.11";
+    };
   myAppImages = {
     enable = true;
 

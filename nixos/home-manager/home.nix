@@ -9,13 +9,13 @@
 }: {
 
   # You can import other home-manager modules here
-  imports = [
+  imports = attrValues inputs.self.homeManagerModules ++ [
     # If you want to use modules your own flake exports (from modules/home-manager):
     # inputs.self.homeManagerModules.example
 
     # Or modules exported from other flakes (such as nix-colors):
     # inputs.nix-colors.homeManagerModules.default
-
+    
     # You can also split up your configuration and import pieces of it here:
     # ./nvim.nix
   ];
@@ -44,19 +44,15 @@
       allowUnfree = true;
     };
   };
-  programs.neovim = {
-    enable = true;
-    #package = inputs.neovim-nightly-overlay.packages.${pkgs.system}.default;
-  };
-  # TODO: Set your username
   home = {
     username = "killua";
     homeDirectory = "/home/killua";
   };
 
   # Add stuff for your user as you see fit:
-  # programs.neovim.enable = true;
-  # home.packages = with pkgs; [ steam ];
+  home.packages = with pkgs; [
+    # jetbrains.idea-ultimate
+  ];
 
   # Enable home-manager and git
   programs.home-manager.enable = true;

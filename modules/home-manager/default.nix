@@ -3,4 +3,9 @@
 {
   # List your module files here
   # my-module = import ./my-module.nix;
+
+  git = import ./git.nix;
+  packages = import ./packages.nix;
+  zsh = import ./zsh.nix;
+  neovim = import ./neovim.nix
 }
