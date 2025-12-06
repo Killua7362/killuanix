@@ -86,6 +86,9 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.killua = {
     isNormalUser = true;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHneczMjHD8zJgu5j73XDS8C+4+/XqIRSsoBEZqJaEVR bhat7362@gmail.com"
+    ];
     description = "killua";
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
@@ -105,7 +108,7 @@
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
-#	git
+	git
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -137,7 +140,19 @@
 
     services.openssh = {
     enable = true;
-  
+    settings = {
+      # Allow password authentication initially (can disable later)
+      # PasswordAuthentication = true;
+
+      # Enable public key authentication
+      PubkeyAuthentication = true;
+
+      # Optional: Only allow specific users
+      AllowUsers = [ "killua" ];
+
+      # Optional: Disable root login
+      #PermitRootLogin = "no";
+    };
   };
 
   nixpkgs = {
@@ -192,6 +207,15 @@
       killua = import ./home-manager/home.nix;
     };
   };
-
+  programs.fish.enable = true;
+programs.bash = {
+  interactiveShellInit = ''
+    if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
+    then
+      shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
+      exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
+    fi
+  '';
+};
 
 }

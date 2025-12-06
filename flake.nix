@@ -39,9 +39,9 @@
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
 
     # nixos specific packages
-    nixospkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixospkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     nixospkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    home-manager.url = "github:nix-community/home-manager/release-23.11";
+    home-manager.url = "github:nix-community/home-manager/release-25.11";
     home-manager.inputs.nixpkgs.follows = "nixospkgs";
   };
 
@@ -145,9 +145,9 @@
         };
         in
         {
-        packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
+#        packages = forAllSystems (system: nixpkgs.legacyPackages.${system});
         formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
-        overlays = import ./overlays {inherit inputs;};
+#        overlays = import ./overlays {inherit inputs;};
         nixosModules = import ./modules/nixos;
         homeManagerModules = import ./modules/home-manager;
         nixosConfigurations = {

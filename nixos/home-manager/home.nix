@@ -7,6 +7,7 @@
   pkgs,
   ...
 }: {
+
   # You can import other home-manager modules here
   imports = [
     # If you want to use modules your own flake exports (from modules/home-manager):
@@ -28,7 +29,7 @@
 #      inputs.self.overlays.unstable-packages
 
       # You can also add overlays exported from other flakes:
-      # neovim-nightly-overlay.overlays.default
+       inputs.neovim-nightly-overlay.overlays.default
 
       # Or define it inline, for example:
       # (final: prev: {
@@ -43,7 +44,10 @@
       allowUnfree = true;
     };
   };
-
+  programs.neovim = {
+    enable = true;
+    #package = inputs.neovim-nightly-overlay.packages.${pkgs.system}.default;
+  };
   # TODO: Set your username
   home = {
     username = "killua";
@@ -62,5 +66,5 @@
   systemd.user.startServices = "sd-switch";
 
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
-  home.stateVersion = "23.05";
+  home.stateVersion = "25.11";
 }
