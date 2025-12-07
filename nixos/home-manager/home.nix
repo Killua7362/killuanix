@@ -1,6 +1,10 @@
-{ inputs, lib, config, pkgs, ... }:
-
 {
+  inputs,
+  lib,
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ../../modules/cross-platform
     ./users/dots-manage.nix

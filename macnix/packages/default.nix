@@ -1,4 +1,8 @@
-{ pkgs, lib, ... }: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   nix = {
     extraOptions = ''
       system = aarch64-darwin

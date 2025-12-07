@@ -5,16 +5,15 @@
   pkgs,
   ...
 }: {
-  imports =
-    [
-      ./hardware-configuration.nix
-	    inputs.home-manager.nixosModules.home-manager
-    ];
+  imports = [
+    ./hardware-configuration.nix
+    inputs.home-manager.nixosModules.home-manager
+  ];
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   services.tailscale.enable = true;
-#  services.flatpak.enable = true;  
+  #  services.flatpak.enable = true;
   services.sunshine = {
     enable = true;
     autoStart = true;
@@ -30,12 +29,12 @@
   };
 
   networking.firewall = {
-    trustedInterfaces = [ "tailscale0" ];
-    allowedUDPPorts = [ 41641 21116 ];
+    trustedInterfaces = ["tailscale0"];
+    allowedUDPPorts = [41641 21116];
     allowedTCPPortRanges = [
       {
-      from=21114;
-      to=21119;
+        from = 21114;
+        to = 21119;
       }
     ];
   };
@@ -84,7 +83,7 @@
     isNormalUser = true;
     openssh.authorizedKeys.keys = inputs.self.commonModules.user.userConfig.sshKeys;
     description = "killua";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = ["networkmanager" "wheel"];
   };
 
   programs.firefox.enable = true;
@@ -96,11 +95,11 @@
 
   system.stateVersion = "25.11";
 
-    services.openssh = {
+  services.openssh = {
     enable = true;
     settings = {
       PubkeyAuthentication = true;
-      AllowUsers = [ "killua" ];
+      AllowUsers = ["killua"];
     };
   };
 
@@ -111,8 +110,7 @@
       allowUnfree = true;
     };
   };
-  
-  
+
   nix = let
     flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
   in {
@@ -128,19 +126,18 @@
 
   programs.fish.enable = true;
   programs.bash = {
-  interactiveShellInit = ''
-    if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
-    then
-      shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
-      exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
-    fi
-  '';
-};
+    interactiveShellInit = ''
+      if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
+      then
+        shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
+        exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
+      fi
+    '';
+  };
 
-   virtualisation.virtualbox.host.enable = true;
-   users.extraGroups.vboxusers.members = [ "killua" ];
-   virtualisation.virtualbox.host.enableExtensionPack = true;
+  virtualisation.virtualbox.host.enable = true;
+  users.extraGroups.vboxusers.members = ["killua"];
+  virtualisation.virtualbox.host.enableExtensionPack = true;
   virtualisation.virtualbox.guest.enable = true;
   virtualisation.virtualbox.guest.dragAndDrop = true;
-
 }

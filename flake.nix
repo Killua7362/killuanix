@@ -45,101 +45,113 @@
     home-manager.inputs.nixpkgs.follows = "nixospkgs";
   };
 
-  outputs =
-    inputs @ {
-       self
-    , flake-utils
-    , homemanager
-    , home-manager
-    , nixpkgs
-    , neovim-nightly-overlay
-    , nur
-    , emacs
-    , darwin
-    , mk-darwin-system
-    , nixgl
-    , nix-flatpak
-    , nixospkgs
-    , ...
-    }:
-    let
-      inherit (darwin.lib) darwinSystem;
-      inherit (inputs.nixpkgs-unstable.lib)
-        attrValues makeOverridable optionalAttrs singleton;
+  outputs = inputs @ {
+    self,
+    flake-utils,
+    homemanager,
+    home-manager,
+    nixpkgs,
+    neovim-nightly-overlay,
+    nur,
+    emacs,
+    darwin,
+    mk-darwin-system,
+    nixgl,
+    nix-flatpak,
+    nixospkgs,
+    ...
+  }: let
+    inherit (darwin.lib) darwinSystem;
+    inherit
+      (inputs.nixpkgs-unstable.lib)
+      attrValues
+      makeOverridable
+      optionalAttrs
+      singleton
+      ;
 
-        systems = [
-          "aarch64-linux"
-          "i686-linux"
-          "x86_64-linux"
-          "aarch64-darwin"
-          "x86_64-darwin"
-        ];
+    systems = [
+      "aarch64-linux"
+      "i686-linux"
+      "x86_64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
+    ];
 
-        forAllSystems = nixpkgs.lib.genAttrs systems;
-        in
-        {
-        formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
-        overlays = import ./overlays {inherit inputs;};
-        nixosModules = import ./modules/nixos;
-        homeManagerModules = import ./modules/home-manager;
-        commonModules = import ./modules/common;
-        crossPlatformModules = import ./modules/cross-platform;
+    forAllSystems = nixpkgs.lib.genAttrs systems;
+  in {
+    formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+    overlays = import ./overlays {inherit inputs;};
+    nixosModules = import ./modules/nixos;
+    homeManagerModules = import ./modules/home-manager;
+    commonModules = import ./modules/common;
+    crossPlatformModules = import ./modules/cross-platform;
 
-        nixosConfigurations = {
-          killua = nixpkgs.lib.nixosSystem {
-            specialArgs = {inherit inputs;};
-            modules = [
-              ./nixos/configuration.nix
-              ({inputs, pkgs,...} : {
-                  home-manager = {
-                    extraSpecialArgs = { inherit inputs; };
-                    users = {
-                      killua = import ./nixos/home-manager/home.nix;
-                    };
-                  };
-                })
-            ];
-          };
-        };
-
-        darwinConfigurations = rec {
-          macnix = darwinSystem {
-            system = "aarch64-darwin";
-            modules = [
-              homemanager.darwinModules.home-manager
-              ./macnix/packages/nix-index.nix
-              ./macnix/settings.nix
-              ./macnix/brew.nix
-              ./macnix/packages
-              ./macnix
-            ];
-          };
-        };
-
-        homeManagerConfigurations = {
-          archnix = home-manager.lib.homeManagerConfiguration {
-            pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
-            extraSpecialArgs = {
-              inherit inputs;
-              nixgl = nixgl;
+    nixosConfigurations = {
+      killua = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs;};
+        modules = [
+          ./nixos/configuration.nix
+          ({
+            inputs,
+            pkgs,
+            ...
+          }: {
+            home-manager = {
+              extraSpecialArgs = {inherit inputs;};
+              users = {
+                killua = import ./nixos/home-manager/home.nix;
+              };
             };
-            modules = [
-              nix-flatpak.homeManagerModules.nix-flatpak
-              ({ pkgs, lib,inputs, ... }: {
-                imports = attrValues self.homeManagerModules ++ [ ./archnix/home.nix ];
-                nixpkgs = {
-                  overlays = attrValues self.overlays ++ [
-                    nur.overlays.default
-                    nixgl.overlay
-                  ];
-                  config = {
-                    allowUnfree = true;
-                  };
-                };
-              })
-            ];
-          };
-        };
+          })
+        ];
       };
+    };
 
-  }
+    darwinConfigurations = rec {
+      macnix = darwinSystem {
+        system = "aarch64-darwin";
+        modules = [
+          homemanager.darwinModules.home-manager
+          ./macnix/packages/nix-index.nix
+          ./macnix/settings.nix
+          ./macnix/brew.nix
+          ./macnix/packages
+          ./macnix
+        ];
+      };
+    };
+
+    homeManagerConfigurations = {
+      archnix = home-manager.lib.homeManagerConfiguration {
+        pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
+        extraSpecialArgs = {
+          inherit inputs;
+          nixgl = nixgl;
+        };
+        modules = [
+          nix-flatpak.homeManagerModules.nix-flatpak
+          ({
+            pkgs,
+            lib,
+            inputs,
+            ...
+          }: {
+            imports = attrValues self.homeManagerModules ++ [./archnix/home.nix];
+            nixpkgs = {
+              overlays =
+                attrValues self.overlays
+                ++ [
+                  nur.overlays.default
+                  nixgl.overlay
+                ];
+              config = {
+                allowUnfree = true;
+              };
+            };
+          })
+        ];
+      };
+    };
+  };
+}
