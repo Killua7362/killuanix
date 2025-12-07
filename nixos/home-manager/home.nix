@@ -9,7 +9,7 @@
 }: {
 
   # You can import other home-manager modules here
-  imports = attrValues inputs.self.homeManagerModules ++ [
+  imports = builtins.attrValues inputs.self.homeManagerModules ++ [
     # If you want to use modules your own flake exports (from modules/home-manager):
     # inputs.self.homeManagerModules.example
 
@@ -51,7 +51,7 @@
 
   # Add stuff for your user as you see fit:
   home.packages = with pkgs; [
-    # jetbrains.idea-ultimate
+    jetbrains.idea-ultimate
   ];
 
   # Enable home-manager and git

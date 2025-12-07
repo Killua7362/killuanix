@@ -1,3 +1,5 @@
+
+
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
@@ -18,6 +20,38 @@
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  services.tailscale.enable = true;
+services.flatpak.enable = true;  
+  services.sunshine = {
+    enable = true;
+    autoStart = true;
+    capSysAdmin = true;
+    openFirewall = true;
+    
+  };
+  hardware.opengl = {
+    enable = true;
+    extraPackages = with pkgs; [
+      # your Open GL, Vulkan and VAAPI drivers
+      vpl-gpu-rt # for newer GPUs on NixOS &gt;24.05 or unstable
+      # onevpl-intel-gpu  # for newer GPUs on NixOS &lt;= 24.05
+      # Below was required for intel Arc GPU's
+      intel-media-driver
+      # intel-media-sdk   # for older GPUs
+    ];
+  };
+
+  # Open firewall for Tailscale
+  networking.firewall = {
+    trustedInterfaces = [ "tailscale0" ];
+    allowedUDPPorts = [ 41641 21116 ]; # Tailscale port
+    allowedTCPPortRanges = [
+{
+from=21114;
+to=21119;
+}
+	];
+  };
 
   networking.hostName = "killua"; # Define your hostname.
   #networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -109,6 +143,8 @@
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
 	git
+#rustdesk
+moonlight-qt
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -217,5 +253,11 @@ programs.bash = {
     fi
   '';
 };
+
+   virtualisation.virtualbox.host.enable = true;
+   users.extraGroups.vboxusers.members = [ "killua" ];
+   virtualisation.virtualbox.host.enableExtensionPack = true;
+  virtualisation.virtualbox.guest.enable = true;
+  virtualisation.virtualbox.guest.dragAndDrop = true;
 
 }
