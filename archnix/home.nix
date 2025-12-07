@@ -5,16 +5,16 @@
 
   imports = [
     ./users/dots-manage.nix
-    ./users/theme.nix
     ./users/commands.nix
     ./users/appimages.nix
   ];
 
-    home = {
-      username = "killua";
-      homeDirectory = "/home/killua";
-      stateVersion = "24.11";
-    };
+  home = {
+    username = "killua";
+    homeDirectory = "/home/killua";
+    stateVersion = "24.11";
+  };
+
   myAppImages = {
     enable = true;
 
@@ -34,11 +34,6 @@
     };
   };
 
-# i18n.inputMethod = {
-#   enable = true;
-#   type = "fcitx5";
-#   fcitx5.addons = with pkgs; [ fcitx5-mozc fcitx5-gtk ];
-# };
   home.packages = with pkgs; [
     inputs.neovim-nightly-overlay.packages.${pkgs.system}.default
     pcmanfm

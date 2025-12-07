@@ -1,5 +1,3 @@
-# This is your home-manager configuration file
-# Use this to configure your home environment (it replaces ~/.config/nixpkgs/home.nix)
 {
   inputs,
   lib,
@@ -8,39 +6,15 @@
   ...
 }: {
 
-  # You can import other home-manager modules here
   imports = builtins.attrValues inputs.self.homeManagerModules ++ [
-    # If you want to use modules your own flake exports (from modules/home-manager):
-    # inputs.self.homeManagerModules.example
-
-    # Or modules exported from other flakes (such as nix-colors):
-    # inputs.nix-colors.homeManagerModules.default
-    
-    # You can also split up your configuration and import pieces of it here:
-    # ./nvim.nix
+    ./users/dots-manage.nix
   ];
 
   nixpkgs = {
-    # You can add overlays here
     overlays = [
-      # Add overlays your own flake exports (from overlays and pkgs dir):
-#      inputs.self.overlays.additions
-#      inputs.self.overlays.modifications
-#      inputs.self.overlays.unstable-packages
-
-      # You can also add overlays exported from other flakes:
        inputs.neovim-nightly-overlay.overlays.default
-
-      # Or define it inline, for example:
-      # (final: prev: {
-      #   hi = final.hello.overrideAttrs (oldAttrs: {
-      #     patches = [ ./change-hello-to-hi.patch ];
-      #   });
-      # })
     ];
-    # Configure your nixpkgs instance
     config = {
-      # Disable if you don't want unfree packages
       allowUnfree = true;
     };
   };
@@ -49,18 +23,44 @@
     homeDirectory = "/home/killua";
   };
 
-  # Add stuff for your user as you see fit:
   home.packages = with pkgs; [
     jetbrains.idea-ultimate
+    qbittorrent
+    fontpreview
+    arandr
+    bottom
+    cachix
+    comma
+    git-crypt
+    lazygit
+    luarocks-nix
+    neofetch
+    nitrogen
+    nix-prefetch-github
+    nix-script
+    nixpkgs-fmt
+    starship
+    trackma
+    update-nix-fetchgit
+    vscodium
+    zathura
+    file
+    dmenu
+    fd
+    tmux
+    delta
+    zplug
+    direnv
+    zoxide
+    eza
+    fzf
+    nix-search-cli
   ];
 
-  # Enable home-manager and git
   programs.home-manager.enable = true;
   programs.git.enable = true;
 
-  # Nicely reload system units when changing configs
   systemd.user.startServices = "sd-switch";
 
-  # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
   home.stateVersion = "25.11";
 }

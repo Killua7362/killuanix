@@ -76,10 +76,8 @@
         ];
 
         forAllSystems = nixpkgs.lib.genAttrs systems;
-
         in
         {
-#        packages = forAllSystems (system: nixpkgs.legacyPackages.${system});
         formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
         overlays = import ./overlays {inherit inputs;};
         nixosModules = import ./modules/nixos;
@@ -89,8 +87,15 @@
           killua = nixpkgs.lib.nixosSystem {
             specialArgs = {inherit inputs;};
             modules = [
-              # > Our main nixos configuration file <
               ./nixos/configuration.nix
+              ({inputs, pkgs,...} : {
+                  home-manager = {
+                    extraSpecialArgs = { inherit inputs; };
+                    users = {
+                      killua = import ./nixos/home-manager/home.nix;
+                    };
+                  };
+                })
             ];
           };
         };
@@ -123,14 +128,10 @@
                 nixpkgs = {
                   overlays = attrValues self.overlays ++ [
                     nur.overlays.default
-                    emacs.overlay
                     nixgl.overlay
                   ];
                   config = {
                     allowUnfree = true;
-                    cudaSupport = false;
-                    keep-derivations = true;
-                    keep-outputs = true;
                   };
                 };
               })

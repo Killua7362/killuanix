@@ -10,7 +10,6 @@
     fzf
     tldr
     antigen
-   # rnix-lsp
     prefmanager
     cht-sh
   ];
