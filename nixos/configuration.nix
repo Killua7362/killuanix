@@ -82,9 +82,7 @@
 
   users.users.killua = {
     isNormalUser = true;
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHneczMjHD8zJgu5j73XDS8C+4+/XqIRSsoBEZqJaEVR bhat7362@gmail.com"
-    ];
+    openssh.authorizedKeys.keys = config.userConfig.sshKeys;
     description = "killua";
     extraGroups = [ "networkmanager" "wheel" ];
   };

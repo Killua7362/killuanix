@@ -1,20 +1,14 @@
-{ pkgs, config, inputs,nixgl, libs, ... }:
-{
-  programs.home-manager.enable = true;
-  #programs.home-manager.path = https://github.com/nix-community/home-manager/archive/master.tar.gz;
+{ pkgs, config, inputs, nixgl, libs, ... }:
 
+{
   imports = [
+    ../modules/cross-platform
     ./users/dots-manage.nix
     ./users/commands.nix
     ./users/appimages.nix
   ];
 
-  home = {
-    username = "killua";
-    homeDirectory = "/home/killua";
-    stateVersion = "24.11";
-  };
-
+  # AppImages configuration (Linux specific)
   myAppImages = {
     enable = true;
 
@@ -34,64 +28,6 @@
     };
   };
 
-  home.packages = with pkgs; [
-    inputs.neovim-nightly-overlay.packages.${pkgs.system}.default
-    pcmanfm
-    unetbootin
-    qbittorrent
-    hakuneko
-    fontpreview
-    arandr
-    bottom
-    cachix
-    comma
-    git-crypt
-    lazygit
-    luarocks-nix
-    neofetch
-    nitrogen
-    nix-prefetch-github
-    nix-script
-    nixpkgs-fmt
-    starship
-    trackma
-    update-nix-fetchgit
-    vscodium
-    zathura
-    file
-    dmenu
-    fd
-    tmux
-    delta
-    zplug
-    direnv
-    zoxide
-    eza
-    fzf
-    nix-search-cli
-    foot
-  ];
-
-  services.lorri.enable = true;
-
-  xdg.enable = true;
-  xdg.mime.enable = true;
-  targets.genericLinux.enable = true;
-  systemd.user.startServices = true;
-  systemd.user.systemctlPath = "/bin/systemctl";
-
-  services.flatpak = {
-    enable = true;
-    packages = [
-        "com.logseq.Logseq"
-        "com.github.tchx84.Flatseal"
-        "com.usebottles.bottles"
-        "io.missioncenter.MissionCenter"
-        "io.github.limo_app.limo"
-        "io.github.fastrizwaan.WineZGUI"
-        "com.jetbrains.CLion"
-        "org.vinegarhq.Sober"
-        "io.github.nozwock.Packet"
-      ];
-  };
+  # Linux-specific state version
+  home.stateVersion = "24.11";
 }

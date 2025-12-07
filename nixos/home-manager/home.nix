@@ -1,66 +1,24 @@
-{
-  inputs,
-  lib,
-  config,
-  pkgs,
-  ...
-}: {
+{ inputs, lib, config, pkgs, ... }:
 
-  imports = builtins.attrValues inputs.self.homeManagerModules ++ [
+{
+  imports = [
+    ../../modules/cross-platform
     ./users/dots-manage.nix
   ];
 
-  nixpkgs = {
-    overlays = [
-       inputs.neovim-nightly-overlay.overlays.default
-    ];
-    config = {
-      allowUnfree = true;
-    };
-  };
-  home = {
-    username = "killua";
-    homeDirectory = "/home/killua";
-  };
-
-  home.packages = with pkgs; [
-    jetbrains.idea-ultimate
-    qbittorrent
-    fontpreview
-    arandr
-    bottom
-    cachix
-    comma
-    git-crypt
-    lazygit
-    luarocks-nix
-    neofetch
-    nitrogen
-    nix-prefetch-github
-    nix-script
-    nixpkgs-fmt
-    starship
-    trackma
-    update-nix-fetchgit
-    vscodium
-    zathura
-    file
-    dmenu
-    fd
-    tmux
-    delta
-    zplug
-    direnv
-    zoxide
-    eza
-    fzf
-    nix-search-cli
+  # NixOS-specific overlays
+  nixpkgs.overlays = [
+    inputs.neovim-nightly-overlay.overlays.default
   ];
 
-  programs.home-manager.enable = true;
-  programs.git.enable = true;
+  # NixOS-specific packages
+  home.packages = with pkgs; [
+    jetbrains.idea-ultimate
+  ];
 
+  # NixOS-specific systemd configuration
   systemd.user.startServices = "sd-switch";
 
+  # NixOS-specific state version
   home.stateVersion = "25.11";
 }

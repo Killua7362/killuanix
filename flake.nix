@@ -82,6 +82,8 @@
         overlays = import ./overlays {inherit inputs;};
         nixosModules = import ./modules/nixos;
         homeManagerModules = import ./modules/home-manager;
+        commonModules = import ./modules/common;
+        crossPlatformModules = import ./modules/cross-platform;
 
         nixosConfigurations = {
           killua = nixpkgs.lib.nixosSystem {
