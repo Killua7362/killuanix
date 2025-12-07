@@ -1,8 +1,6 @@
-{ pkgs, ... }:
-
 {
   # Common packages that are useful across all systems
-  commonPackages = with pkgs; [
+  commonPackages = pkgs: with pkgs; [
     # File utilities
     fd
     fzf
@@ -31,14 +29,14 @@
   ];
 
   # Terminal and shell packages
-  terminalPackages = with pkgs; [
+  terminalPackages = pkgs: with pkgs; [
     tmux
     delta
     zplug
   ];
 
   # Desktop packages (Linux specific)
-  desktopPackages = with pkgs; [
+  desktopPackages = pkgs: with pkgs; [
     pcmanfm
     unetbootin
     qbittorrent
@@ -53,13 +51,13 @@
   ];
 
   # Development packages
-  devPackages = with pkgs; [
+  devPackages = pkgs: with pkgs; [
     luarocks-nix
     trackma
   ];
 
   # Mac-specific packages
-  macPackages = with pkgs; [
+  macPackages = pkgs: with pkgs; [
     skim
     antigen
     prefmanager

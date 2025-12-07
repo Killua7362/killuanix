@@ -1,5 +1,3 @@
-{ ... }:
-
 {
   # User configuration that can be shared across systems
   userConfig = {

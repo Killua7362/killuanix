@@ -140,10 +140,10 @@
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/zellij;
           recursive = true;
         };
-        "/home/killua/.gitconfig" =
-        {
-          source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/gitconfig;
-        };
+   #     "/home/killua/.gitconfig" =
+  #      {
+ #         source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/gitconfig;
+#        };
         "/home/killua/.gitignore_global" =
         {
           source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/gitignore_global;

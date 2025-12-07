@@ -14,7 +14,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   services.tailscale.enable = true;
-  services.flatpak.enable = true;  
+#  services.flatpak.enable = true;  
   services.sunshine = {
     enable = true;
     autoStart = true;
@@ -82,7 +82,7 @@
 
   users.users.killua = {
     isNormalUser = true;
-    openssh.authorizedKeys.keys = config.userConfig.sshKeys;
+    openssh.authorizedKeys.keys = inputs.self.commonModules.user.userConfig.sshKeys;
     description = "killua";
     extraGroups = [ "networkmanager" "wheel" ];
   };

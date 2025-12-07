@@ -4,6 +4,7 @@
   imports = [
     ../../modules/cross-platform
     ./users/dots-manage.nix
+    inputs.nix-flatpak.homeManagerModules.nix-flatpak
   ];
 
   # NixOS-specific overlays
