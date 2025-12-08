@@ -23,7 +23,7 @@ in {
     nixpkgs.config.allowUnfree = true;
 
     # Common packages - these will be available on all systems
-    home.packages = commonPackages ++ terminalPackages ++ devPackages ++ lib.mkIf (pkgs.stdenv.isLinux) desktopPackages ++ lib.mkIf (pkgs.stdenv.isDarwin) macPackages;
+    home.packages = commonPackages ++ terminalPackages ++ devPackages ++ (if pkgs.stdenv.isLinux then desktopPackages else []) ++ (if pkgs.stdenv.isDarwin then macPackages else []);
 
     # Platform-specific home directory
     home.username = userConfig.username;
