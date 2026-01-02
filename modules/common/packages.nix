@@ -27,6 +27,8 @@
       nix-prefetch-github
       nix-script
       update-nix-fetchgit
+
+      tree-sitter
     ];
 
   # Terminal and shell packages
@@ -51,6 +53,9 @@
       zathura
       dmenu
       foot
+      gcr
+      hyprpolkitagent
+      networkmanagerapplet
     ];
 
   # Development packages

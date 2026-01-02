@@ -1,4 +1,17 @@
 {
+  nixConfig = {
+    extra-substituters = [
+    "https://hyprland.cachix.org"
+    "https://vicinae.cachix.org"
+    "https://nix-community.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+    "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+    "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
+    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    ];
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
@@ -43,6 +56,21 @@
     nixospkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager/release-25.11";
     home-manager.inputs.nixpkgs.follows = "nixospkgs";
+
+    dms = {
+      url = "github:AvengeMedia/DankMaterialShell/stable";
+      inputs.nixpkgs.follows = "nixospkgs-unstable";
+    };
+
+    hyprland.url = "github:hyprwm/Hyprland";
+    vicinae.url = "github:vicinaehq/vicinae";
+
+    vicinae-extensions = {
+      url = "github:vicinaehq/extensions";
+      inputs.nixpkgs.follows = "nixospkgs-unstable";
+    };
+
+    nixCats.url = "github:BirdeeHub/nixCats-nvim";
   };
 
   outputs = inputs @ {
@@ -131,17 +159,21 @@
         };
         modules = [
           nix-flatpak.homeManagerModules.nix-flatpak
+          inputs.vicinae.homeManagerModules.default
+          inputs.nixCats.homeModule
           ({
             pkgs,
             lib,
             inputs,
             ...
           }: {
-            imports = attrValues self.homeManagerModules ++ [./archnix/home.nix];
+            imports = attrValues self.homeManagerModules ++ [
+            ./archnix/home.nix
+            inputs.dms.homeModules.dankMaterialShell.default
+            ];
             nixpkgs = {
               overlays =
-                attrValues self.overlays
-                ++ [
+                [
                   nur.overlays.default
                   nixgl.overlay
                 ];

@@ -36,23 +36,21 @@ in {
       # Add common Fish configuration here
     };
 
-    # Neovim configuration
-    programs.neovim = {
-      enable = lib.mkDefault true;
-      # Add common Neovim configuration here
-    };
-
     # Starship configuration
     programs.starship = {
       enable = lib.mkDefault true;
       # Add common Starship configuration here
     };
 
-    # Platform-specific program configurations
-    programs.kitty = {
+    programs.dankMaterialShell = {
       enable = lib.mkDefault (pkgs.stdenv.isLinux);
-      # Add Kitty configuration here
     };
+
+    # Platform-specific program configurations
+    # programs.kitty = {
+    #   enable = lib.mkDefault (pkgs.stdenv.isLinux);
+    #   # Add Kitty configuration here
+    # };
 
     # Linux-specific programs
     services.lorri.enable = lib.mkIf (pkgs.stdenv.isLinux) true;

@@ -6,5 +6,4 @@
 
   git = import ./git.nix;
   zsh = import ./zsh.nix;
-  neovim = import ./neovim.nix;
 }

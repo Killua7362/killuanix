@@ -12,7 +12,11 @@
   devPackages = inputs.self.commonModules.packages.devPackages pkgs;
   macPackages = inputs.self.commonModules.packages.macPackages pkgs;
 in {
-  imports = [inputs.self.commonModules.programs];
+  imports = [
+    inputs.self.commonModules.programs
+    ../common/programs/hyprland
+    ../common/programs/neovim
+  ];
 
   config = {
     # Common system settings
@@ -73,5 +77,83 @@ in {
       "org.vinegarhq.Sober"
       "io.github.nozwock.Packet"
     ];
+
+    # Gnome key ring
+    services.gnome-keyring.enable = true;
+    services.kdeconnect.enable = true;
+
+    services.kanshi = {
+      enable = true;
+      systemdTarget = "hyprland-session.target";
+
+      profiles = {
+        undocked = {
+          outputs = [
+            {
+              criteria = "eDP-1";
+              scale = 1.1;
+              status = "enable";
+            }
+          ];
+        };
+
+        docked = {
+          outputs = [
+            {
+              criteria = "DP-1";
+              position = "0,0";
+              status = "enable";
+            }
+            {
+              criteria = "eDP-1";
+              status = "disable";
+            }
+          ];
+        };
+      };
+    };
+
+  services.vicinae = {
+    enable = true;
+    systemd = {
+      enable = true;
+      autoStart = true; # default: false
+      environment = {
+        USE_LAYER_SHELL = 1;
+      };
+    };
+    settings = {
+      close_on_focus_loss = true;
+      consider_preedit = true;
+      pop_to_root_on_close = true;
+      favicon_service = "twenty";
+      search_files_in_root = true;
+      font = {
+        normal = {
+          size = 12;
+          normal = "Maple Nerd Font";
+        };
+      };
+      theme = {
+        light = {
+          name = "vicinae-light";
+          icon_theme = "default";
+        };
+        dark = {
+          name = "vicinae-dark";
+          icon_theme = "default";
+        };
+      };
+      launcher_window = {
+        opacity = 0.98;
+      };
+    };
+    extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
+      bluetooth
+      nix
+      power-profile
+    ];
+  };
+
   };
 }

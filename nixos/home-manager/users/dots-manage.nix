@@ -8,10 +8,6 @@
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/zathura;
       recursive = true;
     };
-    "/home/killua/.config/nvim" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/nvim;
-      recursive = true;
-    };
     "/home/killua/.lesskey" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/.lesskey;
     };
@@ -54,10 +50,6 @@
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/aconfmgr;
       recursive = true;
     };
-    "/home/killua/.config/hypr" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/hypr;
-      recursive = true;
-    };
     "/home/killua/.config/ueli" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/ueli;
       recursive = true;
@@ -81,10 +73,6 @@
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/sway;
       recursive = true;
     };
-    "/home/killua/.config/kanshi" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/kanshi;
-      recursive = true;
-    };
     "/home/killua/.config/ags" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/ags;
       recursive = true;
@@ -99,10 +87,6 @@
     };
     "/home/killua/.config/niri" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/niri;
-      recursive = true;
-    };
-    "/home/killua/.config/quickshell" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/quickshell;
       recursive = true;
     };
     "/home/killua/.config/walker" = {

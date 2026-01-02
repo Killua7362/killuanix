@@ -8,11 +8,6 @@
       source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/zathura;
       recursive = true;
     };
-    "/Users/killua/.config/nvim" = {
-      source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/nvim;
-      recursive = true;
-    };
-
     "/Users/killua/.config/ghostty" = {
       source = config.lib.file.mkOutOfStoreSymlink /Users/killua/killuanix/DotFiles/ghostty;
       recursive = true;

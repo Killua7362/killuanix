@@ -31,10 +31,20 @@
   networking.firewall = {
     trustedInterfaces = ["tailscale0"];
     allowedUDPPorts = [41641 21116];
+    allowedUDPPortRanges = [
+      {
+        from = 1714;
+        to = 1764;
+      }
+    ];
     allowedTCPPortRanges = [
       {
         from = 21114;
         to = 21119;
+      }
+      {
+        from = 1714;
+        to = 1764;
       }
     ];
   };
@@ -140,4 +150,6 @@
   virtualisation.virtualbox.host.enableExtensionPack = true;
   virtualisation.virtualbox.guest.enable = true;
   virtualisation.virtualbox.guest.dragAndDrop = true;
+
+  services.dbus.packages = [ pkgs.blueman ];
 }

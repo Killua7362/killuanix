@@ -37,12 +37,4 @@
   prefmanager = _: prev: {
     prefmanager = inputs.prefmanager.packages.${prev.stdenv.system}.default;
   };
-
-  apple-silicon = _: prev:
-    optionalAttrs (prev.stdenv.system == "aarch64-darwin") {
-      pkgs-x86 = import inputs.nixpkgs-unstable {
-        system = "x86_64-darwin";
-        config.allowUnfree = true;
-      };
-    };
 }
