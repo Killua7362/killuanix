@@ -9,32 +9,19 @@
   imports = [
     ../modules/cross-platform
     ./users/dots-manage.nix
-    ./users/commands.nix
-    ./users/appimages.nix
   ];
 
-  nix.package = pkgs.nix;
+    nix.package = pkgs.nix;
 
-  # AppImages configuration (Linux specific)
-  myAppImages = {
-    enable = true;
+    # Arch-specific overlays
+    nixpkgs.overlays = [
+      inputs.nur.overlays.default
+      # inputs.nixgl.overlay
+      inputs.neovim-nightly-overlay.overlays.default
+    ];
 
-    apps = {
-      "PrismLauncher" = {
-        repoOwner = "Diegiwg";
-        repoName = "PrismLauncher-Cracked";
-        releaseTag = "9.4";
-        fileName = "PrismLauncher-Linux-x86_64.AppImage";
-      };
-      "Anymex" = {
-        repoOwner = "RyanYuuki";
-        repoName = "AnymeX";
-        releaseTag = "v3.0.1";
-        fileName = "AnymeX-Linux.AppImage";
-      };
-    };
-  };
+  # targets.genericLinux.enable = true;
 
   # Linux-specific state version
-  home.stateVersion = "24.11";
+  home.stateVersion = "25.11";
 }

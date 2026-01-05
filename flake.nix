@@ -23,52 +23,57 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
-    comma = {
-      url = "github:Shopify/comma";
-      flake = false;
-    };
     emacs.url = "github:nix-community/emacs-overlay";
     nur = {
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    darwin.url = "github:LnL7/nix-darwin";
+    darwin.url = "github:nix-darwin/nix-darwin/master";
     darwin.inputs.nixpkgs.follows = "nixpkgs-unstable";
-
-    prefmanager.url = "github:malob/prefmanager";
-    prefmanager.inputs.nixpkgs.follows = "nixpkgs";
-    prefmanager.inputs.flake-compat.follows = "flake-compat";
-    prefmanager.inputs.flake-utils.follows = "flake-utils";
 
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
     };
+
     flake-utils.url = "github:numtide/flake-utils";
     mk-darwin-system.url = "github:vic/mk-darwin-system/main";
     spacebar.url = "github:cmacrae/spacebar/v1.3.0";
-    nixgl.url = "github:nix-community/nixGL";
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+
+    nonNixosGpu = {
+      url = "github:exzombie/non-nixos-gpu";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # nixos specific packages
     nixospkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     nixospkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager/release-25.11";
     home-manager.inputs.nixpkgs.follows = "nixospkgs";
+    firefox.url = "github:nix-community/flake-firefox-nightly";
+    quickshell = {
+      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
 
-    dms = {
-      url = "github:AvengeMedia/DankMaterialShell/stable";
+      # THIS IS IMPORTANT
+      # Mismatched system dependencies will lead to crashes and other issues.
       inputs.nixpkgs.follows = "nixospkgs-unstable";
     };
 
     hyprland.url = "github:hyprwm/Hyprland";
-    vicinae.url = "github:vicinaehq/vicinae";
+    portainer-on-nixos.url = "gitlab:cbleslie/portainer-on-nixos";
+    portainer-on-nixos.inputs.nixpkgs.follows = "nixospkgs-unstable";
 
-    vicinae-extensions = {
-      url = "github:vicinaehq/extensions";
+    antigravity-nix = {
+      url = "github:jacopone/antigravity-nix";
       inputs.nixpkgs.follows = "nixospkgs-unstable";
     };
+    globalprotect-openconnect.url = "github:yuezk/GlobalProtect-openconnect";
+
+    vicinae-extensions.url = "github:vicinaehq/extensions";
+    vicinae.url = "github:vicinaehq/vicinae";
+
 
     nixCats.url = "github:BirdeeHub/nixCats-nvim";
     
@@ -98,7 +103,6 @@
     emacs,
     darwin,
     mk-darwin-system,
-    nixgl,
     nix-flatpak,
     nixospkgs,
     ...
@@ -169,34 +173,12 @@
         pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
         extraSpecialArgs = {
           inherit inputs;
-          nixgl = nixgl;
         };
         modules = [
           inputs.chaotic.homeManagerModules.default
           nix-flatpak.homeManagerModules.nix-flatpak
           inputs.vicinae.homeManagerModules.default
           inputs.nixCats.homeModule
-          ({
-            pkgs,
-            lib,
-            inputs,
-            ...
-          }: {
-            imports = attrValues self.homeManagerModules ++ [
-            ./archnix/home.nix
-            inputs.dms.homeModules.dankMaterialShell.default
-            ];
-            nixpkgs = {
-              overlays =
-                [
-                  nur.overlays.default
-                  nixgl.overlay
-                ];
-              config = {
-                allowUnfree = true;
-              };
-            };
-          })
         ];
       };
     };

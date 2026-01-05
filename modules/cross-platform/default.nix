@@ -14,9 +14,6 @@
 in {
   imports = [
     inputs.self.commonModules.programs
-    ../common/programs/hyprland
-    ../common/programs/neovim
-    ../common/programs/firefox
   ];
 
   config = {
@@ -26,6 +23,10 @@ in {
 
     # Platform-specific configurations
     nixpkgs.config.allowUnfree = true;
+
+    nixpkgs.config.permittedInsecurePackages = [
+        "openssl-1.1.1w"
+    ];
 
     # Common packages - these will be available on all systems
     home.packages = commonPackages ++ terminalPackages ++ devPackages ++ (if pkgs.stdenv.isLinux then desktopPackages else []) ++ (if pkgs.stdenv.isDarwin then macPackages else []);

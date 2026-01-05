@@ -4,54 +4,8 @@
   ...
 }: {
   xdg.configFile = {
-    "/home/killua/.config/zathura" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/zathura;
-      recursive = true;
-    };
-    "/home/killua/.lesskey" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/.lesskey;
-    };
-    "/home/killua/.config/mpv" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/mpv;
-      recursive = true;
-    };
-    "/home/killua/.config/ranger" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/ranger;
-      recursive = true;
-    };
-    "/home/killua/.tmux.conf.local" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/.tmux/.tmux.conf.local;
-    };
-    "/home/killua/.tmux.conf" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/.tmux/.tmux.conf;
-    };
-    "/home/killua/.config/kitty" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/kitty;
-      recursive = true;
-    };
-    "/home/killua/.config/wezterm" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/wezterm;
-      recursive = true;
-    };
-    "/home/killua/.config/yazi" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/yazi;
-      recursive = true;
-    };
-    "/home/killua/.config/lazygit.yml" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/lazygit.yml;
-    };
-
-    "/home/killua/.config/ghostty" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/ghostty;
-      recursive = true;
-    };
-
     "/home/killua/.config/aconfmgr" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/aconfmgr;
-      recursive = true;
-    };
-    "/home/killua/.config/ueli" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/ueli;
       recursive = true;
     };
     "/home/killua/.config/handlr" = {
@@ -75,10 +29,6 @@
     };
     "/home/killua/.config/ags" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/ags;
-      recursive = true;
-    };
-    "/home/killua/.config/DankMaterialShell" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/DankMaterialShell;
       recursive = true;
     };
     "/home/killua/.config/matugen" = {

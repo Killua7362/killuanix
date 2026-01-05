@@ -3,7 +3,4 @@
 {
   # List your module files here
   # my-module = import ./my-module.nix;
-
-  git = import ./git.nix;
-  zsh = import ./zsh.nix;
 }

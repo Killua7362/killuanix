@@ -4,19 +4,28 @@
   lib,
   inputs,
   ...
-}: let
-  userConfig = inputs.self.commonModules.user.userConfig;
-in {
+}:  let
+     userConfig = inputs.self.commonModules.user.userConfig;
+     dotfilesPath = "${config.home.homeDirectory}/killuanix/DotFiles";
+   in
+{
+  imports = [
+    ../common/programs/kitty.nix
+    ../common/programs/git.nix
+    ../common/programs/neovim.nix
+    ../common/programs/fish.nix
+    ../common/programs/dots.nix
+    ../common/programs/hyprland
+    ../common/programs/neovim
+    ../common/programs/firefox
+  ];
+
   config = {
+
     # Home Manager configuration
     programs.home-manager.enable = true;
 
-    # Git configuration
-    programs.git = {
-      enable = true;
-      userEmail = userConfig.email;
-      userName = userConfig.fullName;
-    };
+    programs.less.enable = true;
 
     # Direnv configuration
     programs.direnv = {
@@ -24,38 +33,17 @@ in {
       nix-direnv.enable = true;
     };
 
-    # Zsh configuration (if using Zsh)
-    programs.zsh = {
-      enable = lib.mkDefault false;
-      # Add common Zsh configuration here
-    };
-
-    # Fish configuration (if using Fish)
-    programs.fish = {
-      enable = lib.mkDefault false;
-      # Add common Fish configuration here
-    };
 
     # Starship configuration
     programs.starship = {
       enable = lib.mkDefault true;
-      # Add common Starship configuration here
+      enableFishIntegration = true;
     };
 
-    # Platform-specific program configurations
-    # programs.kitty = {
-    #   enable = lib.mkDefault (pkgs.stdenv.isLinux);
-    #   # Add Kitty configuration here
-    # };
+    xdg.configFile."starship.toml".source = "${dotfilesPath}/starship.toml";
 
     # Linux-specific programs
     services.lorri.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
     services.flatpak.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
-
-    # Additional program configurations can be added here
-    # For example:
-    # programs.tmux.enable = true;
-    # programs.bat.enable = true;
-    # programs.exa.enable = true;
   };
 }

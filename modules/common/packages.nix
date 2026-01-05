@@ -36,7 +36,6 @@
   # Terminal and shell packages
   terminalPackages = pkgs:
     with pkgs; [
-      tmux
       delta
       zplug
     ];
@@ -52,12 +51,14 @@
       arandr
       nitrogen
       vscodium
-      zathura
       dmenu
       foot
       gcr
       hyprpolkitagent
       networkmanagerapplet
+      postman
+      google-chrome
+      teleport
     ];
 
   # Development packages
@@ -72,7 +73,6 @@
     with pkgs; [
       skim
       antigen
-      prefmanager
       cht-sh
     ];
 }
