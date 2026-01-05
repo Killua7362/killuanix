@@ -71,6 +71,20 @@
     };
 
     nixCats.url = "github:BirdeeHub/nixCats-nvim";
+    
+    opencode-flake.url = "github:aodhanhayter/opencode-flake";
+
+    chaotic = {
+      url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+      inputs.home-manager.follows = "home-manager";
+    };
+
+    arkenfox = {
+      url = "github:dwarfmaster/arkenfox-nixos";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.systems.follows = "systems";
+    };
   };
 
   outputs = inputs @ {
@@ -109,7 +123,7 @@
     forAllSystems = nixpkgs.lib.genAttrs systems;
   in {
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
-    overlays = import ./overlays {inherit inputs;};
+    customOverlays = import ./overlays {inherit inputs;};
     nixosModules = import ./modules/nixos;
     homeManagerModules = import ./modules/home-manager;
     commonModules = import ./modules/common;
@@ -158,6 +172,7 @@
           nixgl = nixgl;
         };
         modules = [
+          inputs.chaotic.homeManagerModules.default
           nix-flatpak.homeManagerModules.nix-flatpak
           inputs.vicinae.homeManagerModules.default
           inputs.nixCats.homeModule

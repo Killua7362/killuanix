@@ -6,7 +6,7 @@
   ...
 }: let
   userConfig = inputs.self.commonModules.user.userConfig;
-  commonPackages = inputs.self.commonModules.packages.commonPackages pkgs;
+  commonPackages = inputs.self.commonModules.packages.commonPackages pkgs inputs;
   terminalPackages = inputs.self.commonModules.packages.terminalPackages pkgs;
   desktopPackages = inputs.self.commonModules.packages.desktopPackages pkgs;
   devPackages = inputs.self.commonModules.packages.devPackages pkgs;
@@ -16,6 +16,7 @@ in {
     inputs.self.commonModules.programs
     ../common/programs/hyprland
     ../common/programs/neovim
+    ../common/programs/firefox
   ];
 
   config = {

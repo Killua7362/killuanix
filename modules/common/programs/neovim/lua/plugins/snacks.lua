@@ -1,6 +1,15 @@
 return {
   "folke/snacks.nvim",
   opts = {
+    notifier = {
+      filter = function(notif)
+        -- Suppress messages containing "nvim-treesitter"
+        if notif.msg:find("treesitter") then
+          return false
+        end
+        return true
+      end,
+    },
     scope = {
       ---@class snacks.scope.Config
       ---@field max_size? number

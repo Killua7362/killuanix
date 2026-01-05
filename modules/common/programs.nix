@@ -42,10 +42,6 @@ in {
       # Add common Starship configuration here
     };
 
-    programs.dankMaterialShell = {
-      enable = lib.mkDefault (pkgs.stdenv.isLinux);
-    };
-
     # Platform-specific program configurations
     # programs.kitty = {
     #   enable = lib.mkDefault (pkgs.stdenv.isLinux);

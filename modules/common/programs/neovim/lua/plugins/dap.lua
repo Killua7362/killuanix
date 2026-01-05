@@ -16,6 +16,9 @@ local function get_args(config)
   return config
 end
 
+-- Check if running under nixCats
+local isNixCats = require("nixCatsUtils").isNixCats
+
 return {
   {
     "mfussenegger/nvim-dap",
@@ -23,9 +26,7 @@ return {
     desc = "Debugging support. Requires language specific adapters to be configured. (see lang extras)",
 
     dependencies = {
-      -- "rcarriga/nvim-dap-ui",
       "igorlfs/nvim-dap-view",
-      -- virtual text for the debugger
       {
         "theHamsta/nvim-dap-virtual-text",
         opts = {},
@@ -57,8 +58,10 @@ return {
     },
 
     config = function()
-      -- load mason-nvim-dap here, after all adapters have been setup
-      if LazyVim.has("mason-nvim-dap.nvim") then
+      local dap = require("dap")
+
+      -- Only use mason-nvim-dap when NOT using nixCats
+      if not isNixCats and LazyVim.has("mason-nvim-dap.nvim") then
         require("mason-nvim-dap").setup(LazyVim.opts("mason-nvim-dap.nvim"))
       end
 
@@ -72,14 +75,217 @@ return {
         )
       end
 
-      -- setup dap config by VsCode launch.json file
+      -- Setup dap config by VsCode launch.json file
       local vscode = require("dap.ext.vscode")
       local json = require("plenary.json")
       vscode.json_decode = function(str)
         return vim.json.decode(json.json_strip_comments(str))
       end
+
+      -- ═══════════════════════════════════════════════════════════════════
+      -- nixCats DAP Adapter Configuration
+      -- Adapters are passed via extra arguments from Nix
+      -- ═══════════════════════════════════════════════════════════════════
+      if isNixCats then
+        -- Get adapter paths from nixCats extra arguments
+        -- These should be defined in your Nix configuration
+        local debugAdapters = nixCats("debugAdapters") or {}
+
+        -- ─────────────────────────────────────────────────────────────────
+        -- Python (debugpy)
+        -- ─────────────────────────────────────────────────────────────────
+        if debugAdapters.python then
+          dap.adapters.python = {
+            type = "executable",
+            command = debugAdapters.python,
+            args = { "-m", "debugpy.adapter" },
+          }
+          dap.configurations.python = {
+            {
+              type = "python",
+              request = "launch",
+              name = "Launch file",
+              program = "${file}",
+              pythonPath = function()
+                local venv = os.getenv("VIRTUAL_ENV")
+                if venv then
+                  return venv .. "/bin/python"
+                end
+                return debugAdapters.python
+              end,
+            },
+          }
+        end
+
+        -- ─────────────────────────────────────────────────────────────────
+        -- C/C++/Rust (lldb-vscode / codelldb)
+        -- ─────────────────────────────────────────────────────────────────
+        if debugAdapters.lldb then
+          dap.adapters.lldb = {
+            type = "executable",
+            command = debugAdapters.lldb,
+            name = "lldb",
+          }
+          dap.configurations.cpp = {
+            {
+              name = "Launch",
+              type = "lldb",
+              request = "launch",
+              program = function()
+                return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+              end,
+              cwd = "${workspaceFolder}",
+              stopOnEntry = false,
+              args = {},
+            },
+          }
+          dap.configurations.c = dap.configurations.cpp
+          dap.configurations.rust = dap.configurations.cpp
+        end
+
+        -- Alternative: codelldb
+        if debugAdapters.codelldb then
+          dap.adapters.codelldb = {
+            type = "server",
+            port = "${port}",
+            executable = {
+              command = debugAdapters.codelldb,
+              args = { "--port", "${port}" },
+            },
+          }
+        end
+
+        -- ─────────────────────────────────────────────────────────────────
+        -- Go (delve)
+        -- ─────────────────────────────────────────────────────────────────
+        if debugAdapters.delve then
+          dap.adapters.delve = {
+            type = "server",
+            port = "${port}",
+            executable = {
+              command = debugAdapters.delve,
+              args = { "dap", "-l", "127.0.0.1:${port}" },
+            },
+          }
+          dap.configurations.go = {
+            {
+              type = "delve",
+              name = "Debug",
+              request = "launch",
+              program = "${file}",
+            },
+            {
+              type = "delve",
+              name = "Debug Package",
+              request = "launch",
+              program = "${workspaceFolder}",
+            },
+            {
+              type = "delve",
+              name = "Debug test",
+              request = "launch",
+              mode = "test",
+              program = "${file}",
+            },
+            {
+              type = "delve",
+              name = "Debug test (go.mod)",
+              request = "launch",
+              mode = "test",
+              program = "./${relativeFileDirname}",
+            },
+          }
+        end
+
+        -- ─────────────────────────────────────────────────────────────────
+        -- JavaScript/TypeScript (node-debug2 / js-debug)
+        -- ─────────────────────────────────────────────────────────────────
+        if debugAdapters.node then
+          dap.adapters.node2 = {
+            type = "executable",
+            command = "node",
+            args = { debugAdapters.node },
+          }
+          dap.configurations.javascript = {
+            {
+              name = "Launch",
+              type = "node2",
+              request = "launch",
+              program = "${file}",
+              cwd = vim.fn.getcwd(),
+              sourceMaps = true,
+              protocol = "inspector",
+              console = "integratedTerminal",
+            },
+            {
+              name = "Attach to process",
+              type = "node2",
+              request = "attach",
+              processId = require("dap.utils").pick_process,
+            },
+          }
+          dap.configurations.typescript = dap.configurations.javascript
+        end
+
+        -- ─────────────────────────────────────────────────────────────────
+        -- Bash
+        -- ─────────────────────────────────────────────────────────────────
+        if debugAdapters.bash then
+          dap.adapters.bashdb = {
+            type = "executable",
+            command = debugAdapters.bash,
+            name = "bashdb",
+          }
+          dap.configurations.sh = {
+            {
+              type = "bashdb",
+              request = "launch",
+              name = "Launch file",
+              showDebugOutput = true,
+              pathBashdb = debugAdapters.bashdb or debugAdapters.bash,
+              pathBashdbLib = debugAdapters.bashdbLib or "",
+              trace = true,
+              file = "${file}",
+              program = "${file}",
+              cwd = "${workspaceFolder}",
+              pathCat = "cat",
+              pathBash = "/bin/bash",
+              pathMkfifo = "mkfifo",
+              pathPkill = "pkill",
+              args = {},
+              env = {},
+              terminalKind = "integrated",
+            },
+          }
+        end
+
+        -- ─────────────────────────────────────────────────────────────────
+        -- Lua (local-lua-debugger-vscode)
+        -- ─────────────────────────────────────────────────────────────────
+        if debugAdapters.lua then
+          dap.adapters["local-lua"] = {
+            type = "executable",
+            command = "node",
+            args = { debugAdapters.lua },
+          }
+          dap.configurations.lua = {
+            {
+              type = "local-lua",
+              request = "launch",
+              name = "Debug current file",
+              cwd = "${workspaceFolder}",
+              program = {
+                lua = "lua",
+                file = "${file}",
+              },
+            },
+          }
+        end
+      end
     end,
   },
+
+  -- nvim-dap-view
   {
     {
       "igorlfs/nvim-dap-view",
@@ -99,12 +305,10 @@ return {
                   vim.print("🎊")
                 end,
               },
-              -- Stop | Restart
-              -- Double click, middle click or click with a modifier disconnect instead of stopping
               term_restart = {
                 render = function(session)
                   local group = session and "ControlTerminate" or "ControlRunLast"
-                  local icon = session and "" or ""
+                  local icon = session and "" or ""
                   return "%#NvimDapView" .. group .. "#" .. icon .. "%*"
                 end,
                 action = function(clicks, button, modifiers)
@@ -125,7 +329,7 @@ return {
             breakpoints = {
               keymap = "B",
               label = "Breakpoints [B]",
-              short_label = " [B]",
+              short_label = " [B]",
               action = function()
                 require("dap-view.views").switch_to_view("breakpoints")
               end,
@@ -171,9 +375,9 @@ return {
               end,
             },
             sessions = {
-              keymap = "K", -- I ran out of mnemonics
+              keymap = "K",
               label = "Sessions [K]",
-              short_label = " [K]",
+              short_label = " [K]",
               action = function()
                 require("dap-view.views").switch_to_view("sessions")
               end,
@@ -214,7 +418,8 @@ return {
       end,
     },
   },
-  -- fancy UI for the debugger
+
+  -- nvim-dap-ui (disabled, using dap-view instead)
   {
     "rcarriga/nvim-dap-ui",
     enabled = false,
@@ -241,27 +446,17 @@ return {
     end,
   },
 
-  -- mason.nvim integration
+  -- mason.nvim integration - DISABLED when using nixCats
   {
     "jay-babu/mason-nvim-dap.nvim",
+    enabled = not isNixCats,
     dependencies = "mason.nvim",
     cmd = { "DapInstall", "DapUninstall" },
     opts = {
-      -- Makes a best effort to setup the various debuggers with
-      -- reasonable debug configurations
       automatic_installation = true,
-
-      -- You can provide additional configuration to the handlers,
-      -- see mason-nvim-dap README for more information
       handlers = {},
-
-      -- You'll need to check that you have the required things installed
-      -- online, please don't ask me how to install them :)
-      ensure_installed = {
-        -- Update this to ensure that you have the debuggers for the langs you want
-      },
+      ensure_installed = {},
     },
-    -- mason-nvim-dap is loaded when nvim-dap loads
     config = function() end,
   },
 }

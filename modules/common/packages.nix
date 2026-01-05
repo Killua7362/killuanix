@@ -1,7 +1,7 @@
 {
   # Common packages that are useful across all systems
-  commonPackages = pkgs:
-    with pkgs; [
+  commonPackages = pkgs: inputs:
+    (with pkgs; [
       # File utilities
       fd
       fzf
@@ -29,6 +29,8 @@
       update-nix-fetchgit
 
       tree-sitter
+    ]) ++ [
+      inputs.opencode-flake.packages.${pkgs.system}.default
     ];
 
   # Terminal and shell packages

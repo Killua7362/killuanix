@@ -96,8 +96,6 @@
     extraGroups = ["networkmanager" "wheel"];
   };
 
-  programs.firefox.enable = true;
-
   environment.systemPackages = with pkgs; [
     git
     moonlight-qt
@@ -152,4 +150,5 @@
   virtualisation.virtualbox.guest.dragAndDrop = true;
 
   services.dbus.packages = [ pkgs.blueman ];
+  programs.openvpn3.enable;
 }

@@ -13,6 +13,8 @@
     ./users/appimages.nix
   ];
 
+  nix.package = pkgs.nix;
+
   # AppImages configuration (Linux specific)
   myAppImages = {
     enable = true;

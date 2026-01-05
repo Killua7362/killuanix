@@ -10,6 +10,13 @@
         ./misc.nix
         ./windowrules.nix
         ./execs.nix
+        ./gestures.nix
+        ./layout.nix
+        ./input.nix
+        ./keybinds.nix
+        ./hyprlock.nix
+        ./hypridle.nix
+        ./dms.nix
       ];
 
       wayland.windowManager.hyprland = {
@@ -27,4 +34,5 @@
         ];
         };
       };
+
 }
