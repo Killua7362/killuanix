@@ -4,11 +4,13 @@
     "https://hyprland.cachix.org"
     "https://vicinae.cachix.org"
     "https://nix-community.cachix.org"
+    "https://chaotic-nyx.cachix.org"
     ];
     extra-trusted-public-keys = [
     "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
     "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
     "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
     ];
   };
 
@@ -60,7 +62,10 @@
       # Mismatched system dependencies will lead to crashes and other issues.
       inputs.nixpkgs.follows = "nixospkgs-unstable";
     };
-
+    dms = {
+      url = "github:AvengeMedia/DankMaterialShell/stable";
+      inputs.nixpkgs.follows = "nixospkgs-unstable";
+    };
     hyprland.url = "github:hyprwm/Hyprland";
     portainer-on-nixos.url = "gitlab:cbleslie/portainer-on-nixos";
     portainer-on-nixos.inputs.nixpkgs.follows = "nixospkgs-unstable";
@@ -90,6 +95,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.systems.follows = "systems";
     };
+
+    nix-index-database.url = "github:nix-community/nix-index-database";
+    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = inputs @ {
@@ -176,7 +184,7 @@
         };
         modules = [
           inputs.chaotic.homeManagerModules.default
-          nix-flatpak.homeManagerModules.nix-flatpak
+          inputs.nix-flatpak.homeManagerModules.nix-flatpak
           inputs.vicinae.homeManagerModules.default
           inputs.nixCats.homeModule
         ];

@@ -78,6 +78,7 @@ in {
       "com.jetbrains.CLion"
       "org.vinegarhq.Sober"
       "io.github.nozwock.Packet"
+      "us.zoom.Zoom"
     ];
 
     # Gnome key ring

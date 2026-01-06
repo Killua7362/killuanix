@@ -7,7 +7,7 @@ return {
     "nvim-lua/plenary.nvim",
   },
   -- Disable build command when using nixCats (Nix handles the binary)
-  build = not isNixCats and "npm install -g mcp-hub@latest" or nil,
+  build = nil,
   config = function()
     local opts = {}
 

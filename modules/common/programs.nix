@@ -12,7 +12,6 @@
   imports = [
     ../common/programs/kitty.nix
     ../common/programs/git.nix
-    ../common/programs/neovim.nix
     ../common/programs/fish.nix
     ../common/programs/dots.nix
     ../common/programs/hyprland
@@ -42,8 +41,7 @@
 
     xdg.configFile."starship.toml".source = "${dotfilesPath}/starship.toml";
 
-    # Linux-specific programs
-    services.lorri.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
-    services.flatpak.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
+    programs.nix-index.enable = true;
+    programs.nix-index-database.comma.enable = true;
   };
 }

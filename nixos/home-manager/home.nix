@@ -10,16 +10,21 @@
     ./users/dots-manage.nix
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dankMaterialShell.default
+    inputs.chaotic.homeManagerModules.default
+    inputs.vicinae.homeManagerModules.default
+    inputs.nixCats.homeModule
+    inputs.nix-index-database.homeModules.default
   ];
 
   # NixOS-specific overlays
   nixpkgs.overlays = [
      inputs.neovim-nightly-overlay.overlays.default
+     inputs.nur.overlays.default
   ];
 
   # NixOS-specific packages
   home.packages = with pkgs; [
-    jetbrains.idea-ultimate
+    jetbrains.idea
 #    inputs.quickshell.packages.x86_64-linux.default
 #	fish
     inputs.antigravity-nix.packages.x86_64-linux.default

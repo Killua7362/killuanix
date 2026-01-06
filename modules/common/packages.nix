@@ -22,12 +22,11 @@
       tldr
       neofetch
       cachix
-      comma
       git-crypt
       nix-prefetch-github
       nix-script
       update-nix-fetchgit
-
+nodejs_20
       tree-sitter
     ]) ++ [
       inputs.opencode-flake.packages.${pkgs.system}.default
