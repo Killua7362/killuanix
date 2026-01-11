@@ -1,16 +1,18 @@
 {
   nixConfig = {
     extra-substituters = [
-    "https://hyprland.cachix.org"
-    "https://vicinae.cachix.org"
-    "https://nix-community.cachix.org"
-    "https://chaotic-nyx.cachix.org"
+      "https://hyprland.cachix.org"
+      "https://vicinae.cachix.org"
+      "https://nix-community.cachix.org"
+      "https://chaotic-nyx.cachix.org"
+      "https://yazi.cachix.org"
     ];
     extra-trusted-public-keys = [
-    "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-    "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
-    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-    "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
+      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+      "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
+      "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
     ];
   };
 
@@ -54,7 +56,7 @@
     nixospkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager/release-25.11";
     home-manager.inputs.nixpkgs.follows = "nixospkgs";
-    firefox.url = "github:nix-community/flake-firefox-nightly";
+
     quickshell = {
       url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
 
@@ -98,6 +100,26 @@
 
     nix-index-database.url = "github:nix-community/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
+
+    hyprland-plugins = {
+      url = "github:hyprwm/hyprland-plugins";
+      inputs.hyprland.follows = "hyprland";
+    };
+
+    hyprscroller = {
+      url = "github:cpiber/hyprscroller";
+      inputs.hyprland.follows = "hyprland";
+    };
+
+		yazi.url = "github:sxyazi/yazi";
+    nix-yazi-plugins = {
+      url = "github:lordkekz/nix-yazi-plugins?ref=yazi-v0.2.5";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nix-yazi-flavors.url = "github:aguirre-matteo/nix-yazi-flavors";
+    firefox.url = "github:nix-community/flake-firefox-nightly";
+    firefox.inputs.nixpkgs.follows = "nixospkgs-unstable";
+
   };
 
   outputs = inputs @ {
@@ -187,6 +209,10 @@
           inputs.nix-flatpak.homeManagerModules.nix-flatpak
           inputs.vicinae.homeManagerModules.default
           inputs.nixCats.homeModule
+          inputs.dms.homeModules.dankMaterialShell.default
+          inputs.nix-index-database.homeModules.default
+          # inputs.nix-yazi-plugins.legacyPackages.x86_64-linux.homeManagerModules.default # TODO: Revisit in future
+          ./archnix/home.nix
         ];
       };
     };

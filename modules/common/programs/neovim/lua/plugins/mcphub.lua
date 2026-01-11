@@ -13,7 +13,7 @@ return {
 
     -- When using nixCats, get the mcp-hub path from Nix
     if isNixCats then
-      local mcpHubPath = nixCats("mcpHub")
+      local mcpHubPath = nixCats("extra.mcpHub")
       if mcpHubPath then
         opts.cmd = mcpHubPath
       end

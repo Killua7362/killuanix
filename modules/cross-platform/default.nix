@@ -116,6 +116,10 @@ in {
       };
     };
 
+  fonts.fontconfig.enable = true;
+chaotic.nyx = {
+  cache.enable = true;
+};
   services.vicinae = {
     enable = true;
     systemd = {

@@ -13,11 +13,11 @@
 
     nix.package = pkgs.nix;
 
-    # Arch-specific overlays
     nixpkgs.overlays = [
       inputs.nur.overlays.default
-      # inputs.nixgl.overlay
       inputs.neovim-nightly-overlay.overlays.default
+      inputs.yazi.overlays.default
+          inputs.nix-yazi-flavors.overlays.default
     ];
 
   # targets.genericLinux.enable = true;

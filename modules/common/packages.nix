@@ -11,10 +11,8 @@
 
       # Development tools
       git
-      lazygit
       nix-search-cli
       nixpkgs-fmt
-      starship
       direnv
       zoxide
 
@@ -26,7 +24,7 @@
       nix-prefetch-github
       nix-script
       update-nix-fetchgit
-nodejs_20
+      nodejs_20
       tree-sitter
     ]) ++ [
       inputs.opencode-flake.packages.${pkgs.system}.default
@@ -58,6 +56,7 @@ nodejs_20
       postman
       google-chrome
       teleport
+      nerd-fonts.jetbrains-mono
     ];
 
   # Development packages

@@ -4,7 +4,12 @@
   config,
   pkgs,
   ...
-}: {
+}: let
+  session = {
+    command = "${getExe config.programs.uwsm.package} start hyprland-uwsm.desktop";
+    user = "killua";
+  };
+in {
   imports = [
     ./hardware-configuration.nix
     inputs.home-manager.nixosModules.home-manager
@@ -114,7 +119,7 @@ networking.networkmanager.packages = [ pkgs.networkmanager-openconnect ];
 
   services.xserver.enable = true;
 
-  services.displayManager.sddm.enable = true;
+  # services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
   services.xserver.xkb = {
@@ -242,5 +247,23 @@ docker-compose
   virtualisation.virtualbox.guest.dragAndDrop = true;
 
   services.dbus.packages = [ pkgs.blueman pkgs.openvpn3 ];
-
+    programs.hyprland = mkIf cfg.hyprland.enable {
+      enable = true;
+          package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+    # make sure to also set the portal package, so that they are in sync
+    portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+      withUWSM = true;
+    };
+  xdg.portal = {
+    enable = true;
+    extraPortals = with pkgs; [ xdg-desktop-portal-hyprland ];
+  };
+      services.greetd = {
+      enable = true;
+      settings = {
+        terminal.vt = 1;
+        default_session = session;
+        initial_session = session;
+      };
+    };
 }

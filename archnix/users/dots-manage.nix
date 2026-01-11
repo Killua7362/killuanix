@@ -25,22 +25,10 @@
     "/home/killua/.tmux.conf" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/.tmux/.tmux.conf;
     };
-    "/home/killua/.config/kitty" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/kitty;
-      recursive = true;
-    };
     "/home/killua/.config/wezterm" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/macnix/wezterm;
       recursive = true;
     };
-    "/home/killua/.config/yazi" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/yazi;
-      recursive = true;
-    };
-    "/home/killua/.config/lazygit.yml" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/lazygit.yml;
-    };
-
     "/home/killua/.config/ghostty" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/ghostty;
       recursive = true;

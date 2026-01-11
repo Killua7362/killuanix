@@ -27,6 +27,9 @@
         systemd.variables = ["--all"];
         systemd.enable = false; # for uwsm
         xwayland.enable = true;
+        plugins = [
+            inputs.hyprscroller.packages.${pkgs.stdenv.hostPlatform.system}.hyprscroller
+        ];
         settings = {
         "$mod" = "SUPER";
         bind = [

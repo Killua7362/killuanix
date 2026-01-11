@@ -17,7 +17,7 @@
         scrollback_lines=3000;
         copy_on_select=true;
         strip_trailing_spaces="smart";
-        font_family="Fira Code";
+        font_family="JetBrainsMono Nerd Font";
         font_size=12.0;
         tab_bar_style="powerline";
         tab_bar_align="left";

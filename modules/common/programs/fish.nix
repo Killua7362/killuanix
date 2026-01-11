@@ -5,6 +5,12 @@
 programs.fish = {
 
 	enable = true;
+    plugins = [
+        # pkgs.fishPlugins.z
+        # pkgs.fishPlugins.fifc
+        # pkgs.fishPlugins.fzf-fish
+        # pkgs.fishPlugins.nvm
+    ];
     shellAliases = {
         "oil" = "~/killuanix/DotFiles/scripts/oil-ssh.sh";
         ".." = "cd ..";

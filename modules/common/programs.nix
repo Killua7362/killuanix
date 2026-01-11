@@ -17,6 +17,7 @@
     ../common/programs/hyprland
     ../common/programs/neovim
     ../common/programs/firefox
+    ../common/programs/lazygit.nix
   ];
 
   config = {
@@ -31,15 +32,6 @@
       enable = true;
       nix-direnv.enable = true;
     };
-
-
-    # Starship configuration
-    programs.starship = {
-      enable = lib.mkDefault true;
-      enableFishIntegration = true;
-    };
-
-    xdg.configFile."starship.toml".source = "${dotfilesPath}/starship.toml";
 
     programs.nix-index.enable = true;
     programs.nix-index-database.comma.enable = true;
