@@ -34,9 +34,9 @@ style ="cyan";
 read_only =" 🔒";
 };
 
-docker = {
-symbol =" ";
-};
+# docker = {
+# symbol =" ";
+# };
 
 elixir = {
 symbol =" ";
@@ -65,7 +65,7 @@ staged ="✔ ";
 renamed ="⇆ ";
 deleted ="✘ ";
 style ="bold bright-white";
-scan_timeout= 1000;
+# scan_timeout= 1000;
 };
 
 golang = {
@@ -90,7 +90,7 @@ symbol =" ";
 
 memory_usage = {
 symbol =" ";
-disabled = false
+disabled = false;
 };
 
 nim = {
@@ -129,7 +129,7 @@ symbol =" ";
 };
 
 status = {
-disabled = false
+disabled = false;
 };
         };
     };

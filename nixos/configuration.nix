@@ -6,8 +6,12 @@
   ...
 }: let
   session = {
-    command = "${getExe config.programs.uwsm.package} start hyprland-uwsm.desktop";
+    command = "${lib.getExe config.programs.uwsm.package} start hyprland-uwsm.desktop";
     user = "killua";
+  };
+  pinnedVBOX = import inputs.nixpkgs-virtualbox {
+    system = "x86_64-linux";
+    config.allowUnfree = true;
   };
 in {
   imports = [
@@ -119,7 +123,7 @@ networking.networkmanager.packages = [ pkgs.networkmanager-openconnect ];
 
   services.xserver.enable = true;
 
-  # services.displayManager.sddm.enable = true;
+  services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
   services.xserver.xkb = {
@@ -245,25 +249,27 @@ docker-compose
   virtualisation.virtualbox.host.enableExtensionPack = true;
   virtualisation.virtualbox.guest.enable = true;
   virtualisation.virtualbox.guest.dragAndDrop = true;
+  virtualisation.virtualbox.host.package = pinnedVBOX.virtualbox;
 
   services.dbus.packages = [ pkgs.blueman pkgs.openvpn3 ];
-    programs.hyprland = mkIf cfg.hyprland.enable {
+    programs.hyprland = {
       enable = true;
-          package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
-    # make sure to also set the portal package, so that they are in sync
-    portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+      package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+    # # make sure to also set the portal package, so that they are in sync
+    # portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
       withUWSM = true;
     };
-  xdg.portal = {
-    enable = true;
-    extraPortals = with pkgs; [ xdg-desktop-portal-hyprland ];
-  };
-      services.greetd = {
-      enable = true;
-      settings = {
-        terminal.vt = 1;
-        default_session = session;
-        initial_session = session;
-      };
-    };
+    # xdg.portal = {
+    #   enable = true;
+    #   extraPortals = with pkgs; [ xdg-desktop-portal-hyprland ];
+    # };
+  #    services.greetd = {
+  #    enable = true;
+  #    settings = {
+  #      terminal.vt = 1;
+  #      default_session = session;
+  #      initial_session = session;
+  #    };
+  #  };
+  #  programs.regreet.enable = true;
 }

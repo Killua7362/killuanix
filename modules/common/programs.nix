@@ -18,6 +18,7 @@
     ../common/programs/neovim
     ../common/programs/firefox
     ../common/programs/lazygit.nix
+    ../common/programs/starship.nix
   ];
 
   config = {

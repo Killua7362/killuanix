@@ -20,5 +20,6 @@ return {
     end
 
     require("mcphub").setup(opts)
+    
   end,
 }

@@ -28,6 +28,6 @@ let
   };
 in {
   wayland.windowManager.hyprland.settings = {
-    env = builtins.mapAttrs (n: v: "${n},${v}") envAttrs;
+    env = lib.mapAttrsToList (name: value: "${name},${value}") envAttrs;
   };
 }

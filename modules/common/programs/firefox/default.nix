@@ -39,41 +39,7 @@ mergedChrome = pkgs.runCommand "merged-firefox-chrome" {} ''
   EOF
 '';
 
-  fsautoconfig = (
-    builtins.fetchurl {
-      url = "https://raw.githubusercontent.com/MrOtherGuy/fx-autoconfig/master/program/config.js";
-      sha256 = "1mx679fbc4d9x4bnqajqx5a95y1lfasvf90pbqkh9sm3ch945p40";
-    }
-  );
-
-  configpref = (
-    builtins.fetchurl {
-      url = "https://raw.githubusercontent.com/MrOtherGuy/fx-autoconfig/refs/heads/master/program/defaults/pref/config-prefs.js";
-      sha256 = "sha256-a/0u0TnRj/UXjg/GKjtAWFQN2+ujrckSwNae23DBfs4=";
-    }
-  );
-
-  # Get the wrapped package
-  firefoxNightly = inputs.firefox.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin;
-
-  custom-firefox-unwrapped = firefoxNightly.unwrapped.overrideAttrs (oldAttrs: {
-    installPhase = oldAttrs.installPhase + ''
-      echo "Copying fx-autoconfig files..."
-      chmod -R u+w "$out/lib/${oldAttrs.passthru.libName}"
-      cp "${fsautoconfig}" "$out/lib/${oldAttrs.passthru.libName}/config.js"
-      mkdir -p "$out/lib/${oldAttrs.passthru.libName}/defaults/pref"
-      cp "${configpref}" "$out/lib/${oldAttrs.passthru.libName}/defaults/pref/config-prefs.js"
-      echo "Done copying fx-autoconfig files"
-    '';
-  });
-
-  # Re-wrap the customized unwrapped package
-  custom-firefox = pkgs.wrapFirefox custom-firefox-unwrapped {
-    pname = "firefox-nightly-bin";
-  };
-
-  # Firefox-custom = pkgs.wrapFirefox custom-firefox-unwrapped {};
-in {
+  in {
   imports = [
     inputs.arkenfox.hmModules.default
   ];
@@ -91,7 +57,12 @@ in {
       enable = true;
       version = "140.0";
     };
-    package =  custom-firefox;
+    package =  inputs.firefox.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin.override {
+      extraPrefsFiles = [(builtins.fetchurl {  
+      url = "https://raw.githubusercontent.com/MrOtherGuy/fx-autoconfig/master/program/config.js";
+      sha256 = "1mx679fbc4d9x4bnqajqx5a95y1lfasvf90pbqkh9sm3ch945p40";
+    })];
+    };
     policies = let
       Lists = [
         "https://big.oisd.nl/"
@@ -440,7 +411,13 @@ user_pref("userChrome.css.menupopup-shadows", true);
 // custom wikipedia dark mode theme
 // user_pref("userChrome.css.wikipedia.dark-theme-enabled", true);
 
+// natsumi browser
+user_pref("natsumi.theme.disable-translucency", true);
 
+pref("general.config.obscure_value", 0);
+pref("general.config.filename", "config.js");
+// Sandbox needs to be disabled in release and Beta versions
+pref("general.config.sandbox_enabled", false);
               '';
         };
     };
