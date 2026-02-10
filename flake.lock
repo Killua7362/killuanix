@@ -4,7 +4,7 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": [
-          "nixospkgs-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {
@@ -139,7 +139,7 @@
     "dms": {
       "inputs": {
         "nixpkgs": [
-          "nixospkgs-unstable"
+          "nixpkgs"
         ],
         "quickshell": "quickshell"
       },
@@ -205,7 +205,7 @@
         "flake-compat": "flake-compat_3",
         "lib-aggregate": "lib-aggregate",
         "nixpkgs": [
-          "nixospkgs-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {
@@ -595,7 +595,7 @@
     "home-manager": {
       "inputs": {
         "nixpkgs": [
-          "nixospkgs"
+          "nixpkgs"
         ]
       },
       "locked": {
@@ -1728,7 +1728,7 @@
     "portainer-on-nixos": {
       "inputs": {
         "nixpkgs": [
-          "nixospkgs-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {
@@ -1813,7 +1813,7 @@
     "quickshell_2": {
       "inputs": {
         "nixpkgs": [
-          "nixospkgs-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {

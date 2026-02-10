@@ -8,7 +8,7 @@
     # Starship configuration
     programs.starship = {
       enable = lib.mkDefault true;
-      enableFishIntegration = true;
+      enableZshIntegration = true;
       settings = {
 aws = {
   symbol =" ";

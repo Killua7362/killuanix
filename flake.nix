@@ -56,26 +56,26 @@
     nixospkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     nixospkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager/release-25.11";
-    home-manager.inputs.nixpkgs.follows = "nixospkgs";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     quickshell = {
       url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
 
       # THIS IS IMPORTANT
       # Mismatched system dependencies will lead to crashes and other issues.
-      inputs.nixpkgs.follows = "nixospkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     dms = {
       url = "github:AvengeMedia/DankMaterialShell/stable";
-      inputs.nixpkgs.follows = "nixospkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     hyprland.url = "github:hyprwm/Hyprland";
     portainer-on-nixos.url = "gitlab:cbleslie/portainer-on-nixos";
-    portainer-on-nixos.inputs.nixpkgs.follows = "nixospkgs-unstable";
+    portainer-on-nixos.inputs.nixpkgs.follows = "nixpkgs";
 
     antigravity-nix = {
       url = "github:jacopone/antigravity-nix";
-      inputs.nixpkgs.follows = "nixospkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     globalprotect-openconnect.url = "github:yuezk/GlobalProtect-openconnect";
 
@@ -119,7 +119,7 @@
     };
     nix-yazi-flavors.url = "github:aguirre-matteo/nix-yazi-flavors";
     firefox.url = "github:nix-community/flake-firefox-nightly";
-    firefox.inputs.nixpkgs.follows = "nixospkgs-unstable";
+    firefox.inputs.nixpkgs.follows = "nixpkgs";
 
   };
 

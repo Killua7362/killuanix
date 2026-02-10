@@ -35,7 +35,7 @@
         "ctrl+w"="no_op";
       };
       extraConfig = ''
-            shell fish
+            shell zsh
             cursor #e2e2e2
             cursor_text_color #c6c6c6
             foreground            #e2e2e2

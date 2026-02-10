@@ -149,6 +149,7 @@ networking.networkmanager.packages = [ pkgs.networkmanager-openconnect ];
     openssh.authorizedKeys.keys = inputs.self.commonModules.user.userConfig.sshKeys;
     description = "killua";
     extraGroups = ["networkmanager" "wheel" "openvpn" "docker"];
+    shell = pkgs.zsh;
   };
 
     programs.java = {
@@ -204,16 +205,18 @@ docker-compose
     nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
   };
 
-  programs.fish.enable = true;
-  programs.bash = {
-    interactiveShellInit = ''
-      if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
-      then
-        shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
-        exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
-      fi
-    '';
-  };
+  programs.zsh.enable = true;
+
+  # programs.fish.enable = true;
+  # programs.bash = {
+  #   interactiveShellInit = ''
+  #     if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
+  #     then
+  #       shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
+  #       exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
+  #     fi
+  #   '';
+  # };
 
     programs.nix-ld.enable = true;
     programs.nix-ld.libraries = with pkgs; [

@@ -55,10 +55,9 @@ mergedChrome = pkgs.runCommand "merged-firefox-chrome" {} ''
     enable = true;
     arkenfox = {
       enable = true;
-      version = "140.0";
     };
     package =  inputs.firefox.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin.override {
-      extraPrefsFiles = [(builtins.fetchurl {  
+      extraPrefsFiles = [(builtins.fetchurl {
       url = "https://raw.githubusercontent.com/MrOtherGuy/fx-autoconfig/master/program/config.js";
       sha256 = "1mx679fbc4d9x4bnqajqx5a95y1lfasvf90pbqkh9sm3ch945p40";
     })];
@@ -418,6 +417,7 @@ pref("general.config.obscure_value", 0);
 pref("general.config.filename", "config.js");
 // Sandbox needs to be disabled in release and Beta versions
 pref("general.config.sandbox_enabled", false);
+pref("accessibility.force_disabled","1");
               '';
         };
     };

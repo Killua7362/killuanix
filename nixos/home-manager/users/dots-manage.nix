@@ -43,10 +43,6 @@
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/walker;
       recursive = true;
     };
-    "/home/killua/.config/zellij" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/zellij;
-      recursive = true;
-    };
     #     "/home/killua/.gitconfig" =
     #      {
     #         source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/gitconfig;

@@ -13,12 +13,14 @@
     ../common/programs/kitty.nix
     ../common/programs/git.nix
     ../common/programs/fish.nix
+    ../common/programs/zsh.nix
     ../common/programs/dots.nix
     ../common/programs/hyprland
     ../common/programs/neovim
     ../common/programs/firefox
     ../common/programs/lazygit.nix
     ../common/programs/starship.nix
+    ../common/programs/zellij.nix
   ];
 
   config = {

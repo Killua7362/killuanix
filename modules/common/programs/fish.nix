@@ -3,7 +3,6 @@
 {
 
 programs.fish = {
-
 	enable = true;
     plugins = [
         # pkgs.fishPlugins.z

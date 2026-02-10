@@ -7,7 +7,7 @@
 }:{
   programs.yazi = {
       enable = true;
-      enableFishIntegration = true;
+      enableZshIntegration = true;
       settings = {
         yazi = lib.importTOML ./settings.toml;
         keymap = lib.importTOML ./keymap.toml;
