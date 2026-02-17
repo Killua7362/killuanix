@@ -50,10 +50,6 @@
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/rofi;
       recursive = true;
     };
-    "/home/killua/.config/satty" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/satty;
-      recursive = true;
-    };
     "/home/killua/.ideavimrc" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/ideavimrc;
     };

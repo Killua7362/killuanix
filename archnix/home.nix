@@ -17,11 +17,14 @@
       inputs.nur.overlays.default
       inputs.neovim-nightly-overlay.overlays.default
       inputs.yazi.overlays.default
-          inputs.nix-yazi-flavors.overlays.default
+      inputs.nix-yazi-flavors.overlays.default
+      inputs.nixgl.overlay
     ];
 
-  # targets.genericLinux.enable = true;
+  targets.genericLinux.nixGL.packages = import nixgl { inherit pkgs; };
+  targets.genericLinux.nixGL.defaultWrapper = "mesa";
+  targets.genericLinux.nixGL.installScripts = [ "mesa" ];
+  targets.genericLinux.nixGL.vulkan.enable = true;
 
-  # Linux-specific state version
   home.stateVersion = "25.11";
 }

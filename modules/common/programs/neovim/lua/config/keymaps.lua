@@ -70,11 +70,18 @@ vim.keymap.set("n", "<leader>cD", function()
   vim.cmd("cd " .. vim.g.initial_dir)
 end, { desc = "Cd to initial directory" })
 
+-- nnoremap(
+--   { "n" },
+--   "<leader>ff",
+--   LazyVim.pick("files", { cwd = require("mini.misc").find_root(), live = true, regex = true }),
+--   "Find Files (root dir)"
+-- )
+
 nnoremap(
   { "n" },
   "<leader>ff",
-  LazyVim.pick("files", { cwd = require("mini.misc").find_root(), live = true, regex = true }),
-  "Find Files (root dir)"
+  "<cmd> FFFSnacks <cr>",
+  "FFF search"
 )
 
 nnoremap({ "n" }, "<leader>fE", function()

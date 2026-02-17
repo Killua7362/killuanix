@@ -19,5 +19,21 @@
           focus_on_activate = true;
           force_default_wallpaper = -1;
       };
+      animations = {
+        enabled = true;
+          animation = [
+              "windows, 0"
+              "windowsIn, 0"
+              "windowsOut, 0"
+              "windowsMove, 0"
+              "workspaces, 0"
+              "fade, 0"
+          ];
+      };
+      plugin = {
+          scroller = {
+                column_widths = "onehalf one";
+            };
+        };
   };
 }

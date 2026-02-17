@@ -120,7 +120,11 @@
     nix-yazi-flavors.url = "github:aguirre-matteo/nix-yazi-flavors";
     firefox.url = "github:nix-community/flake-firefox-nightly";
     firefox.inputs.nixpkgs.follows = "nixpkgs";
-
+    zed-editor-flake.url = "github:Rishabh5321/zed-editor-flake";
+    nixgl = {
+      url = "github:nix-community/nixGL";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
@@ -136,6 +140,7 @@
     mk-darwin-system,
     nix-flatpak,
     nixospkgs,
+    nixgl,
     ...
   }: let
     inherit (darwin.lib) darwinSystem;
@@ -175,7 +180,9 @@
             ...
           }: {
             home-manager = {
-              extraSpecialArgs = {inherit inputs;};
+              extraSpecialArgs = {
+                inherit inputs;
+              };
               users = {
                 killua = import ./nixos/home-manager/home.nix;
               };
@@ -203,14 +210,14 @@
       archnix = home-manager.lib.homeManagerConfiguration {
         pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
         extraSpecialArgs = {
-          inherit inputs;
+          inherit inputs nixgl;
         };
         modules = [
           inputs.chaotic.homeManagerModules.default
           inputs.nix-flatpak.homeManagerModules.nix-flatpak
           inputs.vicinae.homeManagerModules.default
           inputs.nixCats.homeModule
-          inputs.dms.homeModules.dankMaterialShell.default
+          inputs.dms.homeModules.dank-material-shell
           inputs.nix-index-database.homeModules.default
           # inputs.nix-yazi-plugins.legacyPackages.x86_64-linux.homeManagerModules.default # TODO: Revisit in future
           ./archnix/home.nix

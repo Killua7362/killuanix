@@ -329,7 +329,7 @@ web_client {
  
 theme "onedark"
  
-default_shell "fish"
+default_shell "zsh"
  
 copy_command "wl-copy"                    // wayland
 show_startup_tips false

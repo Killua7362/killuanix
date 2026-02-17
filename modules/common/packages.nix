@@ -8,6 +8,10 @@
       eza
       file
       bottom
+      bat
+      chafa
+      exiftool
+      lesspipe
 
       # Development tools
       git
@@ -57,6 +61,22 @@
       google-chrome
       teleport
       nerd-fonts.jetbrains-mono
+      # Adwaita theming
+      adw-gtk3              # Modern Adwaita look for GTK3 apps
+      adwaita-icon-theme    # Icons and cursors
+      gnome-themes-extra    # Extra Adwaita assets (optional, for full coverage)
+
+      # QT Adwaita integration
+      adwaita-qt            # Qt5 Adwaita style
+      adwaita-qt6           # Qt6 Adwaita style
+      gnome-keyring
+      libsecret
+      seahorse
+      nixgl.nixVulkanIntel
+      grim
+      slurp
+      wl-clipboard
+      cliphist
     ];
 
   # Development packages

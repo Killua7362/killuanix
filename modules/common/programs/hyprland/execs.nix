@@ -18,7 +18,6 @@ in {
   wayland.windowManager.hyprland.settings = {
         exec-once = (map (x: "uwsm app -- ${x}") once) ++ [
           "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
-          "hyprpm reload"
         ];
         exec = (map (x: "uwsm app -- ${x}") always) ++ [
 

@@ -9,7 +9,7 @@
     ../../modules/cross-platform
     ./users/dots-manage.nix
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
-    inputs.dms.homeModules.dankMaterialShell.default
+    inputs.dms.homeModules.dank-material-shel
     inputs.chaotic.homeManagerModules.default
     inputs.vicinae.homeManagerModules.default
     inputs.nixCats.homeModule

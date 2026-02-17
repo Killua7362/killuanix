@@ -21,6 +21,8 @@
     ../common/programs/lazygit.nix
     ../common/programs/starship.nix
     ../common/programs/zellij.nix
+    ../common/programs/zed.nix
+    ../common/programs/satty.nix
   ];
 
   config = {

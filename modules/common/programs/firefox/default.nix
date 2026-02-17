@@ -68,6 +68,7 @@ mergedChrome = pkgs.runCommand "merged-firefox-chrome" {} ''
         "http://sbc.io/hosts/hosts"
         "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
         "https://gist.githubusercontent.com/Icey-Glitch/d7e365b793bfae21759b750e316d3744/raw/63a1661f3c7e0aac85a8fbb9499fa305d4507e91/ytbetter.txt"
+        "https://raw.githubusercontent.com/gijsdev/ublock-hide-yt-shorts/master/list.txt"
       ];
     in {
       "3rdparty".Extensions = {
@@ -147,8 +148,8 @@ mergedChrome = pkgs.runCommand "merged-firefox-chrome" {} ''
 
           search = {
             force = true;
-            default = "Searx";
-            order = [ "Searx" "google" ];
+            default = "google";
+            order = [ "google" "Searx" ];
             engines = {
               "Nix Packages" = {
                 urls = [
@@ -240,184 +241,197 @@ mergedChrome = pkgs.runCommand "merged-firefox-chrome" {} ''
                   user_pref("userChromeJS.persistent_domcontent_callback", true);
                   ////// ⚠️ REQUIRED PREFS
 
-// only required if you're using any of my scripts that use eval().
-user_pref("security.allow_unsafe_dangerous_privileged_evil_eval", true);
-//// disable telemetry since we're modding firefox
-user_pref("toolkit.telemetry.enabled", false);
-user_pref("browser.discovery.enabled", false);
-user_pref("app.shield.optoutstudies.enabled", false);
-user_pref("datareporting.healthreport.documentServerURI", "http://%(server)s/healthreport/");
-user_pref("datareporting.healthreport.uploadEnabled", false);
-user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
-user_pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
-//// make the theme work properly
-user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
-user_pref("userChromeJS.enabled", true);  // Add this if missing
-user_pref("browser.proton.places-tooltip.enabled", true);
-user_pref("layout.css.moz-document.content.enabled", true);
-//// eliminate the blank white window during startup
-user_pref("browser.startup.blankWindow", false);
-user_pref("browser.startup.preXulSkeletonUI", false);
-////
-// required for icons with data URLs
-user_pref("svg.context-properties.content.enabled", true);
-// required for acrylic gaussian blur
-user_pref("layout.css.backdrop-filter.enabled", true);
-// enable browser dark mode
-user_pref("ui.systemUsesDarkTheme", 1);
-// enable content dark mode
-user_pref("layout.css.prefers-color-scheme.content-override", 0);
-//// avoid native styling
-user_pref("browser.display.windows.non_native_menus", 1);
-user_pref("widget.content.allow-gtk-dark-theme", true);
-// make sure the tab bar is in the titlebar on Linux
-user_pref("browser.tabs.inTitlebar", 1);
-////
-// avoid custom menulist/select styling
-user_pref("dom.forms.select.customstyling", false);
-// keep "all tabs" menu available at all times, useful for all tabs menu
-// expansion pack
-user_pref("browser.tabs.tabmanager.enabled", true);
-// disable urlbar result group labels since we don't use them
-user_pref("browser.urlbar.groupLabels.enabled", false);
-// allow urlbar result menu buttons without slowing down tabbing through results
-user_pref("browser.urlbar.resultMenu.keyboardAccessible", false);
-// Background for selected <option> elements and others
-user_pref("ui.selecteditem", "#2F3456");
-// Text color for selected <option> elements and others
-user_pref("ui.selecteditemtext", "#FFFFFFCC");
-//// Tooltip colors (only relevant if userChrome.ag.css somehow fails to apply,
-//// but doesn't hurt)
-user_pref("ui.infotext", "#FFFFFF");
-user_pref("ui.infobackground", "#hsl(233, 36%, 11%)");
-////
+                  // only required if you're using any of my scripts that use eval().
+                  user_pref("security.allow_unsafe_dangerous_privileged_evil_eval", true);
+                  //// disable telemetry since we're modding firefox
+                  user_pref("toolkit.telemetry.enabled", false);
+                  user_pref("browser.discovery.enabled", false);
+                  user_pref("app.shield.optoutstudies.enabled", false);
+                  user_pref("datareporting.healthreport.documentServerURI", "http://%(server)s/healthreport/");
+                  user_pref("datareporting.healthreport.uploadEnabled", false);
+                  user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
+                  user_pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
+                  //// make the theme work properly
+                  user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
+                  user_pref("userChromeJS.enabled", true);  // Add this if missing
+                  user_pref("browser.proton.places-tooltip.enabled", true);
+                  user_pref("layout.css.moz-document.content.enabled", true);
+                  //// eliminate the blank white window during startup
+                  user_pref("browser.startup.blankWindow", false);
+                  user_pref("browser.startup.preXulSkeletonUI", false);
+                  ////
+                  // required for icons with data URLs
+                  user_pref("svg.context-properties.content.enabled", true);
+                  // required for acrylic gaussian blur
+                  user_pref("layout.css.backdrop-filter.enabled", true);
+                  // enable browser dark mode
+                  user_pref("ui.systemUsesDarkTheme", 1);
+                  // enable content dark mode
+                  user_pref("layout.css.prefers-color-scheme.content-override", 0);
+                  //// avoid native styling
+                  user_pref("browser.display.windows.non_native_menus", 1);
+                  user_pref("widget.content.allow-gtk-dark-theme", true);
+                  // make sure the tab bar is in the titlebar on Linux
+                  user_pref("browser.tabs.inTitlebar", 1);
+                  ////
+                  // avoid custom menulist/select styling
+                  user_pref("dom.forms.select.customstyling", false);
+                  // keep "all tabs" menu available at all times, useful for all tabs menu
+                  // expansion pack
+                  user_pref("browser.tabs.tabmanager.enabled", true);
+                  // disable urlbar result group labels since we don't use them
+                  user_pref("browser.urlbar.groupLabels.enabled", false);
+                  // allow urlbar result menu buttons without slowing down tabbing through results
+                  user_pref("browser.urlbar.resultMenu.keyboardAccessible", false);
+                  // Background for selected <option> elements and others
+                  user_pref("ui.selecteditem", "#2F3456");
+                  // Text color for selected <option> elements and others
+                  user_pref("ui.selecteditemtext", "#FFFFFFCC");
+                  //// Tooltip colors (only relevant if userChrome.ag.css somehow fails to apply,
+                  //// but doesn't hurt)
+                  user_pref("ui.infotext", "#FFFFFF");
+                  user_pref("ui.infobackground", "#hsl(233, 36%, 11%)");
+                  ////
 
-// ⚠️ REQUIRED on macOS
-user_pref("widget.macos.native-context-menus", false);
+                  // ⚠️ REQUIRED on macOS
+                  user_pref("widget.macos.native-context-menus", false);
 
-////// ✨ RECOMMENDED PREFS
+                  ////// ✨ RECOMMENDED PREFS
 
-//// allow installing the unsigned search extensions. the localized search
-//// extensions currently can't be signed because of
-//// https://github.com/mozilla/addons-linter/issues/3911 so to use them, we
-//// must disable the signature requirement and go to about:addons > gear icon >
-//// install addon from file > find the .zip file
-user_pref("xpinstall.signatures.required", false);
-user_pref("extensions.autoDisableScopes", 0);
-//// functionality oriented prefs
-user_pref("browser.shell.checkDefaultBrowser", false);
-user_pref("browser.startup.homepage_override.mstone", "ignore");
-user_pref("browser.display.use_system_colors", false);
-user_pref("browser.privatebrowsing.enable-new-indicator", false);
-user_pref("accessibility.mouse_focuses_formcontrol", 0);
-user_pref("browser.tabs.tabMinWidth", 90);
-user_pref("browser.urlbar.accessibility.tabToSearch.announceResults", false);
-// disable large urlbar suggestions for now. they are styled so this is not
-// required, but I don't find them useful since they only seem to appear when
-// the urlbar is empty and search engine is set to google.
-user_pref("browser.urlbar.richSuggestions.featureGate", false);
-// but enable the rich one-line suggestions that appear when typing long search
-// terms and guess an end to the sentence
-user_pref("browser.urlbar.richSuggestions.tail", false);
-user_pref("browser.urlbar.suggest.quicksuggest.nonsponsored", false);
-user_pref("browser.urlbar.suggest.quicksuggest.sponsored", false);
-user_pref("browser.urlbar.trimURLs", false);
-// hide fullscreen enter/exit warning
-user_pref("full-screen-api.transition-duration.enter", "0 0");
-user_pref("full-screen-api.transition-duration.leave", "0 0");
-user_pref("full-screen-api.warning.delay", -1);
-user_pref("full-screen-api.warning.timeout", 0);
-// whether to show content dialogs within tabs or above tabs
-user_pref("prompts.contentPromptSubDialog", true);
-// when using the keyboard to navigate menus, skip past disabled items
-user_pref("ui.skipNavigatingDisabledMenuItem", 1);
-user_pref("ui.prefersReducedMotion", 0);
-// reduce the delay before showing submenus (e.g. View > Toolbars)
-user_pref("ui.submenuDelay", 100);
-// the delay before a tooltip appears when hovering an element (default 300ms)
-user_pref("ui.tooltipDelay", 300);
-// should pressing the Alt key alone focus the menu bar?
-user_pref("ui.key.menuAccessKeyFocuses", false);
-// reduce update frequency
-user_pref("app.update.suppressPrompts", true);
-////
+                  //// allow installing the unsigned search extensions. the localized search
+                  //// extensions currently can't be signed because of
+                  //// https://github.com/mozilla/addons-linter/issues/3911 so to use them, we
+                  //// must disable the signature requirement and go to about:addons > gear icon >
+                  //// install addon from file > find the .zip file
+                  user_pref("xpinstall.signatures.required", false);
+                  user_pref("extensions.autoDisableScopes", 0);
+                  //// functionality oriented prefs
+                  user_pref("browser.shell.checkDefaultBrowser", false);
+                  user_pref("browser.startup.homepage_override.mstone", "ignore");
+                  user_pref("browser.display.use_system_colors", false);
+                  user_pref("browser.privatebrowsing.enable-new-indicator", false);
+                  user_pref("accessibility.mouse_focuses_formcontrol", 0);
+                  user_pref("browser.tabs.tabMinWidth", 90);
+                  user_pref("browser.urlbar.accessibility.tabToSearch.announceResults", false);
+                  // disable large urlbar suggestions for now. they are styled so this is not
+                  // required, but I don't find them useful since they only seem to appear when
+                  // the urlbar is empty and search engine is set to google.
+                  user_pref("browser.urlbar.richSuggestions.featureGate", false);
+                  // but enable the rich one-line suggestions that appear when typing long search
+                  // terms and guess an end to the sentence
+                  user_pref("browser.urlbar.richSuggestions.tail", false);
+                  user_pref("browser.urlbar.suggest.quicksuggest.nonsponsored", false);
+                  user_pref("browser.urlbar.suggest.quicksuggest.sponsored", false);
+                  user_pref("browser.urlbar.trimURLs", false);
+                  // hide fullscreen enter/exit warning
+                  user_pref("full-screen-api.transition-duration.enter", "0 0");
+                  user_pref("full-screen-api.transition-duration.leave", "0 0");
+                  user_pref("full-screen-api.warning.delay", -1);
+                  user_pref("full-screen-api.warning.timeout", 0);
+                  // whether to show content dialogs within tabs or above tabs
+                  user_pref("prompts.contentPromptSubDialog", true);
+                  // when using the keyboard to navigate menus, skip past disabled items
+                  user_pref("ui.skipNavigatingDisabledMenuItem", 1);
+                  user_pref("ui.prefersReducedMotion", 0);
+                  // reduce the delay before showing submenus (e.g. View > Toolbars)
+                  user_pref("ui.submenuDelay", 100);
+                  // the delay before a tooltip appears when hovering an element (default 300ms)
+                  user_pref("ui.tooltipDelay", 300);
+                  // should pressing the Alt key alone focus the menu bar?
+                  user_pref("ui.key.menuAccessKeyFocuses", false);
+                  // reduce update frequency
+                  user_pref("app.update.suppressPrompts", true);
+                  ////
 
-//// style oriented prefs
-// use GTK style for in-content scrollbars
-user_pref("widget.non-native-theme.scrollbar.style", 2);
-//// set the scrollbar style and width
-user_pref("widget.non-native-theme.win.scrollbar.use-system-size", false);
-user_pref("widget.non-native-theme.scrollbar.size.override", 11);
-user_pref("widget.non-native-theme.gtk.scrollbar.thumb-size", "0.818");
-//// base color scheme prefs
-user_pref("browser.theme.content-theme", 0);
-user_pref("browser.theme.toolbar-theme", 0);
-// set the default background color for color-scheme: dark. see it for example
-// on about:blank
-user_pref("browser.display.background_color.dark", "#19191b");
-//// selection/highlight colors
-user_pref("ui.highlight", "hsla(245, 100%, 70%, 0.55)");
-user_pref("ui.highlighttext", "#ffffff");
-// window inactive selection/highlight colors
-user_pref("ui.textSelectDisabledBackground", "hsla(243, 35%, 65%, 0.45)");
-//// findbar highlight and selection colors, match --global-selection-bgcolor
-user_pref("ui.textHighlightBackground", "hsla(245, 100%, 70%, 0.55)");
-user_pref("ui.textHighlightForeground", "#FFFFFF");
-user_pref("ui.textSelectAttentionBackground", "hsla(335, 100%, 60%, 0.65)");
-user_pref("ui.textSelectAttentionForeground", "#FFFFFF");
-//// spell check style
-user_pref("ui.SpellCheckerUnderline", "#E2467A");
-user_pref("ui.SpellCheckerUnderlineStyle", 1);
-//// IME style (for example when typing pinyin or hangul)
-user_pref("ui.IMERawInputBackground", "#000000");
-user_pref("ui.IMESelectedRawTextBackground", "hsla(245, 100%, 70%, 0.55)");
-////
-// about:reader dark mode
-user_pref("reader.color_scheme", "dark");
+                  //// style oriented prefs
+                  // use GTK style for in-content scrollbars
+                  user_pref("widget.non-native-theme.scrollbar.style", 2);
+                  //// set the scrollbar style and width
+                  user_pref("widget.non-native-theme.win.scrollbar.use-system-size", false);
+                  user_pref("widget.non-native-theme.scrollbar.size.override", 11);
+                  user_pref("widget.non-native-theme.gtk.scrollbar.thumb-size", "0.818");
+                  //// base color scheme prefs
+                  user_pref("browser.theme.content-theme", 0);
+                  user_pref("browser.theme.toolbar-theme", 0);
+                  // set the default background color for color-scheme: dark. see it for example
+                  // on about:blank
+                  user_pref("browser.display.background_color.dark", "#19191b");
+                  //// selection/highlight colors
+                  user_pref("ui.highlight", "hsla(245, 100%, 70%, 0.55)");
+                  user_pref("ui.highlighttext", "#ffffff");
+                  // window inactive selection/highlight colors
+                  user_pref("ui.textSelectDisabledBackground", "hsla(243, 35%, 65%, 0.45)");
+                  //// findbar highlight and selection colors, match --global-selection-bgcolor
+                  user_pref("ui.textHighlightBackground", "hsla(245, 100%, 70%, 0.55)");
+                  user_pref("ui.textHighlightForeground", "#FFFFFF");
+                  user_pref("ui.textSelectAttentionBackground", "hsla(335, 100%, 60%, 0.65)");
+                  user_pref("ui.textSelectAttentionForeground", "#FFFFFF");
+                  //// spell check style
+                  user_pref("ui.SpellCheckerUnderline", "#E2467A");
+                  user_pref("ui.SpellCheckerUnderlineStyle", 1);
+                  //// IME style (for example when typing pinyin or hangul)
+                  user_pref("ui.IMERawInputBackground", "#000000");
+                  user_pref("ui.IMESelectedRawTextBackground", "hsla(245, 100%, 70%, 0.55)");
+                  ////
+                  // about:reader dark mode
+                  user_pref("reader.color_scheme", "dark");
 
-//// font settings
-user_pref("layout.css.font-visibility.private", 3);
-user_pref("layout.css.font-visibility.resistFingerprinting", 3);
-////
+                  //// font settings
+                  user_pref("layout.css.font-visibility.private", 3);
+                  user_pref("layout.css.font-visibility.resistFingerprinting", 3);
+                  ////
 
-//// windows font settings - does nothing on macOS or linux
-user_pref("gfx.font_rendering.cleartype_params.cleartype_level", 100);
-user_pref("gfx.font_rendering.cleartype_params.force_gdi_classic_for_families", "");
-user_pref("gfx.font_rendering.cleartype_params.force_gdi_classic_max_size", 6);
-user_pref("gfx.font_rendering.cleartype_params.pixel_structure", 1);
-user_pref("gfx.font_rendering.cleartype_params.rendering_mode", 5);
-user_pref("gfx.font_rendering.directwrite.use_gdi_table_loading", false);
-user_pref("userChromeJS.persistent_domcontent_callback", true);
-////
+                  //// windows font settings - does nothing on macOS or linux
+                  user_pref("gfx.font_rendering.cleartype_params.cleartype_level", 100);
+                  user_pref("gfx.font_rendering.cleartype_params.force_gdi_classic_for_families", "");
+                  user_pref("gfx.font_rendering.cleartype_params.force_gdi_classic_max_size", 6);
+                  user_pref("gfx.font_rendering.cleartype_params.pixel_structure", 1);
+                  user_pref("gfx.font_rendering.cleartype_params.rendering_mode", 5);
+                  user_pref("gfx.font_rendering.directwrite.use_gdi_table_loading", false);
+                  user_pref("userChromeJS.persistent_domcontent_callback", true);
+                  ////
 
-//// recommended userChrome... prefs created by the theme or scripts. there are
-//// many more not included here, to allow a lot more customization. these are
-//// just the ones I'm pretty certain 90% of users will want. see the prefs list
-//// at https://github.com/aminomancer/uc.css.js
-user_pref("userChrome.tabs.pinned-tabs.close-buttons.disabled", true);
-user_pref("userChrome.urlbar-results.hide-help-button", true);
-// add a drop shadow on menupopup and panel elements (e.g. context menus)
-user_pref("userChrome.css.menupopup-shadows", true);
-//// these are more subjective prefs, but they're important ones
-//// display the all tabs menu in reverse order (newer tabs on top, like history)
-// user_pref("userChrome.tabs.all-tabs-menu.reverse-order", true);
-// turn bookmarks on the toolbar into small square buttons with no text labels
-// user_pref("userChrome.bookmarks-toolbar.icons-only", false);
-// replace UI font with SF Pro, the system font for macOS.
-// recommended for all operating systems, but not required.
-// must have the fonts installed. check the repo's readme for more details.
-// user_pref("userChrome.css.mac-ui-fonts", true);
-// custom wikipedia dark mode theme
-// user_pref("userChrome.css.wikipedia.dark-theme-enabled", true);
+                  //// recommended userChrome... prefs created by the theme or scripts. there are
+                  //// many more not included here, to allow a lot more customization. these are
+                  //// just the ones I'm pretty certain 90% of users will want. see the prefs list
+                  //// at https://github.com/aminomancer/uc.css.js
+                  user_pref("userChrome.tabs.pinned-tabs.close-buttons.disabled", true);
+                  user_pref("userChrome.urlbar-results.hide-help-button", true);
+                  // add a drop shadow on menupopup and panel elements (e.g. context menus)
+                  user_pref("userChrome.css.menupopup-shadows", true);
+                  //// these are more subjective prefs, but they're important ones
+                  //// display the all tabs menu in reverse order (newer tabs on top, like history)
+                  // user_pref("userChrome.tabs.all-tabs-menu.reverse-order", true);
+                  // turn bookmarks on the toolbar into small square buttons with no text labels
+                  // user_pref("userChrome.bookmarks-toolbar.icons-only", false);
+                  // replace UI font with SF Pro, the system font for macOS.
+                  // recommended for all operating systems, but not required.
+                  // must have the fonts installed. check the repo's readme for more details.
+                  // user_pref("userChrome.css.mac-ui-fonts", true);
+                  // custom wikipedia dark mode theme
+                  // user_pref("userChrome.css.wikipedia.dark-theme-enabled", true);
 
-// natsumi browser
-user_pref("natsumi.theme.disable-translucency", true);
+                  // natsumi browser
+                  user_pref("natsumi.theme.disable-translucency", true);
 
-pref("general.config.obscure_value", 0);
-pref("general.config.filename", "config.js");
-// Sandbox needs to be disabled in release and Beta versions
-pref("general.config.sandbox_enabled", false);
-pref("accessibility.force_disabled","1");
+                  pref("general.config.obscure_value", 0);
+                  pref("general.config.filename", "config.js");
+                  // Sandbox needs to be disabled in release and Beta versions
+                  pref("general.config.sandbox_enabled", false);
+                  pref("accessibility.force_disabled",1);
+                  pref("natsumi.theme.type", "colorful")
+                  pref("natsumi.urlbar.do-not-float", true)
+                  pref("sidebar.verticalTabs", true)
+                  pref("sidebar.verticalTabs.dragToPinPromo.dismissed", true)
+                  pref("browser.link.open_newwindow", 3)
+                  pref("browser.ctrlTab.sortByRecentlyUsed", true)
+                  pref("browser.tabs.insertAfterCurrent", true)
+                  pref("browser.tabs.insertAfterCurrentExceptPinned", true)
+                  pref("browser.tabs.closeWindowWithLastTab", false)
+                  pref("media.videocontrols.picture-in-picture.video-toggle.always-show", true)
+                  pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true)
+                  pref("media.videocontrols.picture-in-picture.video-toggle.has-used", true)
+                  pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled", true)
               '';
         };
     };

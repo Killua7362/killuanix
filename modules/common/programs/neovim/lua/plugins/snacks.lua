@@ -34,6 +34,15 @@ return {
       },
     },
     picker = {
+      sources = {
+        files = {
+          on_change = function(picker, item)
+            vim.schedule(function()
+              picker.preview.win:set_title(item.file)
+            end)
+          end,
+        },
+      },
       win = {
         input = {
           keys = {
@@ -61,6 +70,7 @@ return {
         list = {
           keys = {
             ["i"] = { "list_up" },
+            ["e"] = { "list_down" },
             ["k"] = { "focus_input" },
             ["<c-h>"] = "edit_split",
             -- ["<c-l>"] = { "preview_scroll_left", mode = { "i", "n" } },

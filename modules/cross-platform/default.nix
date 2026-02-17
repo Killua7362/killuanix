@@ -64,7 +64,7 @@ in {
     services.lorri.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
     services.flatpak.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
 
-    targets.genericLinux.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
+    # targets.genericLinux.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
     systemd.user.systemctlPath = lib.mkIf (pkgs.stdenv.isLinux) "/bin/systemctl";
 
     # Flatpak packages (Linux specific)
@@ -81,42 +81,114 @@ in {
       "us.zoom.Zoom"
     ];
 
-    # Gnome key ring
-    services.gnome-keyring.enable = true;
     services.kdeconnect.enable = true;
 
     services.kanshi = {
       enable = true;
-      systemdTarget = "hyprland-session.target";
+      systemdTarget = "";
 
-      profiles = {
-        undocked = {
-          outputs = [
-            {
-              criteria = "eDP-1";
-              scale = 1.1;
-              status = "enable";
-            }
-          ];
-        };
+      settings = [
+        {
+            profile.name = "undocked";
+            profile.outputs = [
+              {
+                criteria = "eDP-1";
+                scale = 1.1;
+                status = "enable";
+              }
+            ];
+          }
+          {
+              profile.name = "docked";
+              profile.outputs = [
 
-        docked = {
-          outputs = [
-            {
-              criteria = "DP-1";
-              position = "0,0";
-              status = "enable";
-            }
-            {
-              criteria = "eDP-1";
-              status = "disable";
-            }
-          ];
-        };
-      };
+                  {
+                    criteria = "DP-1";
+                    position = "0,0";
+                    status = "enable";
+                  }
+                  {
+                    criteria = "eDP-1";
+                    status = "disable";
+                  }
+              ];
+          }
+      ];
     };
 
   fonts.fontconfig.enable = true;
+
+    gtk = {
+      enable = true;
+
+      # adw-gtk3-dark gives GTK3 apps the modern libadwaita look
+      theme = {
+        name = "adw-gtk3-dark";
+        package = pkgs.adw-gtk3;
+      };
+
+      iconTheme = {
+        name = "Adwaita";
+        package = pkgs.adwaita-icon-theme;
+      };
+
+      cursorTheme = {
+        name = "Adwaita";
+        package = pkgs.adwaita-icon-theme;
+        size = 24;
+      };
+
+      font = {
+        name = "JetBrainsMono Nerd Font";
+        size = 11;
+      };
+
+      gtk3.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
+        gtk-theme-name = "adw-gtk3-dark";
+      };
+
+      gtk4.extraConfig = {
+        gtk-application-prefer-dark-theme = true;
+      };
+    };
+
+    qt = {
+      enable = true;
+      platformTheme.name = "adwaita";
+      style = {
+        name = "adwaita-dark";
+        package = pkgs.adwaita-qt;
+      };
+    };
+
+      xdg.portal = {
+        enable = true;
+        extraPortals = with pkgs; [
+          xdg-desktop-portal-gnome
+          xdg-desktop-portal-gtk
+        ];
+        config = {
+          hyprland = {
+            default = [ "hyprland" "gtk" ];
+            "org.freedesktop.impl.portal.ScreenCast" = [
+              "gnome"
+            ];
+          };
+        };
+      };
+
+
+    dconf.settings = {
+      "org/gnome/desktop/interface" = {
+        color-scheme = "prefer-dark";
+        gtk-theme = "adw-gtk3-dark";
+        icon-theme = "Adwaita";
+        cursor-theme = "Adwaita";
+        font-name = "JetBrainsMono Nerd Font 11";
+      };
+    };
+
 chaotic.nyx = {
   cache.enable = true;
 };
@@ -124,13 +196,13 @@ chaotic.nyx = {
     enable = true;
     systemd = {
       enable = true;
-      autoStart = true; # default: false
+      autoStart = true;
       environment = {
         USE_LAYER_SHELL = 1;
       };
     };
     settings = {
-      close_on_focus_loss = true;
+      close_on_focus_loss = false;
       consider_preedit = true;
       pop_to_root_on_close = true;
       favicon_service = "twenty";
@@ -142,6 +214,7 @@ chaotic.nyx = {
         };
       };
       theme = {
+        name = "vicinae-dark";
         light = {
           name = "vicinae-light";
           icon_theme = "default";
@@ -151,6 +224,7 @@ chaotic.nyx = {
           icon_theme = "default";
         };
       };
+      keybinding = "emacs";
       launcher_window = {
         opacity = 0.98;
       };
@@ -160,6 +234,11 @@ chaotic.nyx = {
       nix
       power-profile
     ];
+  };
+
+  services.gnome-keyring = {
+    enable = true;
+    components = [ "secrets" "pkcs11" ];
   };
 
   };

@@ -95,6 +95,18 @@
 
       # Case insensitive completion
       zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+      zstyle ':completion:*:git-checkout:*' sort false
+# set descriptions format to enable group support
+# NOTE: don't use escape sequences here, fzf-tab will ignore them
+      zstyle ':completion:*:descriptions' format '[%d]'
+# force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
+      zstyle ':completion:*' menu no
+# preview directory's content with eza when completing cd
+      zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+# switch group using `<` and `>`
+      zstyle ':fzf-tab:*' switch-group '<' '>'
+# zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+# zstyle ':fzf-tab:complete:_zlua:*' query-string input
 
       # Functions (converted from fish)
       nix_switch() {
@@ -123,19 +135,18 @@
       # Disable greeting (zsh doesn't have this by default anyway)
       # Key bindings
       bindkey '^C' send-break
+      bindkey "^[[1~" beginning-of-line
+      bindkey "^[[4~" end-of-line
     '';
-
-    # Optional: Add zsh plugins
-    # plugins = [
-    #   {
-    #     name = "zsh-fzf-tab";
-    #     src = pkgs.fetchFromGitHub {
-    #       owner = "Aloxaf";
-    #       repo = "fzf-tab";
-    #       rev = "...";
-    #       sha256 = "...";
-    #     };
-    #   }
-    # ];
+    zplug = {
+      enable = true;
+      plugins = [
+        {name = "Aloxaf/fzf-tab";}
+        {name = "Bhupesh-V/ugit";}
+        {name = "b4b4r07/enhancd";}
+        {name = "zsh-users/zsh-autosuggestions";}
+        {name = "zsh-users/zsh-syntax-highlighting";}
+      ];
+    };
   };
 }

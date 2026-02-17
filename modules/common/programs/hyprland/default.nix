@@ -2,6 +2,7 @@
   pkgs,
   lib,
   inputs,
+  config,
   ...
 }: {
       imports = [
@@ -22,7 +23,7 @@
       wayland.windowManager.hyprland = {
         enable = true;
         # set the flake package
-        package = inputs.hyprland.packages.${ inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.hyprland;
+        package =(config.lib.nixGL.wrap inputs.hyprland.packages.${inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.hyprland);
         # portalPackage = inputs.hyprland.packages.${ inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
         systemd.variables = ["--all"];
         systemd.enable = false; # for uwsm
