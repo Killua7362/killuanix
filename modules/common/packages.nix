@@ -39,6 +39,7 @@
     with pkgs; [
       delta
       zplug
+      eza
     ];
 
   # Desktop packages (Linux specific)

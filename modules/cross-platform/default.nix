@@ -162,22 +162,22 @@ in {
       };
     };
 
-      xdg.portal = {
-        enable = true;
-        extraPortals = with pkgs; [
-          xdg-desktop-portal-gnome
-          xdg-desktop-portal-gtk
-        ];
-        config = {
-          hyprland = {
-            default = [ "hyprland" "gtk" ];
-            "org.freedesktop.impl.portal.ScreenCast" = [
-              "gnome"
-            ];
-          };
-        };
-      };
-
+    # xdg.portal = {
+    #   enable = true;
+    #   extraPortals = with pkgs; [
+    #     xdg-desktop-portal-hyprland
+    #     xdg-desktop-portal-gtk
+    #   ];
+    #
+    #   configPackages = [ config.wayland.windowManager.hyprland.package ];
+    #
+    #   config.hyprland = {
+    #     default = [ "hyprland" "gtk" ];
+    #     "org.freedesktop.impl.portal.FileChooser" = "gtk";
+    #     "org.freedesktop.impl.portal.Print" = "gtk";
+    #   };
+    #
+    # };
 
     dconf.settings = {
       "org/gnome/desktop/interface" = {

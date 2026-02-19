@@ -3,12 +3,8 @@
 {
   programs.zsh = {
     enable = true;
-    
-    # Enable built-in features (equivalent to fish autosuggestions, etc.)
-    autosuggestion.enable = true;
-    syntaxHighlighting.enable = true;
-    enableCompletion = true;
-    
+    enableCompletion = false;
+
     # History settings
     history = {
       size = 10000;
@@ -21,12 +17,12 @@
     shellAliases = {
       "oil" = "~/killuanix/DotFiles/scripts/oil-ssh.sh";
       ".." = "cd ..";
-      "ls" = "/home/killua/.nix-profile/bin/exa --color=auto --group-directories-first --classify";
-      "lst" = "exa --color=auto --group-directories-first --classify --tree";
-      "la" = "exa --color=auto --group-directories-first --classify --all";
-      "ll" = "exa --color=auto --group-directories-first --classify --all --long --header --group";
-      "llt" = "exa --color=auto --group-directories-first --classify --all --long --header --group --tree";
-      "tree" = "exa --color=auto --group-directories-first --classify --tree";
+      "ls" = "eza --color=auto --group-directories-first --classify";
+      "lst" = "eza --color=auto --group-directories-first --classify --tree";
+      "la" = "eza --color=auto --group-directories-first --classify --all";
+      "ll" = "eza --color=auto --group-directories-first --classify --all --long --header --group";
+      "llt" = "eza --color=auto --group-directories-first --classify --all --long --header --group --tree";
+      "tree" = "eza --color=auto --group-directories-first --classify --tree";
       "cdtemp" = "cd $(mktemp -d)";
       "cp" = "cp -iv";
       "ln" = "ln -v";
@@ -73,7 +69,7 @@
       LC_CTYPE = "en_US.UTF-8";
       
       FZF_DEFAULT_COMMAND = "fd --type f --hidden --follow";
-      FZF_DEFAULT_OPTS = "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672";
+      FZF_DEFAULT_OPTS = "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672 --bind 'start:execute-silent(zellij action switch-mode locked 2>/dev/null)+reload(true)' --bind 'abort:execute-silent(zellij action switch-mode normal 2>/dev/null)'";
       FZF_CTRL_T_OPTS = "";
       FZF_COMPLETION_OPTS = "--height=60% --border --margin=1 --padding=1";
       FZF_TMUX = "1";
@@ -83,30 +79,37 @@
     };
 
     initContent = ''
+
+      fpath=(/usr/share/zsh/site-functions /usr/share/zsh/functions/Completion/{Linux,Unix} $fpath)
+
       # PATH modifications
       export PATH="/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
       export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
-      # Initialize starship
-      eval "$(starship init zsh)"
+      autoload -Uz compinit
+      local zcdump="$HOME/.zcompdump"
+      if [[ -n "$zcdump"(#qN.mh+24) ]]; then
+        compinit -i -d "$zcdump"
+        { zcompile "$zcdump" } &!
+      else
+        compinit -C -d "$zcdump"
+      fi
 
-      # Initialize zoxide
-      eval "$(zoxide init zsh)"
+      eval $(starship init zsh)
+      eval $(zoxide init zsh)
 
-      # Case insensitive completion
+      # Re-source plugins AFTER zsh-vi-mode initializes so keybindings survive
+      zvm_after_init() {
+        [[ -n "\'\'$\{functions[fzf_history_search]\}" ]] && \
+          bindkey -M viins '^R' fzf_history_search
+      }
+
       zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
       zstyle ':completion:*:git-checkout:*' sort false
-# set descriptions format to enable group support
-# NOTE: don't use escape sequences here, fzf-tab will ignore them
       zstyle ':completion:*:descriptions' format '[%d]'
-# force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
       zstyle ':completion:*' menu no
-# preview directory's content with eza when completing cd
       zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
-# switch group using `<` and `>`
       zstyle ':fzf-tab:*' switch-group '<' '>'
-# zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
-# zstyle ':fzf-tab:complete:_zlua:*' query-string input
 
       # Functions (converted from fish)
       nix_switch() {
@@ -135,18 +138,59 @@
       # Disable greeting (zsh doesn't have this by default anyway)
       # Key bindings
       bindkey '^C' send-break
-      bindkey "^[[1~" beginning-of-line
-      bindkey "^[[4~" end-of-line
+      
+      bindkey -M viins "^[[H" beginning-of-line
+      bindkey -M viins "^[[F" end-of-line
+      
+      bindkey -M viins '^[[1;5C' forward-word   # Ctrl+Right
+      bindkey -M viins '^[[1;5D' backward-word  # Ctrl+Left
+
+      bindkey "\'\'$\{key[Up]\}" up-line-or-search
+
+      [[ ! -v functions[command_not_found_handler] ]] || unfunction command_not_found_handler
+
+      # Also unlock after fzf exits normally
+      function fzf() {
+        command fzf "$@"
+        local ret=$?
+        zellij action switch-mode normal 2>/dev/null
+        return $ret
+      }
     '';
-    zplug = {
-      enable = true;
-      plugins = [
-        {name = "Aloxaf/fzf-tab";}
-        {name = "Bhupesh-V/ugit";}
-        {name = "b4b4r07/enhancd";}
-        {name = "zsh-users/zsh-autosuggestions";}
-        {name = "zsh-users/zsh-syntax-highlighting";}
-      ];
-    };
+    antidote = {
+        enable = true;
+        plugins = [
+          "getantidote/use-omz"
+          "jeffreytse/zsh-vi-mode"
+          "Aloxaf/fzf-tab"
+          "joshskidmore/zsh-fzf-history-search"
+          "Bhupesh-V/ugit"
+          "babarot/enhancd"
+          "ohmyzsh/ohmyzsh path:lib"
+          "ohmyzsh/ohmyzsh path:plugins/extract"
+          "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
+          "ohmyzsh/ohmyzsh path:plugins/copybuffer"
+          "ohmyzsh/ohmyzsh path:plugins/copyfile"
+          "ohmyzsh/ohmyzsh path:plugins/copypath"
+          "ohmyzsh/ohmyzsh path:plugins/extract"
+          "ohmyzsh/ohmyzsh path:plugins/globalias"
+          "ohmyzsh/ohmyzsh path:plugins/magic-enter"
+          "ohmyzsh/ohmyzsh path:plugins/fancy-ctrl-z"
+          "ohmyzsh/ohmyzsh path:plugins/otp"
+          "ohmyzsh/ohmyzsh path:plugins/zoxide"
+          "ohmyzsh/ohmyzsh path:plugins/git"
+          "ohmyzsh/ohmyzsh path:plugins/golang"
+          "ohmyzsh/ohmyzsh path:plugins/python"
+          "romkatv/zsh-bench kind:path"
+          "zsh-users/zsh-completions path:src kind:fpath"
+          "zsh-users/zsh-autosuggestions"
+          "zsh-users/zsh-history-substring-search"
+          "zdharma-continuum/fast-syntax-highlighting"
+          "wfxr/forgit"
+          # "zsh-users/zsh-autosuggestions"
+          # "zsh-users/zsh-syntax-highlighting"
+        ];
+        useFriendlyNames = true;
+      };
   };
 }
