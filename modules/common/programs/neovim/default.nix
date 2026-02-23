@@ -142,7 +142,6 @@ in{
             delve = "${pkgs.delve}/bin/dlv";
             bash = "${pkgs.bashdb}/bin/bashdb";
             bashdbLib = "${pkgs.bashdb}/share/bashdb";
-            mcpHub = "${mcp-hub}/bin/mcp-hub";
           };
         };
       };

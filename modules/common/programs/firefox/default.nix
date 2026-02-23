@@ -414,24 +414,24 @@ mergedChrome = pkgs.runCommand "merged-firefox-chrome" {} ''
                   // natsumi browser
                   user_pref("natsumi.theme.disable-translucency", true);
 
-                  pref("general.config.obscure_value", 0);
-                  pref("general.config.filename", "config.js");
+                  user_pref("general.config.obscure_value", 0);
+                  user_pref("general.config.filename", "config.js");
                   // Sandbox needs to be disabled in release and Beta versions
-                  pref("general.config.sandbox_enabled", false);
-                  pref("accessibility.force_disabled",1);
-                  pref("natsumi.theme.type", "colorful")
-                  pref("natsumi.urlbar.do-not-float", true)
-                  pref("sidebar.verticalTabs", true)
-                  pref("sidebar.verticalTabs.dragToPinPromo.dismissed", true)
-                  pref("browser.link.open_newwindow", 3)
-                  pref("browser.ctrlTab.sortByRecentlyUsed", true)
-                  pref("browser.tabs.insertAfterCurrent", true)
-                  pref("browser.tabs.insertAfterCurrentExceptPinned", true)
-                  pref("browser.tabs.closeWindowWithLastTab", false)
-                  pref("media.videocontrols.picture-in-picture.video-toggle.always-show", true)
-                  pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true)
-                  pref("media.videocontrols.picture-in-picture.video-toggle.has-used", true)
-                  pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled", true)
+                  user_pref("general.config.sandbox_enabled", false);
+                  user_pref("accessibility.force_disabled",1);
+                  user_pref("natsumi.theme.type", "colorful")
+                  user_pref("natsumi.urlbar.do-not-float", true)
+                  user_pref("sidebar.verticalTabs", true)
+                  user_pref("sidebar.verticalTabs.dragToPinPromo.dismissed", true)
+                  user_pref("browser.link.open_newwindow", 3)
+                  user_pref("browser.ctrlTab.sortByRecentlyUsed", true)
+                  user_pref("browser.tabs.insertAfterCurrent", true)
+                  user_pref("browser.tabs.insertAfterCurrentExceptPinned", true)
+                  user_pref("browser.tabs.closeWindowWithLastTab", false)
+                  user_pref("media.videocontrols.picture-in-picture.video-toggle.always-show", true)
+                  user_pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true)
+                  user_pref("media.videocontrols.picture-in-picture.video-toggle.has-used", true)
+                  user_pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled", true)
               '';
         };
     };

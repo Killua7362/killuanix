@@ -8,7 +8,6 @@
 {
   programs.zed-editor = {
     enable = true;
-    package =(config.lib.nixGL.wrap inputs.zed-editor-flake.packages.${pkgs.stdenv.hostPlatform.system}.zed-editor-bin);
     extensions = [
       "nix"
       "toml"

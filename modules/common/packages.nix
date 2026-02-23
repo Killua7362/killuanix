@@ -30,6 +30,9 @@
       update-nix-fetchgit
       nodejs_20
       tree-sitter
+      sops
+      age
+      ssh-to-age
     ]) ++ [
       inputs.opencode-flake.packages.${pkgs.system}.default
     ];
@@ -73,11 +76,11 @@
       gnome-keyring
       libsecret
       seahorse
-      nixgl.nixVulkanIntel
       grim
       slurp
       wl-clipboard
       cliphist
+      libreoffice-qt6-fresh
     ];
 
   # Development packages

@@ -14,6 +14,8 @@
 in {
   imports = [
     inputs.self.commonModules.programs
+    ../common/audio/shared.nix
+    ../common/sops.nix
   ];
 
   config = {
@@ -50,6 +52,7 @@ in {
           MANWIDTH = "999";
           KEYTIMEOUT = "1";
           LG_CONFIG_FILE = "$HOME/.config/lazygit.yml";
+          LD_LIBRARY_PATH = lib.mkDefault "/usr/lib/pipewire-0.3/jack";
           # XDG_CONFIG_HOME = "$HOME/.config";
           # XDG_DATA_DIRS = "$HOME/.nix-profile/share:$XDG_DATA_DIRS";
         }
@@ -117,7 +120,13 @@ in {
     };
 
   fonts.fontconfig.enable = true;
-
+  home.pointerCursor = {
+    gtk.enable = true;
+    # x11.enable = true;
+    package = pkgs.bibata-cursors;
+    name = "Bibata-Modern-Classic";
+    size = 16;
+  };
     gtk = {
       enable = true;
 
@@ -162,23 +171,6 @@ in {
       };
     };
 
-    # xdg.portal = {
-    #   enable = true;
-    #   extraPortals = with pkgs; [
-    #     xdg-desktop-portal-hyprland
-    #     xdg-desktop-portal-gtk
-    #   ];
-    #
-    #   configPackages = [ config.wayland.windowManager.hyprland.package ];
-    #
-    #   config.hyprland = {
-    #     default = [ "hyprland" "gtk" ];
-    #     "org.freedesktop.impl.portal.FileChooser" = "gtk";
-    #     "org.freedesktop.impl.portal.Print" = "gtk";
-    #   };
-    #
-    # };
-
     dconf.settings = {
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
@@ -188,7 +180,7 @@ in {
         font-name = "JetBrainsMono Nerd Font 11";
       };
     };
-
+  xdg.configFile."uwsm/env".source = "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh"; 
 chaotic.nyx = {
   cache.enable = true;
 };

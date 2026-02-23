@@ -42,9 +42,22 @@ virtualisation.docker = {
           };
 
 
-hardware.bluetooth.enable = true;
-#  hardware.pulseaudio.enable = true;
-services.blueman.enable = true;
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+
+    settings = {
+      General = {
+        Enable          = "Source,Sink,Media,Socket";
+        Experimental    = true;
+        FastConnectable = true;
+      };
+      Policy = {
+        AutoEnable = true;
+      };
+    };
+  };
+  services.blueman.enable = true;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   services.tailscale = {
@@ -133,14 +146,25 @@ networking.networkmanager.packages = [ pkgs.networkmanager-openconnect ];
 
   services.printing.enable = true;
 
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
+hardware.pulseaudio.enable = false;
+
+security.rtkit.enable = true;
+
   services.pipewire = {
     enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
+
+    alsa = {
+      enable = true;
+      support32Bit = true;
+    };
+    extraPackages = with pkgs; [
+      pipewire.bluetoothPackages  # or explicitly: libspa-bluetooth
+    ];
     pulse.enable = true;
+    jack.enable = true;
+    wireplumber.enable = true;
   };
+
 
   services.xserver.libinput.enable = true;
 
@@ -148,7 +172,7 @@ networking.networkmanager.packages = [ pkgs.networkmanager-openconnect ];
     isNormalUser = true;
     openssh.authorizedKeys.keys = inputs.self.commonModules.user.userConfig.sshKeys;
     description = "killua";
-    extraGroups = ["networkmanager" "wheel" "openvpn" "docker"];
+    extraGroups = ["networkmanager" "wheel" "openvpn" "docker" "audio"];
     shell = pkgs.zsh;
   };
 
@@ -158,6 +182,7 @@ networking.networkmanager.packages = [ pkgs.networkmanager-openconnect ];
     };
 
   environment.systemPackages = with pkgs; [
+    bluez-tools
     git
     moonlight-qt
     zulu8
@@ -185,6 +210,7 @@ docker-compose
 
     ];
     config = {
+      pulseaudio = true;
       allowUnfree = true;
      permittedInsecurePackages = [
                 "qtwebengine-5.15.19"
@@ -261,10 +287,30 @@ docker-compose
       portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
       withUWSM = true;
     };
-    # xdg.portal = {
-    #   enable = true;
-    #   extraPortals = with pkgs; [ xdg-desktop-portal-hyprland ];
-    # };
+    
+  xdg.portal = {
+    extraPortals = with pkgs; [
+      xdg-desktop-portal-gtk
+      # xdg-desktop-portal-kde    # Uncomment if KDE Plasma doesn't provide its own
+    ];
+
+    config = {
+      common = {
+        default = [ "gtk" ];
+      };
+      hyprland = {
+        default                                    = [ "gtk" "hyprland" ];
+        "org.freedesktop.impl.portal.ScreenCast"   = [ "hyprland" ];
+        "org.freedesktop.impl.portal.Screenshot"   = [ "hyprland" ];
+        "org.freedesktop.impl.portal.FileChooser"  = [ "gtk" ];
+      };
+      kde = {
+        default = [ "kde" "gtk" ];
+      };
+    };
+  };
+
+
   #    services.greetd = {
   #    enable = true;
   #    settings = {

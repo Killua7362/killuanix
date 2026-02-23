@@ -125,6 +125,17 @@
       url = "github:nix-community/nixGL";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    system-manager = {
+      url = "github:numtide/system-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    quadlet-nix = {
+      url = "github:SEIAROTg/quadlet-nix";
+    };
+
+    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = inputs @ {
@@ -141,6 +152,7 @@
     nix-flatpak,
     nixospkgs,
     nixgl,
+    system-manager,
     ...
   }: let
     inherit (darwin.lib) darwinSystem;
@@ -183,6 +195,9 @@
               extraSpecialArgs = {
                 inherit inputs;
               };
+              sharedModules = [
+                  inputs.sops-nix.homeManagerModules.sops
+              ];
               users = {
                 killua = import ./nixos/home-manager/home.nix;
               };
@@ -206,6 +221,12 @@
       };
     };
 
+    systemConfigs.default = system-manager.lib.makeSystemConfig {
+        modules = [
+          ./modules/archlinux/default.nix
+        ];
+      };
+
     homeManagerConfigurations = {
       archnix = home-manager.lib.homeManagerConfiguration {
         pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
@@ -219,6 +240,7 @@
           inputs.nixCats.homeModule
           inputs.dms.homeModules.dank-material-shell
           inputs.nix-index-database.homeModules.default
+          inputs.quadlet-nix.homeManagerModules.quadlet
           # inputs.nix-yazi-plugins.legacyPackages.x86_64-linux.homeManagerModules.default # TODO: Revisit in future
           ./archnix/home.nix
         ];

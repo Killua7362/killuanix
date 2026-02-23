@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  gp-vpn:
+    build: .
+    container_name: gp-vpn-browser
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "6080:6080"
+    volumes:
+      - vpn-data:/home/vpnuser
+      - ./all-boeing-certs.pem:/usr/local/share/ca-certificates/all-boeing-certs.pem
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+    restart: unless-stopped
+
+volumes:
+  vpn-data:

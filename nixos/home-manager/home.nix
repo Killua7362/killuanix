@@ -34,6 +34,14 @@
     #sublime
   ];
 
+
+  programs.zed-editor.package = inputs.zed-editor-flake.packages.${pkgs.stdenv.hostPlatform.system}.zed-editor-bin;
+
+    wayland.windowManager.hyprland = {
+      package = null;
+      portalPackage = null;
+    };
+
   # NixOS-specific systemd configuration
   systemd.user.startServices = "sd-switch";
 

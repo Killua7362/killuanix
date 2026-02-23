@@ -6,20 +6,11 @@ return {
   dependencies = {
     "nvim-lua/plenary.nvim",
   },
-  -- Disable build command when using nixCats (Nix handles the binary)
-  build = nil,
   config = function()
-    local opts = {}
-
-    -- When using nixCats, get the mcp-hub path from Nix
-    if isNixCats then
-      local mcpHubPath = nixCats("extra.mcpHub")
-      if mcpHubPath then
-        opts.cmd = mcpHubPath
-      end
-    end
-
-    require("mcphub").setup(opts)
-    
-  end,
+      require("mcphub").setup({
+          port = 31415,
+          auto_start = false,
+          config = vim.fn.expand("~/.config/mcphub/servers.json"),
+      })
+  end
 }

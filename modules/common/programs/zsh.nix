@@ -1,4 +1,4 @@
- { config, pkgs, ... }:
+ { config, pkgs,lib, ... }:
 
 {
   programs.zsh = {
@@ -69,7 +69,7 @@
       LC_CTYPE = "en_US.UTF-8";
       
       FZF_DEFAULT_COMMAND = "fd --type f --hidden --follow";
-      FZF_DEFAULT_OPTS = "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672 --bind 'start:execute-silent(zellij action switch-mode locked 2>/dev/null)+reload(true)' --bind 'abort:execute-silent(zellij action switch-mode normal 2>/dev/null)'";
+      FZF_DEFAULT_OPTS = "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672";
       FZF_CTRL_T_OPTS = "";
       FZF_COMPLETION_OPTS = "--height=60% --border --margin=1 --padding=1";
       FZF_TMUX = "1";
@@ -78,7 +78,13 @@
       ZELLIJ_AUTO_ATTACH = "false";
     };
 
-    initContent = ''
+    initContent = lib.mkAfter ''
+
+    if [ -e "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]; then
+      . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+    fi
+
+    export PATH="$HOME/.nix-profile/bin:$PATH"
 
       fpath=(/usr/share/zsh/site-functions /usr/share/zsh/functions/Completion/{Linux,Unix} $fpath)
 
@@ -87,14 +93,6 @@
       export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
       autoload -Uz compinit
-      local zcdump="$HOME/.zcompdump"
-      if [[ -n "$zcdump"(#qN.mh+24) ]]; then
-        compinit -i -d "$zcdump"
-        { zcompile "$zcdump" } &!
-      else
-        compinit -C -d "$zcdump"
-      fi
-
       eval $(starship init zsh)
       eval $(zoxide init zsh)
 
@@ -149,13 +147,10 @@
 
       [[ ! -v functions[command_not_found_handler] ]] || unfunction command_not_found_handler
 
-      # Also unlock after fzf exits normally
-      function fzf() {
-        command fzf "$@"
-        local ret=$?
-        zellij action switch-mode normal 2>/dev/null
-        return $ret
-      }
+      bindkey -M emacs "^ " globalias
+      bindkey -M viins "^ " globalias
+      bindkey -M emacs " " magic-space
+      bindkey -M viins " " magic-space
     '';
     antidote = {
         enable = true;
