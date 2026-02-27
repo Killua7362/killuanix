@@ -27,8 +27,8 @@
 
       unitConfig = {
         Description = "Portainer CE - Container Management";
-        After = [ "network-online.target" "podman-socket.service" ];
-        Requires = [ "podman-socket.service" ];
+        After = [ "network-online.target" "podman.socket" ];
+        Requires = [ "podman.socket" ];
       };
 
     };

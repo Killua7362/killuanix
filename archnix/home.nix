@@ -74,6 +74,23 @@
           package =(config.lib.nixGL.wrap inputs.hyprland.packages.${inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.hyprland);
           portalPackage = inputs.hyprland.packages.${ inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
         };
+  # ── Enable podman user socket (rootless) ──
+  systemd.user.services.podman-socket = {
+    Unit.Description = "Podman API Socket (rootless)";
+    Service = {
+      ExecStart = "/usr/bin/podman system service --time=0 unix:///run/user/1000/podman/podman.sock";
+      Type = "simple";
+      Restart = "on-failure";
+    };
+    Install.WantedBy = [ "default.target" ];
+  };
 
+
+xdg.configFile."systemd/user/podman-user-wait-network-online.service.d/10-fix-path.conf" = {
+  text = ''
+    [Service]
+    Environment=PATH=/usr/bin:/usr/sbin:/bin:/sbin
+  '';
+};
   home.stateVersion = "25.11";
 }

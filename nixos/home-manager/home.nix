@@ -9,11 +9,13 @@
     ../../modules/cross-platform
     ./users/dots-manage.nix
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
-    inputs.dms.homeModules.dank-material-shel
+    inputs.dms.homeModules.dank-material-shell
     inputs.chaotic.homeManagerModules.default
     inputs.vicinae.homeManagerModules.default
     inputs.nixCats.homeModule
     inputs.nix-index-database.homeModules.default
+    inputs.quadlet-nix.homeManagerModules.quadlet
+    ../../modules/containers/quadlet.nix
   ];
 
   # NixOS-specific overlays
@@ -25,6 +27,7 @@
   # NixOS-specific packages
   home.packages = with pkgs; [
     jetbrains.idea
+    jetbrains.webstorm
 #    inputs.quickshell.packages.x86_64-linux.default
 #	fish
     inputs.antigravity-nix.packages.x86_64-linux.default

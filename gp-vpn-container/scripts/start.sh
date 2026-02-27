@@ -46,3 +46,5 @@ rm -rf /home/vpnuser/.config/google-chrome/Default/Network/TransportSecurity
 chown -R vpnuser:vpnuser /home/vpnuser
 
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
+
+cd /home/vpnuser

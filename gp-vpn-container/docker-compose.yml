@@ -3,6 +3,9 @@ version: "3.8"
 services:
   gp-vpn:
     build: .
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     container_name: gp-vpn-browser
     cap_add:
       - NET_ADMIN
@@ -14,7 +17,8 @@ services:
     ports:
       - "6080:6080"
     volumes:
-      - vpn-data:/home/vpnuser
+      - /home/killua/Documents/vmvolume/home:/home/vpnuser
+      - /home/killua/Documents/Boeing:/home/vpnuser/Boeing
       - ./all-boeing-certs.pem:/usr/local/share/ca-certificates/all-boeing-certs.pem
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1

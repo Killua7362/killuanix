@@ -2,6 +2,8 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+USER root
+
 RUN echo "root:root" | chpasswd
 
 RUN apt-get update && apt-get install -y \
@@ -19,6 +21,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     libnss3-tools \
+    git \
+    thunar \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \

@@ -17,30 +17,14 @@ in {
   imports = [
     ./hardware-configuration.nix
     inputs.home-manager.nixosModules.home-manager
-    inputs.portainer-on-nixos.nixosModules.portainer
   ];
+
 virtualisation.docker = {
   enable = true;
-  rootless = {
-    enable = true;
-    setSocketVariable = true;
+  daemon.settings = {
+    dns = [ "8.8.8.8" "8.8.4.4" ];
   };
 };
-
-          services.portainer = {
-            enable = true; # Default false
-
-            version = "latest"; # Default latest, you can check dockerhub for
-                                # other tags.
-
-            openFirewall = true; # Default false, set to 'true' if you want
-                                    # to be able to access via the port on
-                                    # something other than localhost.
-
-            port = 9443; # Sets the port number in both the firewall and
-                         # the docker container port mapping itself.
-          };
-
 
   hardware.bluetooth = {
     enable = true;
@@ -57,6 +41,11 @@ virtualisation.docker = {
       };
     };
   };
+
+boot.kernel.sysctl = {
+  "net.ipv4.ip_forward" = 1;
+};
+
   services.blueman.enable = true;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -84,7 +73,7 @@ virtualisation.docker = {
 
   networking.firewall = {
     enable = true;
-    trustedInterfaces = ["tailscale0"];
+    trustedInterfaces = ["tailscale0" "docker0"];
     allowedUDPPorts = [41641 21116 1194];
     allowedUDPPortRanges = [
       {
@@ -111,17 +100,27 @@ networking.networkmanager = {
   dns = "systemd-resolved";  # Use resolved for DNS
 };
 
+networking.nameservers = [
+  "1.1.1.1"
+  "1.0.0.1"
+];
+
 services.resolved = {
   enable = true;
-  dnssec = "false";  # Optional, can cause issues with some networks
-  fallbackDns = [ "8.8.8.8" "1.1.1.1" ];
+  dnssec = "true";
+  domains = [ "~." ];
+  fallbackDns = [
+    "1.1.1.1"
+    "1.0.0.1"
+  ];
+  dnsovertls = "true";
 };
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_IN";
 #networking.networkmanager.plugins = [ "openconnect" ];
 networking.networkmanager.packages = [ pkgs.networkmanager-openconnect ];
 
-
+  networking.resolvconf.dnsExtensionMechanism = false;
   i18n.extraLocaleSettings = {
     LC_ADDRESS = "en_IN";
     LC_IDENTIFICATION = "en_IN";
@@ -157,9 +156,6 @@ security.rtkit.enable = true;
       enable = true;
       support32Bit = true;
     };
-    extraPackages = with pkgs; [
-      pipewire.bluetoothPackages  # or explicitly: libspa-bluetooth
-    ];
     pulse.enable = true;
     jack.enable = true;
     wireplumber.enable = true;
@@ -174,6 +170,8 @@ security.rtkit.enable = true;
     description = "killua";
     extraGroups = ["networkmanager" "wheel" "openvpn" "docker" "audio"];
     shell = pkgs.zsh;
+            linger = true;
+        autoSubUidGidRange = true;
   };
 
     programs.java = {
@@ -276,10 +274,8 @@ docker-compose
   virtualisation.virtualbox.host.enable = true;
   users.extraGroups.vboxusers.members = ["killua"];
   virtualisation.virtualbox.host.enableExtensionPack = true;
-  virtualisation.virtualbox.guest.enable = true;
-  virtualisation.virtualbox.guest.dragAndDrop = true;
   virtualisation.virtualbox.host.package = pinnedVBOX.virtualbox;
-
+    virtualisation.quadlet.enable = true;
   services.dbus.packages = [ pkgs.blueman pkgs.openvpn3 ];
     programs.hyprland = {
       enable = true;

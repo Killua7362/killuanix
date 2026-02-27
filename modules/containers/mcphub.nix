@@ -104,11 +104,11 @@ in
           Description = "MCP Server - Model Context Protocol";
           After    = [
             "network-online.target"
-            "podman-socket.service"
+            "podman.socket"
             "mcp-server-build.service"
           ];
           Requires = [
-            "podman-socket.service"
+            "podman.socket"
             "mcp-server-build.service"
           ];
         };

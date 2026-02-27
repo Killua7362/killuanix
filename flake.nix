@@ -186,6 +186,7 @@
         specialArgs = {inherit inputs;};
         modules = [
           ./nixos/configuration.nix
+          inputs.quadlet-nix.nixosModules.quadlet
           ({
             inputs,
             pkgs,
