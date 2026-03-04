@@ -117,6 +117,14 @@
         popd
       }
 
+      chrome-socks() {
+        google-chrome \
+          --proxy-server="socks5://127.0.0.1:1080" \
+          --proxy-bypass-list="<-loopback>" \
+          --user-data-dir="$HOME/.config/teams-vpn-chrome" \
+          --no-first-run
+      }
+
       pacsave() {
         pushd ~/killuanix/archnix/aconfmgr/
         ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes save

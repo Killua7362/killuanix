@@ -76,7 +76,7 @@ in
 
       containers = {
            mcp-server = {
-        autoStart = true;
+        autoStart = false;
 
         containerConfig = {
           image = "localhost/mcp-server:latest";

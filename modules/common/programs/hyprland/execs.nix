@@ -8,7 +8,7 @@ once = [
   "wl-paste --type image --watch bash -c 'cliphist store && qs -c $qsConfig ipc call cliphistService update'"
   "nm-applet --indicator"
   "blueman-applet"
-  "kdeconnect-indicator"
+  #"kdeconnect-indicator"
   "sunshine"
 ];
 always = [

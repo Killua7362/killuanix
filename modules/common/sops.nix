@@ -9,7 +9,6 @@
     age.keyFile = "/home/killua/.config/sops/age/keys.txt";
     defaultSopsFile = ../../secrets/personal.yaml;
     secrets = {
-        "example_key" = {};
       };
   };
 }

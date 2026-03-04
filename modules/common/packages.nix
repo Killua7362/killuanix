@@ -34,7 +34,7 @@
       age
       ssh-to-age
     ]) ++ [
-      inputs.opencode-flake.packages.${pkgs.system}.default
+      
     ];
 
   # Terminal and shell packages

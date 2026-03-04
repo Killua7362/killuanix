@@ -23,7 +23,17 @@ RUN apt-get update && apt-get install -y \
     libnss3-tools \
     git \
     thunar \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+# Build microsocks (tiny SOCKS5 proxy)
+RUN git clone https://github.com/rofl0r/microsocks.git /tmp/microsocks \
+    && cd /tmp/microsocks \
+    && make \
+    && cp microsocks /usr/local/bin/ \
+    && rm -rf /tmp/microsocks \
+    && apt-get purge -y build-essential \
+    && apt-get autoremove -y
 
 RUN wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && apt-get update \
@@ -39,6 +49,6 @@ COPY scripts/connect-vpn.sh /connect-vpn.sh
 COPY scripts/start-chrome.sh /start-chrome.sh
 RUN chmod +x /start.sh /connect-vpn.sh /start-chrome.sh
 
-EXPOSE 6080
+EXPOSE 6080 1080
 
 CMD ["/start.sh"]

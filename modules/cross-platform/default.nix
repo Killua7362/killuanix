@@ -84,7 +84,7 @@ in {
       "us.zoom.Zoom"
     ];
 
-    services.kdeconnect.enable = true;
+    # services.kdeconnect.enable = true;
 
     services.kanshi = {
       enable = true;
