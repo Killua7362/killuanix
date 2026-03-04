@@ -12,6 +12,7 @@
     ./users/dots-manage.nix
     ../modules/containers/quadlet.nix
     inputs.sops-nix.homeManagerModules.sops
+  inputs.spicetify-nix.homeManagerModules.default
   ];
 
   # home.packages = with pkgs; [

@@ -16,6 +16,7 @@
     inputs.nix-index-database.homeModules.default
     inputs.quadlet-nix.homeManagerModules.quadlet
     ../../modules/containers/quadlet.nix
+  inputs.spicetify-nix.homeManagerModules.default
   ];
 
   # NixOS-specific overlays

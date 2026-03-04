@@ -24,6 +24,7 @@
     ../common/programs/zed.nix
     ../common/programs/satty.nix
     ../common/programs/opencode.nix
+    ../common/programs/spotify.nix
   ];
 
   config = {

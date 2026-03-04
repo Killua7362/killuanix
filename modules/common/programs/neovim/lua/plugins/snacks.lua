@@ -38,6 +38,7 @@ return {
         files = {
           on_change = function(picker, item)
             vim.schedule(function()
+              if not item then return end
               picker.preview.win:set_title(item.file)
             end)
           end,

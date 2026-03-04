@@ -81,6 +81,7 @@
       wl-clipboard
       cliphist
       libreoffice-qt6-fresh
+      nwg-displays
     ];
 
   # Development packages

@@ -1,6 +1,7 @@
 keys:
   - &home-laptop age179qajt8wkh9hav687evh79lkczdc97y5p2fpv0j7csyep4qkl3fsuzphp4
   - &master age1jy5gmxfrlyky2nu09rwan68vnp89vun8zmkeyg2e0cng3lc6ccyqdh9sd5
+  - &office age1t24vpc9ejg393999sv0u7t0zzkjs94st9ktc36fltg69mssycccssg4698
 
 creation_rules:
   - path_regex: secrets/personal\.yaml$
@@ -8,3 +9,4 @@ creation_rules:
       - age:
           - *home-laptop
           - *master
+          - *office

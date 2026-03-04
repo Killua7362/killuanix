@@ -87,7 +87,7 @@ in {
     # services.kdeconnect.enable = true;
 
     services.kanshi = {
-      enable = true;
+      enable = false;
       systemdTarget = "";
 
       settings = [
@@ -113,6 +113,20 @@ in {
                   {
                     criteria = "eDP-1";
                     status = "disable";
+                  }
+              ];
+          }
+          {
+              profile.name = "office";
+              profile.outputs = [
+
+                  {
+                    criteria = "HDMI-A-1";
+                    status = "enable";
+                  }
+                  {
+                    criteria = "eDP-1";
+                    status = "enable";
                   }
               ];
           }

@@ -271,6 +271,13 @@ docker-compose
       cups
     ];
 
+
+    fonts.packages = with pkgs; [
+      nerd-fonts.fira-code
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.hack
+    ];
+
   virtualisation.virtualbox.host.enable = true;
   users.extraGroups.vboxusers.members = ["killua"];
   virtualisation.virtualbox.host.enableExtensionPack = true;

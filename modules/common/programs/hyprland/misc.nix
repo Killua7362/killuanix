@@ -1,5 +1,8 @@
 { lib, ... }: {
   wayland.windowManager.hyprland.settings = {
+      xwayland = {
+        force_zero_scaling = true;
+      };
       misc = {
           background_color = "rgba(131313FF)";
           disable_hyprland_logo = true;

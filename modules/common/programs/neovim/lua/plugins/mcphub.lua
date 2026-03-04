@@ -3,6 +3,7 @@ local isNixCats = require("nixCatsUtils").isNixCats
 
 return {
   "ravitemer/mcphub.nvim",
+  enabled = false,
   dependencies = {
     "nvim-lua/plenary.nvim",
   },

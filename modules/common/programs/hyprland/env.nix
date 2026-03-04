@@ -25,6 +25,7 @@ let
     QT_ACCESSIBILITY ="1";
     QT_LINUX_ACCESSIBILITY_ALWAYS_ON ="1";
     WAYLAND_DISPLAY="wayland-1";
+    env = "GDK_SCALE,1";
   };
 in {
   wayland.windowManager.hyprland.settings = {
