@@ -1,6 +1,12 @@
 #!/bin/bash
 
-echo "Connecting to GlobalProtect VPN..."
+cp /etc/resolv.conf /etc/resolv.conf.pre-vpn
+
+cleanup() {
+    echo "Restoring DNS..."
+    cp /etc/resolv.conf.pre-vpn /etc/resolv.conf
+}
+trap cleanup EXIT INT TERM HUP
 
 openconnect \
     --protocol=gp \

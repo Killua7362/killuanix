@@ -234,6 +234,12 @@ chaotic.nyx = {
       launcher_window = {
         opacity = 0.98;
       };
+      providers = {
+          applications = {
+              launchPrefix = "uwsm app --";
+              defaultAction = "focus";
+            };
+        };
     };
     extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
       bluetooth
