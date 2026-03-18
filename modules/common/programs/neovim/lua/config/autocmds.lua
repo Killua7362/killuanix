@@ -15,15 +15,15 @@
 -- })
 
 vim.api.nvim_create_autocmd("VimLeave", {
-  pattern = "*",
-  command = "silent !zellij action switch-mode normal",
+	pattern = "*",
+	command = "silent !zellij action switch-mode normal",
 })
 
 vim.api.nvim_create_autocmd({ "FileType" }, {
-  pattern = { "dap-view", "dap-view-term", "dap-repl" }, -- dap-repl is set by `nvim-dap`
-  callback = function(args)
-    vim.keymap.set("n", "q", "<C-w>q", { buffer = args.buf })
-    vim.keymap.set({"n","i"}, "<C-n>", "<down>", { buffer = args.buf })
-    vim.keymap.set({"n","i"}, "<C-p>", "<up>", { buffer = args.buf })
-  end,
+	pattern = { "dap-view", "dap-view-term", "dap-repl" }, -- dap-repl is set by `nvim-dap`
+	callback = function(args)
+		vim.keymap.set("n", "q", "<C-w>q", { buffer = args.buf })
+		vim.keymap.set({ "n", "i" }, "<C-n>", "<down>", { buffer = args.buf })
+		vim.keymap.set({ "n", "i" }, "<C-p>", "<up>", { buffer = args.buf })
+	end,
 })

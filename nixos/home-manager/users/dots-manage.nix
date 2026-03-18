@@ -1,7 +1,6 @@
-{
-  pkgs,
-  config,
-  ...
+{ pkgs
+, config
+, ...
 }: {
   xdg.configFile = {
     "/home/killua/.config/aconfmgr" = {

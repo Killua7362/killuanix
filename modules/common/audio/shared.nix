@@ -6,18 +6,18 @@
   # ╚══════════════════════════════════════════════════════════════════╝
   home.packages = with pkgs; [
     # Audio GUI tools
-    pavucontrol           # PulseAudio-compatible GTK mixer
-    pwvucontrol           # PipeWire-native volume control
-    helvum                # PipeWire patchbay (visual node graph)
-    qpwgraph              # Alternative Qt-based patchbay
+    pavucontrol # PulseAudio-compatible GTK mixer
+    pwvucontrol # PipeWire-native volume control
+    helvum # PipeWire patchbay (visual node graph)
+    qpwgraph # Alternative Qt-based patchbay
 
     # Audio CLI tools
-    pamixer               # CLI volume control
-    playerctl             # MPRIS media player control
-    pulsemixer            # TUI mixer
+    pamixer # CLI volume control
+    playerctl # MPRIS media player control
+    pulsemixer # TUI mixer
 
     # Bluetooth GUI
-    blueman               # Bluetooth manager + applet
+    blueman # Bluetooth manager + applet
   ];
 
   # ╔══════════════════════════════════════════════════════════════════╗
@@ -146,23 +146,23 @@
       }
     '';
 
-"wireplumber/wireplumber.conf.d/52-bluetooth-nrec.conf".text = ''
-  monitor.bluez.rules = [
-    {
-      matches = [
+    "wireplumber/wireplumber.conf.d/52-bluetooth-nrec.conf".text = ''
+      monitor.bluez.rules = [
         {
-          device.name = "~bluez_card.*"
+          matches = [
+            {
+              device.name = "~bluez_card.*"
+            }
+          ]
+          actions = {
+            update-props = {
+              bluez5.auto-connect  = [ a2dp_sink ]
+              bluez5.hw-volume     = [ hfp_ag hsp_ag a2dp_sink ]
+            }
+          }
         }
       ]
-      actions = {
-        update-props = {
-          bluez5.auto-connect  = [ a2dp_sink ]
-          bluez5.hw-volume     = [ hfp_ag hsp_ag a2dp_sink ]
-        }
-      }
-    }
-  ]
-'';
+    '';
 
     # ── WirePlumber: ALSA tuning ──────────────────────────────────
     "wireplumber/wireplumber.conf.d/50-alsa-config.conf".text = ''

@@ -1,4 +1,4 @@
- { config, pkgs,lib, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   programs.zsh = {
@@ -17,7 +17,7 @@
     shellAliases = {
       "oil" = "~/killuanix/DotFiles/scripts/oil-ssh.sh";
       ".." = "cd ..";
-      "ls" = "eza --color=auto --group-directories-first --classify";
+      "ls" = "eza --color=auto --group-directories-first --classify always";
       "lst" = "eza --color=auto --group-directories-first --classify --tree";
       "la" = "eza --color=auto --group-directories-first --classify --all";
       "ll" = "eza --color=auto --group-directories-first --classify --all --long --header --group";
@@ -53,7 +53,7 @@
       MANWIDTH = "999";
       LG_CONFIG_FILE = "$HOME/.config/lazygit.yml";
       XDG_CONFIG_HOME = "$HOME/.config";
-      
+
       JAVA_HOME = "/home/killua/Downloads/java/jdk1.8.0_291";
       JBOSS_HOME = "/home/killua/Documents/Boeing/jboss-eap-7.2";
       JBOSS_ROOT = "/home/killua/Documents/Boeing/jboss-eap-7.2";
@@ -61,19 +61,19 @@
       ATG_HOME = "/home/killua/ATG/ATG11.3.2";
       ATG_ROOT = "/home/killua/ATG/ATG11.3.2";
       DYNAMO_HOME = "/home/killua/ATG/ATG11.3.2/home";
-      
+
       POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD = "true";
       LANGUAGE = "en_US.UTF-8";
       LC_ALL = "en_US.UTF-8";
       LANG = "en_US.UTF-8";
       LC_CTYPE = "en_US.UTF-8";
-      
+
       FZF_DEFAULT_COMMAND = "fd --type f --hidden --follow";
       FZF_DEFAULT_OPTS = "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672";
       FZF_CTRL_T_OPTS = "";
       FZF_COMPLETION_OPTS = "--height=60% --border --margin=1 --padding=1";
       FZF_TMUX = "1";
-      
+
       ZELLIJ_AUTO_EXIT = "false";
       ZELLIJ_AUTO_ATTACH = "false";
     };
@@ -117,12 +117,23 @@
         popd
       }
 
+      boeingvpn() {
+        openconnect \
+            --protocol=gp \
+            --user=dj216f \
+            --usergroup=gateway \
+            --script-tun \
+            --script "ocproxy -D 1080 -v" \
+            https://ta.as2.cbc.vpn.boeing.net
+      }
+
       chrome-socks() {
         google-chrome \
           --proxy-server="socks5://127.0.0.1:1080" \
           --proxy-bypass-list="<-loopback>" \
           --user-data-dir="$HOME/.config/teams-vpn-chrome" \
-          --no-first-run
+          --no-first-run \
+          --ignore-certificate-errors
       }
 
       pacsave() {
@@ -153,47 +164,63 @@
 
       bindkey "\'\'$\{key[Up]\}" up-line-or-search
 
-      [[ ! -v functions[command_not_found_handler] ]] || unfunction command_not_found_handler
+      # command-not-found disable
+      # [[ ! -v functions[command_not_found_handler] ]] || unfunction command_not_found_handler
 
       bindkey -M emacs "^ " globalias
       bindkey -M viins "^ " globalias
       bindkey -M emacs " " magic-space
       bindkey -M viins " " magic-space
+
+      opencode() {
+        local PROJ="$(basename "$(pwd)")"
+        local NAME="open-code-''${PROJ}"
+ 
+        podman run --userns=keep-id --rm --tty --interactive \
+          --name "''${NAME}" \
+          --add-host=host.docker.internal:host-gateway \
+          -v "''${HOME}/.local/state/opencode:/home/node/.local/state/opencode" \
+          -v "''${HOME}/.local/share/opencode:/home/node/.local/share/opencode" \
+          -v "''${HOME}/.config/opencode:/home/node/.config/opencode" \
+          -v "$(pwd):/app:rw" \
+          open-code "''$@"
+      }
+
     '';
     antidote = {
-        enable = true;
-        plugins = [
-          "getantidote/use-omz"
-          "jeffreytse/zsh-vi-mode"
-          "Aloxaf/fzf-tab"
-          "joshskidmore/zsh-fzf-history-search"
-          "Bhupesh-V/ugit"
-          "babarot/enhancd"
-          "ohmyzsh/ohmyzsh path:lib"
-          "ohmyzsh/ohmyzsh path:plugins/extract"
-          "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
-          "ohmyzsh/ohmyzsh path:plugins/copybuffer"
-          "ohmyzsh/ohmyzsh path:plugins/copyfile"
-          "ohmyzsh/ohmyzsh path:plugins/copypath"
-          "ohmyzsh/ohmyzsh path:plugins/extract"
-          "ohmyzsh/ohmyzsh path:plugins/globalias"
-          "ohmyzsh/ohmyzsh path:plugins/magic-enter"
-          "ohmyzsh/ohmyzsh path:plugins/fancy-ctrl-z"
-          "ohmyzsh/ohmyzsh path:plugins/otp"
-          "ohmyzsh/ohmyzsh path:plugins/zoxide"
-          "ohmyzsh/ohmyzsh path:plugins/git"
-          "ohmyzsh/ohmyzsh path:plugins/golang"
-          "ohmyzsh/ohmyzsh path:plugins/python"
-          "romkatv/zsh-bench kind:path"
-          "zsh-users/zsh-completions path:src kind:fpath"
-          "zsh-users/zsh-autosuggestions"
-          "zsh-users/zsh-history-substring-search"
-          "zdharma-continuum/fast-syntax-highlighting"
-          "wfxr/forgit"
-          # "zsh-users/zsh-autosuggestions"
-          # "zsh-users/zsh-syntax-highlighting"
-        ];
-        useFriendlyNames = true;
-      };
+      enable = true;
+      plugins = [
+        "getantidote/use-omz"
+        "jeffreytse/zsh-vi-mode"
+        "Aloxaf/fzf-tab"
+        "joshskidmore/zsh-fzf-history-search"
+        "Bhupesh-V/ugit"
+        "babarot/enhancd"
+        "ohmyzsh/ohmyzsh path:lib"
+        "ohmyzsh/ohmyzsh path:plugins/extract"
+        "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
+        "ohmyzsh/ohmyzsh path:plugins/copybuffer"
+        "ohmyzsh/ohmyzsh path:plugins/copyfile"
+        "ohmyzsh/ohmyzsh path:plugins/copypath"
+        "ohmyzsh/ohmyzsh path:plugins/extract"
+        "ohmyzsh/ohmyzsh path:plugins/globalias"
+        "ohmyzsh/ohmyzsh path:plugins/magic-enter"
+        "ohmyzsh/ohmyzsh path:plugins/fancy-ctrl-z"
+        "ohmyzsh/ohmyzsh path:plugins/otp"
+        "ohmyzsh/ohmyzsh path:plugins/zoxide"
+        "ohmyzsh/ohmyzsh path:plugins/git"
+        "ohmyzsh/ohmyzsh path:plugins/golang"
+        "ohmyzsh/ohmyzsh path:plugins/python"
+        "romkatv/zsh-bench kind:path"
+        "zsh-users/zsh-completions path:src kind:fpath"
+        "zsh-users/zsh-autosuggestions"
+        "zsh-users/zsh-history-substring-search"
+        "zdharma-continuum/fast-syntax-highlighting"
+        "wfxr/forgit"
+        # "zsh-users/zsh-autosuggestions"
+        # "zsh-users/zsh-syntax-highlighting"
+      ];
+      useFriendlyNames = true;
+    };
   };
 }

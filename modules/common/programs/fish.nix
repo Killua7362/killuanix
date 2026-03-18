@@ -2,70 +2,70 @@
 
 {
 
-programs.fish = {
-	enable = true;
+  programs.fish = {
+    enable = true;
     plugins = [
-        # pkgs.fishPlugins.z
-        # pkgs.fishPlugins.fifc
-        # pkgs.fishPlugins.fzf-fish
-        # pkgs.fishPlugins.nvm
+      # pkgs.fishPlugins.z
+      # pkgs.fishPlugins.fifc
+      # pkgs.fishPlugins.fzf-fish
+      # pkgs.fishPlugins.nvm
     ];
     shellAliases = {
-        "oil" = "~/killuanix/DotFiles/scripts/oil-ssh.sh";
-        ".." = "cd ..";
-        "ls" = "/home/killua/.nix-profile/bin/exa --color=auto --group-directories-first --classify";
-        "lst" = "$ls --tree";
-        "la" = "$ls --all";
-        "ll" = "$ls --all --long --header --group";
-        "llt" = "$ll --tree";
-        "tree" = "$ls --tree";
-        "cdtemp" = "cd `mktemp -d`";
-        "cp" = "cp -iv";
-        "ln" = "ln -v";
-        "mkdir" = "mkdir -vp";
-        "mv" = "mv -iv";
-        "dh" = "du -h";
-        "df" = "df -h";
-        "su" = "sudo -E su -m";
-        "sysu" = "systemctl --user";
-        "jnsu" = "journalctl --user";
-        "svim" = "sudoedit";
-        "c" = "clear";
-        "t" = "tmux attach || tmux";
-        "tl" = "tmux ls";
-        "ta" = "tmux a -t \$1";
-        "td" = "tmux kill-session -t \$1";
-        "tn" = "tmux new-session";
-        "ts" = "~/killuanix/scripts/tmux-sessionizer.sh";
-        "ovpn-connect" = "sudo openvpn --config vpn/goutam-pivotree.ovpn --auth-retry interact";
-        "annepro2_tools" = "/home/killua/repo/AnnePro2-Tools/target/release/annepro2_tools";
-        "d" = "nvim -d";
+      "oil" = "~/killuanix/DotFiles/scripts/oil-ssh.sh";
+      ".." = "cd ..";
+      "ls" = "/home/killua/.nix-profile/bin/exa --color=auto --group-directories-first --classify";
+      "lst" = "$ls --tree";
+      "la" = "$ls --all";
+      "ll" = "$ls --all --long --header --group";
+      "llt" = "$ll --tree";
+      "tree" = "$ls --tree";
+      "cdtemp" = "cd `mktemp -d`";
+      "cp" = "cp -iv";
+      "ln" = "ln -v";
+      "mkdir" = "mkdir -vp";
+      "mv" = "mv -iv";
+      "dh" = "du -h";
+      "df" = "df -h";
+      "su" = "sudo -E su -m";
+      "sysu" = "systemctl --user";
+      "jnsu" = "journalctl --user";
+      "svim" = "sudoedit";
+      "c" = "clear";
+      "t" = "tmux attach || tmux";
+      "tl" = "tmux ls";
+      "ta" = "tmux a -t \$1";
+      "td" = "tmux kill-session -t \$1";
+      "tn" = "tmux new-session";
+      "ts" = "~/killuanix/scripts/tmux-sessionizer.sh";
+      "ovpn-connect" = "sudo openvpn --config vpn/goutam-pivotree.ovpn --auth-retry interact";
+      "annepro2_tools" = "/home/killua/repo/AnnePro2-Tools/target/release/annepro2_tools";
+      "d" = "nvim -d";
     };
     functions = {
-    nix_switch = ''
+      nix_switch = ''
         function nix_switch
             pushd ~/killuanix/
             env TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
             env TERM=xterm-256color ./result/activate
             popd
         end
-        '';
-        pacsave = ''
-            function pacsave
-                pushd ~/killuanix/archnix/aconfmgr/
-                ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes save
-                popd
-            end
-        '';
-        pacapply = ''
-            function pacapply
-                pushd ~/killuanix/archnix/aconfmgr/
-                ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes apply
-                popd
-            end
-        '';
+      '';
+      pacsave = ''
+        function pacsave
+            pushd ~/killuanix/archnix/aconfmgr/
+            ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes save
+            popd
+        end
+      '';
+      pacapply = ''
+        function pacapply
+            pushd ~/killuanix/archnix/aconfmgr/
+            ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes apply
+            popd
+        end
+      '';
     };
-	shellInit = ''
+    shellInit = ''
 
 starship init fish | source
 
@@ -125,6 +125,6 @@ set -x ZELLIJ_AUTO_EXIT false
 set -x ZELLIJ_AUTO_ATTACH false
 
 '';
-};
+  };
 
 }

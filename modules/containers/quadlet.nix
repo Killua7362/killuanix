@@ -4,22 +4,20 @@
   imports = [
     ./portainer.nix
     ./mcphub.nix
-    ./officevm.nix
   ];
   # ── quadlet-nix: Declarative Portainer container ──
   virtualisation.quadlet = {
     # ── Declare the named volume ──
     volumes = {
       portainer_data = {
-        volumeConfig = {
-        };
+        volumeConfig = { };
       };
     };
 
     networks = {
       portainer-net = {
         networkConfig = {
-          subnets =[ "10.89.1.0/24"];
+          subnets = [ "10.89.1.0/24" ];
         };
       };
     };

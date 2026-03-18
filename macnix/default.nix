@@ -1,4 +1,4 @@
-{config, ...}: {
+{ config, ... }: {
   nixpkgs = {
     config = {
       allowUnfree = true;
@@ -11,7 +11,7 @@
       inherit (final.pkgs-x86) idris2;
     }));
   };
-  nix.nixPath = {nixpkgs = "${inputs.nixpkgs-unstable}";};
+  nix.nixPath = { nixpkgs = "${inputs.nixpkgs-unstable}"; };
   users.users."killua" = {
     home = "/Users/killua";
   };
@@ -28,5 +28,5 @@
 
   networking.computerName = "killua";
   networking.hostName = "killua";
-  networking.knownNetworkServices = ["Wi-Fi" "USB 10/100 LAN"];
+  networking.knownNetworkServices = [ "Wi-Fi" "USB 10/100 LAN" ];
 }

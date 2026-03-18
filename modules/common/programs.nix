@@ -1,13 +1,13 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}:  let
-     userConfig = inputs.self.commonModules.user.userConfig;
-     dotfilesPath = "${config.home.homeDirectory}/killuanix/DotFiles";
-   in
+{ config
+, pkgs
+, lib
+, inputs
+, ...
+}:
+let
+  userConfig = inputs.self.commonModules.user.userConfig;
+  dotfilesPath = "${config.home.homeDirectory}/killuanix/DotFiles";
+in
 {
   imports = [
     ../common/programs/kitty.nix
@@ -25,6 +25,7 @@
     ../common/programs/satty.nix
     ../common/programs/opencode.nix
     ../common/programs/spotify.nix
+    ../common/programs/desktopfile.nix
   ];
 
   config = {
