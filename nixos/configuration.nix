@@ -192,6 +192,9 @@ in
     docker-compose
     #globalprotect-openconnect
     #inputs.globalprotect-openconnect.packages.${pkgs.system}.default
+    ocproxy
+    hubstaff
+    distrobox
   ];
 
   system.stateVersion = "25.11";

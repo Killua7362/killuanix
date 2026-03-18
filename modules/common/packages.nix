@@ -91,7 +91,7 @@
       cliphist
       libreoffice-qt6-fresh
       nwg-displays
-      sublime3
+      sublime4
     ];
 
   # Development packages

@@ -29,6 +29,17 @@ in
       "http \"https://dev.azure.com\"" = {
         proxy = "socks5h://127.0.0.1:1080";
       };
+      includes = [
+        {
+          condition = "hasconfig:remote.*.url:https://dev.azure.com/**";
+          contents = {
+            user = {
+              name = userConfig.work.boeing.name;
+              email = userConfig.work.boeing.email;
+            };
+          };
+        }
+      ];
     };
 
     includes = [

@@ -20,13 +20,14 @@
 
   nix.package = pkgs.nix;
 
-  nixpkgs.overlays = [
-    inputs.nur.overlays.default
-    inputs.neovim-nightly-overlay.overlays.default
-    inputs.yazi.overlays.default
-    inputs.nix-yazi-flavors.overlays.default
-    inputs.nixgl.overlay
-  ];
+    nixpkgs.overlays = [
+      inputs.nur.overlays.default
+      inputs.neovim-nightly-overlay.overlays.default
+      inputs.yazi.overlays.default
+      inputs.nix-yazi-flavors.overlays.default
+      inputs.nixgl.overlay
+      inputs.claude-code.overlays.default
+    ];
 
   targets.genericLinux.nixGL.packages = import nixgl { inherit pkgs; };
   targets.genericLinux.nixGL.defaultWrapper = "mesa";
