@@ -1,21 +1,22 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config
+, pkgs
+, lib
+, inputs
+, ...
+}:
+let
   userConfig = inputs.self.commonModules.user.userConfig;
   commonPackages = inputs.self.commonModules.packages.commonPackages pkgs inputs;
   terminalPackages = inputs.self.commonModules.packages.terminalPackages pkgs;
   desktopPackages = inputs.self.commonModules.packages.desktopPackages pkgs;
   devPackages = inputs.self.commonModules.packages.devPackages pkgs;
   macPackages = inputs.self.commonModules.packages.macPackages pkgs;
-in {
+in
+{
   imports = [
+    ../common/sops.nix
     inputs.self.commonModules.programs
     ../common/audio/shared.nix
-    ../common/sops.nix
   ];
 
   config = {
@@ -27,11 +28,11 @@ in {
     nixpkgs.config.allowUnfree = true;
 
     nixpkgs.config.permittedInsecurePackages = [
-        "openssl-1.1.1w"
+      "openssl-1.1.1w"
     ];
 
     # Common packages - these will be available on all systems
-    home.packages = commonPackages ++ terminalPackages ++ devPackages ++ (if pkgs.stdenv.isLinux then desktopPackages else []) ++ (if pkgs.stdenv.isDarwin then macPackages else []);
+    home.packages = commonPackages ++ terminalPackages ++ devPackages ++ (if pkgs.stdenv.isLinux then desktopPackages else [ ]) ++ (if pkgs.stdenv.isDarwin then macPackages else [ ]);
 
     # Platform-specific home directory
     home.username = userConfig.username;
@@ -60,8 +61,12 @@ in {
         then {
           TERMINFO_DIRS = "${pkgs.kitty.terminfo.outPath}/share/terminfo";
         }
-        else {}
+        else { }
       );
+
+    # home.sessionVariablesExtra = ''
+    #   export XDG_DATA_DIRS="$HOME/.local/share''${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
+    # '';
 
     # Platform-specific services
     services.lorri.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
@@ -92,55 +97,55 @@ in {
 
       settings = [
         {
-            profile.name = "undocked";
-            profile.outputs = [
-              {
-                criteria = "eDP-1";
-                scale = 1.1;
-                status = "enable";
-              }
-            ];
-          }
-          {
-              profile.name = "docked";
-              profile.outputs = [
+          profile.name = "undocked";
+          profile.outputs = [
+            {
+              criteria = "eDP-1";
+              scale = 1.1;
+              status = "enable";
+            }
+          ];
+        }
+        {
+          profile.name = "docked";
+          profile.outputs = [
 
-                  {
-                    criteria = "DP-1";
-                    position = "0,0";
-                    status = "enable";
-                  }
-                  {
-                    criteria = "eDP-1";
-                    status = "disable";
-                  }
-              ];
-          }
-          {
-              profile.name = "office";
-              profile.outputs = [
+            {
+              criteria = "DP-1";
+              position = "0,0";
+              status = "enable";
+            }
+            {
+              criteria = "eDP-1";
+              status = "disable";
+            }
+          ];
+        }
+        {
+          profile.name = "office";
+          profile.outputs = [
 
-                  {
-                    criteria = "HDMI-A-1";
-                    status = "enable";
-                  }
-                  {
-                    criteria = "eDP-1";
-                    status = "enable";
-                  }
-              ];
-          }
+            {
+              criteria = "HDMI-A-1";
+              status = "enable";
+            }
+            {
+              criteria = "eDP-1";
+              status = "enable";
+            }
+          ];
+        }
       ];
     };
 
-  fonts.fontconfig.enable = true;
-  home.pointerCursor = {
-    gtk.enable = true;
-    # x11.enable = true;
-    package = pkgs.bibata-cursors;
-    name = "Bibata-Modern-Classic";
-    size = 16;
-  };
+    fonts.fontconfig.enable = true;
+    home.pointerCursor = {
+      gtk.enable = true;
+      # x11.enable = true;
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Modern-Classic";
+      size = 16;
+    };
     gtk = {
       enable = true;
 
@@ -194,58 +199,58 @@ in {
         font-name = "JetBrainsMono Nerd Font 11";
       };
     };
-  xdg.configFile."uwsm/env".source = "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh"; 
-chaotic.nyx = {
-  cache.enable = true;
-};
-  services.vicinae = {
-    enable = true;
-    systemd = {
+    xdg.configFile."uwsm/env".source = "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh";
+    chaotic.nyx = {
+      cache.enable = true;
+    };
+    services.vicinae = {
       enable = true;
-      autoStart = true;
-      environment = {
-        USE_LAYER_SHELL = 1;
-      };
-    };
-    settings = {
-      close_on_focus_loss = false;
-      consider_preedit = true;
-      pop_to_root_on_close = true;
-      favicon_service = "twenty";
-      search_files_in_root = true;
-      font = {
-        normal = {
-          size = 12;
-          normal = "Maple Nerd Font";
+      systemd = {
+        enable = true;
+        autoStart = true;
+        environment = {
+          USE_LAYER_SHELL = 1;
         };
       };
-      theme = {
-        name = "vicinae-dark";
-        light = {
-          name = "vicinae-light";
-          icon_theme = "default";
+      settings = {
+        close_on_focus_loss = false;
+        consider_preedit = true;
+        pop_to_root_on_close = true;
+        favicon_service = "twenty";
+        search_files_in_root = true;
+        font = {
+          normal = {
+            size = 12;
+            normal = "Maple Nerd Font";
+          };
         };
-        dark = {
+        theme = {
           name = "vicinae-dark";
-          icon_theme = "default";
+          light = {
+            name = "vicinae-light";
+            icon_theme = "default";
+          };
+          dark = {
+            name = "vicinae-dark";
+            icon_theme = "default";
+          };
+        };
+        keybinding = "emacs";
+        launcher_window = {
+          opacity = 0.98;
         };
       };
-      keybinding = "emacs";
-      launcher_window = {
-        opacity = 0.98;
-      };
+      extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
+        bluetooth
+        nix
+        power-profile
+      ];
     };
-    extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
-      bluetooth
-      nix
-      power-profile
-    ];
-  };
 
-  services.gnome-keyring = {
-    enable = true;
-    components = [ "secrets" "pkcs11" ];
-  };
+    services.gnome-keyring = {
+      enable = true;
+      components = [ "secrets" "pkcs11" ];
+    };
 
   };
 }

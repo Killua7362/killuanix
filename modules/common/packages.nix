@@ -34,7 +34,6 @@
       age
       ssh-to-age
     ]) ++ [
-      
     ];
 
   # Terminal and shell packages
@@ -43,6 +42,16 @@
       delta
       zplug
       eza
+      proxychains-ng
+      (writeShellApplication {
+        name = "ns";
+        runtimeInputs = with pkgs; [
+          fzf
+          nix-search-tv
+        ];
+        text = builtins.readFile "${pkgs.nix-search-tv.src}/nixpkgs.sh";
+      })
+      (callPackage ./programs/openchamber/default.nix { })
     ];
 
   # Desktop packages (Linux specific)
@@ -66,13 +75,13 @@
       teleport
       nerd-fonts.jetbrains-mono
       # Adwaita theming
-      adw-gtk3              # Modern Adwaita look for GTK3 apps
-      adwaita-icon-theme    # Icons and cursors
-      gnome-themes-extra    # Extra Adwaita assets (optional, for full coverage)
+      adw-gtk3 # Modern Adwaita look for GTK3 apps
+      adwaita-icon-theme # Icons and cursors
+      gnome-themes-extra # Extra Adwaita assets (optional, for full coverage)
 
       # QT Adwaita integration
-      adwaita-qt            # Qt5 Adwaita style
-      adwaita-qt6           # Qt6 Adwaita style
+      adwaita-qt # Qt5 Adwaita style
+      adwaita-qt6 # Qt6 Adwaita style
       gnome-keyring
       libsecret
       seahorse
@@ -82,6 +91,7 @@
       cliphist
       libreoffice-qt6-fresh
       nwg-displays
+      sublime3
     ];
 
   # Development packages

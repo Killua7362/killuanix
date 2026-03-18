@@ -1,25 +1,24 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}:{
+{ config
+, pkgs
+, lib
+, inputs
+, ...
+}: {
   programs.yazi = {
-      enable = true;
-      enableZshIntegration = true;
-      settings = {
-        yazi = lib.importTOML ./settings.toml;
-        keymap = lib.importTOML ./keymap.toml;
-        theme = lib.importTOML ./theme.toml;      
-      };
-      flavors = {
-        inherit (pkgs.yaziFlavors)
+    enable = true;
+    enableZshIntegration = true;
+    settings = {
+      yazi = lib.importTOML ./settings.toml;
+      keymap = lib.importTOML ./keymap.toml;
+      theme = lib.importTOML ./theme.toml;
+    };
+    flavors = {
+      inherit (pkgs.yaziFlavors)
         vscode-dark-plus;
-      };
-      plugins = {
-        inherit (pkgs.yaziPlugins) mount;
-      };
+    };
+    plugins = {
+      inherit (pkgs.yaziPlugins) mount;
+    };
   };
 
   # programs.yazi.yaziPlugins = {

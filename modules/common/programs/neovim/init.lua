@@ -7,21 +7,21 @@ require("nixCatsUtils").setup({
 })
 
 if not require("nixCatsUtils").isNixCats then
-  local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-  if not (vim.uv or vim.loop).fs_stat(lazypath) then
-    local lazyrepo = "https://github.com/folke/lazy.nvim.git"
-    local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
-    if vim.v.shell_error ~= 0 then
-      vim.api.nvim_echo({
-        { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-        { out, "WarningMsg" },
-        { "\nPress any key to exit..." },
-      }, true, {})
-      vim.fn.getchar()
-      os.exit(1)
-    end
-  end
-  vim.opt.rtp:prepend(lazypath)
+	local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+	if not (vim.uv or vim.loop).fs_stat(lazypath) then
+		local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+		local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+		if vim.v.shell_error ~= 0 then
+			vim.api.nvim_echo({
+				{ "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+				{ out, "WarningMsg" },
+				{ "\nPress any key to exit..." },
+			}, true, {})
+			vim.fn.getchar()
+			os.exit(1)
+		end
+	end
+	vim.opt.rtp:prepend(lazypath)
 end
 
 -- NOTE: You might want to move the lazy-lock.json file
@@ -39,15 +39,15 @@ local lazyOptions = {
 		enabled = true, -- automatically check for plugin updates
 		notify = false, -- get a notification when new updates are found
 	},
-  defaults = {
-    -- By default, only LazyVim plugins will be lazy-loaded. Your custom plugins will load during startup.
-    -- If you know what you're doing, you can set this to `true` to have all your custom plugins lazy-loaded by default.
-    lazy = false,
-    -- It's recommended to leave version=false for now, since a lot the plugin that support versioning,
-    -- have outdated releases, which may break your Neovim install.
-    version = false, -- always use the latest git commit
-    -- version = "*", -- try installing the latest stable version for plugins that support semver
-  },
+	defaults = {
+		-- By default, only LazyVim plugins will be lazy-loaded. Your custom plugins will load during startup.
+		-- If you know what you're doing, you can set this to `true` to have all your custom plugins lazy-loaded by default.
+		lazy = false,
+		-- It's recommended to leave version=false for now, since a lot the plugin that support versioning,
+		-- have outdated releases, which may break your Neovim install.
+		version = false, -- always use the latest git commit
+		-- version = "*", -- try installing the latest stable version for plugins that support semver
+	},
 	-- ui config
 	ui = {
 		border = "rounded",

@@ -43,12 +43,12 @@ let
 
   mcp-server-src = pkgs.fetchFromGitHub {
     owner = "ravitemer";
-    repo  = "mcp-hub";
-    rev   = "9c7670a4c341ed3cf738a6242c0fde1cea40bccf";
-    hash  = "sha256-KakvXZf0vjdqzyT+LsAKHEr4GLICGXPmxl1hZ3tI7Yg=";
+    repo = "mcp-hub";
+    rev = "9c7670a4c341ed3cf738a6242c0fde1cea40bccf";
+    hash = "sha256-KakvXZf0vjdqzyT+LsAKHEr4GLICGXPmxl1hZ3tI7Yg=";
   };
 
-  buildContext = pkgs.runCommand "mcp-server-context" {} ''
+  buildContext = pkgs.runCommand "mcp-server-context" { } ''
     cp -r ${mcp-server-src} $out
     chmod -R u+w $out
     cp ${dockerignore} $out/.dockerignore
@@ -56,26 +56,26 @@ let
 in
 {
   virtualisation.quadlet = {
-    builds= {
+    builds = {
       mcp-server = {
-          buildConfig = {
-              tag = "localhost/mcp-server:latest";
-              file = "${mcp-dockerfile}";
-              workdir = "${buildContext}";
-              pull = "missing";
-          };
-          serviceConfig = {
-            TimeoutStartSec = 900;
-          };
+        buildConfig = {
+          tag = "localhost/mcp-server:latest";
+          file = "${mcp-dockerfile}";
+          workdir = "${buildContext}";
+          pull = "missing";
+        };
+        serviceConfig = {
+          TimeoutStartSec = 900;
+        };
 
-          unitConfig = {
-            Description = "Build MCP Server OCI image";
-          };
+        unitConfig = {
+          Description = "Build MCP Server OCI image";
         };
       };
+    };
 
-      containers = {
-           mcp-server = {
+    containers = {
+      mcp-server = {
         autoStart = false;
 
         containerConfig = {
@@ -96,13 +96,13 @@ in
         };
 
         serviceConfig = {
-          Restart         = "always";
+          Restart = "always";
           TimeoutStartSec = 600;
         };
 
         unitConfig = {
           Description = "MCP Server - Model Context Protocol";
-          After    = [
+          After = [
             "network-online.target"
             "podman.socket"
             "mcp-server-build.service"
@@ -112,7 +112,7 @@ in
             "mcp-server-build.service"
           ];
         };
-        };
+      };
     };
   };
   xdg.configFile."mcp-server/mcp-servers.json" = {

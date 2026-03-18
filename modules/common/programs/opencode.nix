@@ -14,13 +14,12 @@
           };
           models = {
             "minimaxai/minimax-m2.1" = {
-                name = "MiniMax aiii";
-              };
+              name = "MiniMax aiii";
+            };
           };
         };
       };
-      mcp = {
-      };
+      mcp = { };
     };
   };
 }

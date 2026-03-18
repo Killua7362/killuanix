@@ -1,9 +1,8 @@
-{
-  inputs,
-  lib,
-  config,
-  pkgs,
-  ...
+{ inputs
+, lib
+, config
+, pkgs
+, ...
 }: {
   imports = [
     ../../modules/cross-platform
@@ -16,21 +15,21 @@
     inputs.nix-index-database.homeModules.default
     inputs.quadlet-nix.homeManagerModules.quadlet
     ../../modules/containers/quadlet.nix
-  inputs.spicetify-nix.homeManagerModules.default
+    inputs.spicetify-nix.homeManagerModules.default
   ];
 
   # NixOS-specific overlays
   nixpkgs.overlays = [
-     inputs.neovim-nightly-overlay.overlays.default
-     inputs.nur.overlays.default
+    inputs.neovim-nightly-overlay.overlays.default
+    inputs.nur.overlays.default
   ];
 
   # NixOS-specific packages
   home.packages = with pkgs; [
     jetbrains.idea
     jetbrains.webstorm
-#    inputs.quickshell.packages.x86_64-linux.default
-#	fish
+    #    inputs.quickshell.packages.x86_64-linux.default
+    #	fish
     inputs.antigravity-nix.packages.x86_64-linux.default
     #$javaPackages.compiler.openjdk8
     claude-code
@@ -41,10 +40,10 @@
 
   programs.zed-editor.package = inputs.zed-editor-flake.packages.${pkgs.stdenv.hostPlatform.system}.zed-editor-bin;
 
-    wayland.windowManager.hyprland = {
-      package = null;
-      portalPackage = null;
-    };
+  wayland.windowManager.hyprland = {
+    package = null;
+    portalPackage = null;
+  };
 
   # NixOS-specific systemd configuration
   systemd.user.startServices = "sd-switch";

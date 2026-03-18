@@ -28,7 +28,7 @@ in
           outline_thickness = 0;
           dots_size = 0.1;
           dots_spacing = 0.3;
-          outer_color = "$entry_border_color";  # Note: This variable wasn't defined in your original
+          outer_color = "$entry_border_color"; # Note: This variable wasn't defined in your original
           inner_color = entry_background_color;
           font_color = entry_color;
           fade_on_empty = true;

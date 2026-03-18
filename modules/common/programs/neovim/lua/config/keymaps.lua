@@ -4,12 +4,12 @@
 --
 
 local function nnoremap(mode, to, from, desc)
-  return vim.keymap.set(mode, to, from, { noremap = true, silent = true, nowait = true, desc = desc })
+	return vim.keymap.set(mode, to, from, { noremap = true, silent = true, nowait = true, desc = desc })
 end
 
 -- formatting
 vim.keymap.set({ "n", "x" }, "<leader>cf", function()
-  require("conform").format({ async = true, lsp_fallback = true })
+	require("conform").format({ async = true, lsp_fallback = true })
 end, { desc = "Format" })
 
 --some standard rebindings for colemak
@@ -67,14 +67,14 @@ vim.g.initial_dir = vim.fn.getcwd()
 
 -- Keymap to return to the initial directory
 vim.keymap.set("n", "<leader>cD", function()
-  vim.cmd("cd " .. vim.g.initial_dir)
+	vim.cmd("cd " .. vim.g.initial_dir)
 end, { desc = "Cd to initial directory" })
 
 nnoremap(
-  { "n" },
-  "<leader>ff",
-  LazyVim.pick("files", { cwd = require("mini.misc").find_root(), live = true, regex = true }),
-  "Find Files (root dir)"
+	{ "n" },
+	"<leader>ff",
+	LazyVim.pick("files", { cwd = require("mini.misc").find_root(), live = true, regex = true }),
+	"Find Files (root dir)"
 )
 
 -- nnoremap(
@@ -85,9 +85,9 @@ nnoremap(
 -- )
 
 nnoremap({ "n" }, "<leader>fE", function()
-  Snacks.explorer()
+	Snacks.explorer()
 end, "Explorer Snacks (cwd)")
 
 nnoremap({ "n" }, "<leader>fe", function()
-  Snacks.explorer({ cwd = require("mini.misc").find_root() })
+	Snacks.explorer({ cwd = require("mini.misc").find_root() })
 end, "Explorer Snacks (root dir)")
