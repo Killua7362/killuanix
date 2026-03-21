@@ -25,11 +25,8 @@ in
     ../common/programs/satty.nix
     ../common/programs/opencode.nix
     ../common/programs/spotify.nix
-<<<<<<< Updated upstream
     ../common/programs/desktopfile.nix
-=======
     ../common/programs/claude.nix
->>>>>>> Stashed changes
   ];
 
   config = {
