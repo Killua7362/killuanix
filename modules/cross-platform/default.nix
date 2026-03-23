@@ -1,22 +1,20 @@
-{ config
-, pkgs
-, lib
-, inputs
-, ...
-}:
-let
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}: let
   userConfig = inputs.self.commonModules.user.userConfig;
   commonPackages = inputs.self.commonModules.packages.commonPackages pkgs inputs;
   terminalPackages = inputs.self.commonModules.packages.terminalPackages pkgs;
   desktopPackages = inputs.self.commonModules.packages.desktopPackages pkgs;
   devPackages = inputs.self.commonModules.packages.devPackages pkgs;
   macPackages = inputs.self.commonModules.packages.macPackages pkgs;
-in
-{
+in {
   imports = [
     ../common/sops.nix
     inputs.self.commonModules.programs
-    ../common/audio/shared.nix
   ];
 
   config = {
@@ -32,7 +30,20 @@ in
     ];
 
     # Common packages - these will be available on all systems
-    home.packages = commonPackages ++ terminalPackages ++ devPackages ++ (if pkgs.stdenv.isLinux then desktopPackages else [ ]) ++ (if pkgs.stdenv.isDarwin then macPackages else [ ]);
+    home.packages =
+      commonPackages
+      ++ terminalPackages
+      ++ devPackages
+      ++ (
+        if pkgs.stdenv.isLinux
+        then desktopPackages
+        else []
+      )
+      ++ (
+        if pkgs.stdenv.isDarwin
+        then macPackages
+        else []
+      );
 
     # Platform-specific home directory
     home.username = userConfig.username;
@@ -61,7 +72,7 @@ in
         then {
           TERMINFO_DIRS = "${pkgs.kitty.terminfo.outPath}/share/terminfo";
         }
-        else { }
+        else {}
       );
 
     # home.sessionVariablesExtra = ''
@@ -87,7 +98,47 @@ in
       "org.vinegarhq.Sober"
       "io.github.nozwock.Packet"
       "us.zoom.Zoom"
+      "org.jdownloader.JDownloader"
     ];
+
+    # Pre-seed JDownloader2 flatpak config (download path, disable auto-updates, Real-Debrid)
+    home.activation.jdownloaderConfig = lib.mkIf (pkgs.stdenv.isLinux) (lib.hm.dag.entryAfter ["writeBoundary" "sopsNix"] (let
+      jdCfgDir = "${config.home.homeDirectory}/.var/app/org.jdownloader.JDownloader/data/jdownloader/cfg";
+      generalSettings = builtins.toJSON {
+        defaultdownloadfolder = "${config.home.homeDirectory}/Downloads/JDownloader";
+      };
+      updateSettings = builtins.toJSON {
+        autoupdateenabled = false;
+        autoinstallupdatesenabled = false;
+        installupdatesonexitenabled = false;
+        donotaskagainselectedbyuser = true;
+      };
+      realdebridSecret = config.sops.secrets."realdebrid_token".path;
+    in ''
+            mkdir -p "${jdCfgDir}"
+
+            # Download path
+            if [ ! -f "${jdCfgDir}/org.jdownloader.settings.GeneralSettings.json" ]; then
+              cat > "${jdCfgDir}/org.jdownloader.settings.GeneralSettings.json" <<'JSONEOF'
+      ${generalSettings}
+      JSONEOF
+            fi
+
+            # Disable auto-updates
+            if [ ! -f "${jdCfgDir}/org.jdownloader.update.UpdateSettings.json" ]; then
+              cat > "${jdCfgDir}/org.jdownloader.update.UpdateSettings.json" <<'JSONEOF'
+      ${updateSettings}
+      JSONEOF
+            fi
+
+            # Real-Debrid API token from sops
+            if [ -f "${realdebridSecret}" ] && [ ! -f "${jdCfgDir}/org.jdownloader.plugins.components.RealDebridCom.json" ]; then
+              RD_TOKEN=$(cat "${realdebridSecret}")
+              cat > "${jdCfgDir}/org.jdownloader.plugins.components.RealDebridCom.json" <<JSONEOF
+      {"apitoken":"$RD_TOKEN"}
+      JSONEOF
+            fi
+    ''));
 
     # services.kdeconnect.enable = true;
 
@@ -109,7 +160,6 @@ in
         {
           profile.name = "docked";
           profile.outputs = [
-
             {
               criteria = "DP-1";
               position = "0,0";
@@ -124,7 +174,6 @@ in
         {
           profile.name = "office";
           profile.outputs = [
-
             {
               criteria = "HDMI-A-1";
               status = "enable";
@@ -235,15 +284,15 @@ in
             icon_theme = "default";
           };
         };
-      keybinding = "emacs";
-      launcher_window = {
-        opacity = 0.98;
-      };
-      providers = {
+        keybinding = "emacs";
+        launcher_window = {
+          opacity = 0.98;
+        };
+        providers = {
           applications = {
-              launchPrefix = "uwsm app --";
-              defaultAction = "focus";
-            };
+            launchPrefix = "uwsm app --";
+            defaultAction = "focus";
+          };
         };
       };
       extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
@@ -255,8 +304,7 @@ in
 
     services.gnome-keyring = {
       enable = true;
-      components = [ "secrets" "pkcs11" ];
+      components = ["secrets" "pkcs11"];
     };
-
   };
 }

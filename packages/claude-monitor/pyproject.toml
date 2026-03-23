@@ -1,0 +1,9 @@
+[project]
+name = "claude-monitor-wrapper"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["claude-monitor>=3.1.0"]
+
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"

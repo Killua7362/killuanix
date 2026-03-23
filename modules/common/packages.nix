@@ -34,6 +34,11 @@
       age
       ssh-to-age
     ]) ++ [
+      (import ../../packages/claude-monitor/package.nix {
+        inherit pkgs;
+        inherit (pkgs) lib;
+        inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;
+      })
     ];
 
   # Terminal and shell packages

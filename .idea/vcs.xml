@@ -3,6 +3,10 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/DotFiles" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/DotFiles/archnix/DankMaterialShell/plugins/PowerUsage" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/DotFiles/archnix/quickshell/dms-back/plugins" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/DotFiles/archnix/quickshell/niri-caelestia-shell" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/archnix/aconfmgr" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/claude-code-router" vcs="Git" />
   </component>
 </project>

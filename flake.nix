@@ -107,11 +107,6 @@
       inputs.hyprland.follows = "hyprland";
     };
 
-    hyprscroller = {
-      url = "github:cpiber/hyprscroller";
-      inputs.hyprland.follows = "hyprland";
-    };
-
     yazi.url = "github:sxyazi/yazi";
     nix-yazi-plugins = {
       url = "github:lordkekz/nix-yazi-plugins?ref=yazi-v0.2.5";
@@ -138,6 +133,22 @@
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
     claude-code.url = "github:sadjow/claude-code-nix";
+
+    pyproject-nix = {
+      url = "github:pyproject-nix/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    uv2nix = {
+      url = "github:pyproject-nix/uv2nix";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.uv2nix.follows = "uv2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
