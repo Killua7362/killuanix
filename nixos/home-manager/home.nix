@@ -32,7 +32,6 @@
     #	fish
     inputs.antigravity-nix.packages.x86_64-linux.default
     #$javaPackages.compiler.openjdk8
-    claude-code
     claude-code-router
     #sublime
   ];

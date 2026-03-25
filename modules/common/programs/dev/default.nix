@@ -4,5 +4,6 @@
     ./lazygit.nix
     ./opencode.nix
     ./claude.nix
+    ./code-index.nix
   ];
 }

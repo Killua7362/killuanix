@@ -42,6 +42,7 @@
       "ovpn-connect" = "sudo openvpn --config vpn/goutam-pivotree.ovpn --auth-retry interact";
       "annepro2_tools" = "/home/killua/repo/AnnePro2-Tools/target/release/annepro2_tools";
       "d" = "nvim -d";
+      "restart-desktop" = "systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal pipewire pipewire-pulse wireplumber";
     };
 
     sessionVariables = {

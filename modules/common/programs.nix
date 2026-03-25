@@ -18,7 +18,6 @@ in {
     ../common/programs/audio
     ../common/programs/media
     ../common/programs/utils
-    ../common/programs/claude.nix
   ];
 
   config = {

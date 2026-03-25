@@ -33,7 +33,8 @@
       sops
       age
       ssh-to-age
-    ]) ++ [
+    ])
+    ++ [
       (import ../../packages/claude-monitor/package.nix {
         inherit pkgs;
         inherit (pkgs) lib;
@@ -56,7 +57,7 @@
         ];
         text = builtins.readFile "${pkgs.nix-search-tv.src}/nixpkgs.sh";
       })
-      (callPackage ./programs/openchamber/default.nix { })
+      (callPackage ./programs/openchamber/default.nix {})
     ];
 
   # Desktop packages (Linux specific)
