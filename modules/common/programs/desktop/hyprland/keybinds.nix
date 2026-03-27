@@ -93,7 +93,7 @@
       "Super SHIFT, O, layoutmsg, swapcol r"
       "Super SHIFT, E, layoutmsg, colresize -conf"
       "Super SHIFT, I, layoutmsg, colresize +conf"
-      "Super, U, exec, uuctl"
+      "Super, U, exec, uwsm-app -- rctl"
       "Super SHIFT, 1, movetoworkspace, 1"
       "Super SHIFT, 2, movetoworkspace, 2"
       "Super SHIFT, 3, movetoworkspace, 3"

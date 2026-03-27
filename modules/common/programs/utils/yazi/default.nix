@@ -7,11 +7,9 @@
   programs.yazi = {
     enable = true;
     enableZshIntegration = true;
-    settings = {
-      yazi = lib.importTOML ./yazi.toml;
-      keymap = lib.importTOML ./keymap.toml;
-      theme = lib.importTOML ./theme.toml;
-    };
+    settings = lib.importTOML ./yazi.toml;
+    keymap = lib.importTOML ./keymap.toml;
+    theme = lib.importTOML ./theme.toml;
     flavors = {
       inherit (pkgs.yaziFlavors)
         vscode-dark-plus;

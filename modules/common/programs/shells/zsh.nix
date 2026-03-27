@@ -103,6 +103,33 @@
           bindkey -M viins '^R' fzf_history_search
       }
 
+      # Colemak remappings for zsh vi mode (mirrors neovim keymaps.lua)
+      zvm_after_lazy_keybindings() {
+        # NEIO navigation (replaces HJKL)
+        bindkey -M vicmd 'n' vi-backward-char        # n → h (left)
+        bindkey -M vicmd 'e' down-line-or-history     # e → j (down)
+        bindkey -M vicmd 'i' up-line-or-history       # i → k (up)
+        bindkey -M vicmd 'o' vi-forward-char          # o → l (right)
+
+        # Displaced keys
+        bindkey -M vicmd 'u' vi-insert                # u → i (insert)
+        bindkey -M vicmd 'U' vi-insert-bol            # U → I (insert at bol)
+        bindkey -M vicmd 'y' vi-open-line-below       # y → o (open line below)
+        bindkey -M vicmd 'Y' vi-open-line-above       # Y → O (open line above)
+        bindkey -M vicmd 'j' vi-forward-word-end      # j → e (end of word)
+        bindkey -M vicmd 'h' vi-repeat-search         # h → n (next search)
+        bindkey -M vicmd 'H' vi-rev-repeat-search     # H → N (prev search)
+        bindkey -M vicmd 'k' undo                     # k → u (undo)
+        bindkey -M vicmd 'l' vi-yank                  # l → y (yank)
+
+        # Visual mode
+        bindkey -M visual 'n' vi-backward-char
+        bindkey -M visual 'e' down-line-or-history
+        bindkey -M visual 'i' up-line-or-history
+        bindkey -M visual 'o' vi-forward-char
+        bindkey -M visual 'j' vi-forward-word-end
+      }
+
       zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
       zstyle ':completion:*:git-checkout:*' sort false
       zstyle ':completion:*:descriptions' format '[%d]'

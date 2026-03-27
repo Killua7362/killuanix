@@ -1,11 +1,14 @@
-{ pkgs
-, config
-, inputs
-, nixgl
-, libs
-, lib
-, ...
-}: {
+{
+  pkgs,
+  config,
+  inputs,
+  nixgl,
+  libs,
+  lib,
+  ...
+}: let
+  hyprlandPortalPkg = inputs.hyprland.packages.${inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+in {
   imports = [
     inputs.sops-nix.homeManagerModules.sops
     ../modules/cross-platform
@@ -20,18 +23,18 @@
 
   nix.package = pkgs.nix;
 
-    nixpkgs.overlays = [
-      inputs.nur.overlays.default
-      inputs.neovim-nightly-overlay.overlays.default
-      inputs.yazi.overlays.default
-      inputs.nix-yazi-flavors.overlays.default
-      inputs.nixgl.overlay
-      inputs.claude-code.overlays.default
-    ];
+  nixpkgs.overlays = [
+    inputs.nur.overlays.default
+    inputs.neovim-nightly-overlay.overlays.default
+    inputs.yazi.overlays.default
+    inputs.nix-yazi-flavors.overlays.default
+    inputs.nixgl.overlay
+    inputs.claude-code.overlays.default
+  ];
 
-  targets.genericLinux.nixGL.packages = import nixgl { inherit pkgs; };
+  targets.genericLinux.nixGL.packages = import nixgl {inherit pkgs;};
   targets.genericLinux.nixGL.defaultWrapper = "mesa";
-  targets.genericLinux.nixGL.installScripts = [ "mesa" ];
+  targets.genericLinux.nixGL.installScripts = ["mesa"];
   targets.genericLinux.nixGL.vulkan.enable = true;
 
   xdg.portal = {
@@ -41,22 +44,20 @@
     ];
     config = {
       common = {
-        default = [ "gtk" ];
+        default = ["gtk"];
       };
       hyprland = {
-        default = [ "gtk" "hyprland" ];
-        "org.freedesktop.impl.portal.ScreenCast" = [ "hyprland" ];
-        "org.freedesktop.impl.portal.Screenshot" = [ "hyprland" ];
-        "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
-      };
-      kde = {
-        default = [ "kde" "gtk" ];
+        default = ["gtk" "hyprland"];
+        "org.freedesktop.impl.portal.ScreenCast" = ["hyprland"];
+        "org.freedesktop.impl.portal.Screenshot" = ["hyprland"];
+        "org.freedesktop.impl.portal.GlobalShortcuts" = ["hyprland"];
+        "org.freedesktop.impl.portal.FileChooser" = ["gtk"];
       };
     };
     xdgOpenUsePortal = true;
   };
 
-  programs.zed-editor.package = (config.lib.nixGL.wrap inputs.zed-editor-flake.packages.${pkgs.stdenv.hostPlatform.system}.zed-editor-bin);
+  programs.zed-editor.package = config.lib.nixGL.wrap inputs.zed-editor-flake.packages.${pkgs.stdenv.hostPlatform.system}.zed-editor-bin;
   # systemd.user.services = {
   #   # Ensure pipewire starts correctly
   #   pipewire.Install.WantedBy = [ "default.target" ];
@@ -72,8 +73,8 @@
   #   $DRY_RUN_CMD /usr/bin/systemctl --user enable --now wireplumber.service   || true
   # '';
   wayland.windowManager.hyprland = {
-    package = (config.lib.nixGL.wrap inputs.hyprland.packages.${inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.hyprland);
-    portalPackage = inputs.hyprland.packages.${ inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+    package = config.lib.nixGL.wrap inputs.hyprland.packages.${inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.hyprland;
+    portalPackage = hyprlandPortalPkg;
   };
   # ── Enable podman user socket (rootless) ──
   systemd.user.services.podman-socket = {
@@ -83,9 +84,18 @@
       Type = "simple";
       Restart = "on-failure";
     };
-    Install.WantedBy = [ "default.target" ];
+    Install.WantedBy = ["default.target"];
   };
 
+  # Override system xdg-desktop-portal-hyprland to use the Nix-managed binary
+  # matching the Hyprland flake version (avoids library mismatch with AUR package)
+  xdg.configFile."systemd/user/xdg-desktop-portal-hyprland.service.d/10-use-nix.conf" = {
+    text = ''
+      [Service]
+      ExecStart=
+      ExecStart=${hyprlandPortalPkg}/libexec/xdg-desktop-portal-hyprland
+    '';
+  };
 
   xdg.configFile."systemd/user/podman-user-wait-network-online.service.d/10-fix-path.conf" = {
     text = ''
