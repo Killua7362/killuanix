@@ -40,6 +40,7 @@
     "log_buf_len=4M"
     "transparent_hugepage=always" # Gaming performance
     "mem_sleep_default=s2idle" # Meteor Lake uses S0ix (no S3)
+    "usbcore.autosuspend=-1" # Disable USB autosuspend — prevents mice/keyboards from disconnecting when idle
   ];
 
   # ══════════════════════════════════════════════════════════════
@@ -151,10 +152,6 @@
   # LED control udev rules (from 70-led-control.rules)
   # ══════════════════════════════════════════════════════════════
   services.udev.extraRules = ''
-    # Disable USB autosuspend for HID devices (mice/keyboards)
-    # Prevents mouse from disconnecting when idle (powertop --auto-tune enables aggressive autosuspend)
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{bInterfaceClass}=="03", ATTR{power/control}="on"
-
     # LED color/brightness write access for user
     SUBSYSTEM=="leds", RUN+="${pkgs.coreutils}/bin/chown 1000:1000 '/sys/class/leds/%k/brightness'"
     SUBSYSTEM=="leds", RUN+="${pkgs.coreutils}/bin/chown 1000:1000 '/sys/class/leds/%k/effect'"

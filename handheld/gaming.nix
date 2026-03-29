@@ -73,13 +73,12 @@ in {
     capSysNice = true;
   };
 
-  # ── Jovian Steam — enable gamescope session but NOT autoStart ──
-  # We handle SDDM + auto-login ourselves so defaultSession is configurable
+  # ── Jovian Steam UI — autoStart enables steamos-manager + "Switch to Desktop" ──
   jovian.steam = {
     enable = true;
-    autoStart = false;
+    autoStart = true;
     user = "killua";
-    desktopSession = "plasma"; # fallback for "Return to Desktop" from Game Mode
+    desktopSession = "plasma"; # "Return to Desktop" from Game Mode goes here
 
     # Intel GPU environment for gamescope session
     environment = {
@@ -88,19 +87,9 @@ in {
     };
   };
 
-  # ── SDDM + auto-login with configurable default session ──
-  services.displayManager = {
-    sddm = {
-      enable = true;
-      wayland.enable = true;
-      autoLogin.relogin = true;
-    };
-    autoLogin = {
-      enable = true;
-      user = "killua";
-    };
-    defaultSession = defaultSession;
-  };
+  # ── Override Jovian's hardcoded defaultSession so we can boot into any session ──
+  # Jovian sets defaultSession = "gamescope-wayland" internally; we override it here.
+  services.displayManager.defaultSession = lib.mkForce defaultSession;
 
   # ── GameMode ──
   programs.gamemode = {

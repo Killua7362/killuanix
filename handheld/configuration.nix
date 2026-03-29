@@ -110,7 +110,8 @@
 
   # ── Thermal / Power management ──
   services.thermald.enable = true;
-  powerManagement.powertop.enable = true;
+  # NOTE: powertop removed — it aggressively enables USB autosuspend which
+  # kills mice/keyboards when idle. thermald + scx_lavd handle power fine.
   services.earlyoom.enable = true;
 
   # ── SSH ──

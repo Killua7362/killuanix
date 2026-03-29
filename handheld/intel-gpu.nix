@@ -11,7 +11,9 @@
   boot.kernelParams = [
     "xe.force_probe=7d55" # Force Xe driver for Meteor Lake iGPU
     "i915.force_probe=!7d55" # Prevent i915 from claiming the GPU
-    "fbcon=rotate:1" # Console rotation for portrait-native panel
+    # No fbcon=rotate — gamescope handles rotation in DRM mode,
+    # Plasma/Hyprland handle it via their own display config.
+    # This keeps TTY unrotated (native portrait).
   ];
 
   # ── Intel firmware (GuC, HuC, DMC) ──
