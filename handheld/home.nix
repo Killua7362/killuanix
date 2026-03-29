@@ -27,8 +27,11 @@
     inputs.antigravity-nix.packages.x86_64-linux.default
   ];
 
-  # Hyprland not used on handheld (Plasma + Game Mode instead)
-  wayland.windowManager.hyprland.enable = lib.mkForce false;
+  # Hyprland is available as a desktop session alongside Plasma
+  wayland.windowManager.hyprland = {
+    package = null;
+    portalPackage = null;
+  };
 
   # NixOS-specific systemd configuration
   systemd.user.startServices = "sd-switch";

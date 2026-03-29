@@ -151,6 +151,10 @@
   # LED control udev rules (from 70-led-control.rules)
   # ══════════════════════════════════════════════════════════════
   services.udev.extraRules = ''
+    # Disable USB autosuspend for HID devices (mice/keyboards)
+    # Prevents mouse from disconnecting when idle (powertop --auto-tune enables aggressive autosuspend)
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{bInterfaceClass}=="03", ATTR{power/control}="on"
+
     # LED color/brightness write access for user
     SUBSYSTEM=="leds", RUN+="${pkgs.coreutils}/bin/chown 1000:1000 '/sys/class/leds/%k/brightness'"
     SUBSYSTEM=="leds", RUN+="${pkgs.coreutils}/bin/chown 1000:1000 '/sys/class/leds/%k/effect'"

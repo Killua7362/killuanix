@@ -43,10 +43,18 @@
     LC_TIME = "en_IN";
   };
 
-  # ── Desktop: Plasma 6 + SDDM ──
+  # ── Desktop: Plasma 6 + Hyprland ──
+  # NOTE: SDDM is NOT enabled here — Jovian's autoStart handles SDDM + auto-login
+  # Both Plasma and Hyprland are available as desktop sessions.
+  # Change `defaultDesktop` in gaming.nix to set which one "Return to Desktop" goes to.
   services.xserver.enable = true;
-  services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+  programs.hyprland = {
+    enable = true;
+    package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+    portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+    withUWSM = true;
+  };
   services.xserver.xkb = {
     layout = "us";
     variant = "";
