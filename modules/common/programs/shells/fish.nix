@@ -83,7 +83,7 @@ set -gx EDITOR nvim
 set -gx LESS "~/.lesskey"
 set -gx MANPAGER "nvim +Man!"
 set -gx MANWIDTH 999
-set -gx LG_CONFIG_FILE "$HOME/.config/lazygit.yml"
+set -gx LG_CONFIG_FILE "$HOME/.config/lazygit/config.yml"
 set -gx XDG_CONFIG_HOME "$HOME/.config"
 set -gx XDG_DATA_DIRS "$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 

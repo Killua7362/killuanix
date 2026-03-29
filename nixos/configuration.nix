@@ -1,10 +1,10 @@
-{ inputs
-, lib
-, config
-, pkgs
-, ...
-}:
-let
+{
+  inputs,
+  lib,
+  config,
+  pkgs,
+  ...
+}: let
   session = {
     command = "${lib.getExe config.programs.uwsm.package} start hyprland-uwsm.desktop";
     user = "killua";
@@ -13,8 +13,7 @@ let
     system = "x86_64-linux";
     config.allowUnfree = true;
   };
-in
-{
+in {
   imports = [
     ./hardware-configuration.nix
     inputs.home-manager.nixosModules.home-manager
@@ -23,7 +22,7 @@ in
   virtualisation.docker = {
     enable = true;
     daemon.settings = {
-      dns = [ "8.8.8.8" "8.8.4.4" ];
+      dns = ["8.8.8.8" "8.8.4.4"];
     };
   };
 
@@ -53,7 +52,7 @@ in
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
-    extraUpFlags = [ "--accept-dns=false" ]; # Disable Tailscale DNS override
+    extraUpFlags = ["--accept-dns=false"]; # Disable Tailscale DNS override
   };
   #  services.flatpak.enable = true;
   services.sunshine = {
@@ -74,15 +73,15 @@ in
 
   networking.firewall = {
     enable = true;
-    trustedInterfaces = [ "tailscale0" "docker0" ];
-    allowedUDPPorts = [ 41641 21116 1194 ];
+    trustedInterfaces = ["tailscale0" "docker0"];
+    allowedUDPPorts = [41641 21116 1194];
     allowedUDPPortRanges = [
       {
         from = 1714;
         to = 1764;
       }
     ];
-    allowedTCPPorts = [ 443 ];
+    allowedTCPPorts = [443];
     allowedTCPPortRanges = [
       {
         from = 21114;
@@ -109,7 +108,7 @@ in
   services.resolved = {
     enable = true;
     dnssec = "true";
-    domains = [ "~." ];
+    domains = ["~."];
     fallbackDns = [
       "1.1.1.1"
       "1.0.0.1"
@@ -119,7 +118,7 @@ in
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_IN";
   #networking.networkmanager.plugins = [ "openconnect" ];
-  networking.networkmanager.packages = [ pkgs.networkmanager-openconnect ];
+  networking.networkmanager.packages = [pkgs.networkmanager-openconnect];
 
   networking.resolvconf.dnsExtensionMechanism = false;
   i18n.extraLocaleSettings = {
@@ -162,14 +161,13 @@ in
     wireplumber.enable = true;
   };
 
-
   services.xserver.libinput.enable = true;
 
   users.users.killua = {
     isNormalUser = true;
     openssh.authorizedKeys.keys = inputs.self.commonModules.user.userConfig.sshKeys;
     description = "killua";
-    extraGroups = [ "networkmanager" "wheel" "openvpn" "docker" "audio" ];
+    extraGroups = ["networkmanager" "wheel" "openvpn" "docker" "audio" "libvirtd"];
     shell = pkgs.zsh;
     linger = true;
     autoSubUidGidRange = true;
@@ -203,13 +201,12 @@ in
     enable = true;
     settings = {
       PubkeyAuthentication = true;
-      AllowUsers = [ "killua" ];
+      AllowUsers = ["killua"];
     };
   };
 
   nixpkgs = {
     overlays = [
-
     ];
     config = {
       pulseaudio = true;
@@ -220,20 +217,18 @@ in
     };
   };
 
-  nix =
-    let
-      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-    in
-    {
-      settings = {
-        experimental-features = "nix-command flakes";
-        flake-registry = "";
-        nix-path = config.nix.nixPath;
-      };
-      channel.enable = false;
-      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+  nix = let
+    flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+  in {
+    settings = {
+      experimental-features = "nix-command flakes";
+      flake-registry = "";
+      nix-path = config.nix.nixPath;
     };
+    channel.enable = false;
+    registry = lib.mapAttrs (_: flake: {inherit flake;}) flakeInputs;
+    nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+  };
 
   programs.zsh.enable = true;
 
@@ -277,19 +272,28 @@ in
     cups
   ];
 
-
   fonts.packages = with pkgs; [
     nerd-fonts.fira-code
     nerd-fonts.jetbrains-mono
     nerd-fonts.hack
   ];
 
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package = pkgs.qemu_kvm;
+      runAsRoot = true;
+      swtpm.enable = true;
+    };
+  };
+  programs.virt-manager.enable = true;
+
   virtualisation.virtualbox.host.enable = true;
-  users.extraGroups.vboxusers.members = [ "killua" ];
+  users.extraGroups.vboxusers.members = ["killua"];
   virtualisation.virtualbox.host.enableExtensionPack = true;
   virtualisation.virtualbox.host.package = pinnedVBOX.virtualbox;
   virtualisation.quadlet.enable = true;
-  services.dbus.packages = [ pkgs.blueman pkgs.openvpn3 ];
+  services.dbus.packages = [pkgs.blueman pkgs.openvpn3];
   programs.hyprland = {
     enable = true;
     package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
@@ -305,20 +309,19 @@ in
 
     config = {
       common = {
-        default = [ "gtk" ];
+        default = ["gtk"];
       };
       hyprland = {
-        default = [ "gtk" "hyprland" ];
-        "org.freedesktop.impl.portal.ScreenCast" = [ "hyprland" ];
-        "org.freedesktop.impl.portal.Screenshot" = [ "hyprland" ];
-        "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+        default = ["gtk" "hyprland"];
+        "org.freedesktop.impl.portal.ScreenCast" = ["hyprland"];
+        "org.freedesktop.impl.portal.Screenshot" = ["hyprland"];
+        "org.freedesktop.impl.portal.FileChooser" = ["gtk"];
       };
       kde = {
-        default = [ "kde" "gtk" ];
+        default = ["kde" "gtk"];
       };
     };
   };
-
 
   #    services.greetd = {
   #    enable = true;

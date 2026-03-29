@@ -52,7 +52,7 @@
       LESS = "~/.lesskey";
       MANPAGER = "nvim +Man!";
       MANWIDTH = "999";
-      LG_CONFIG_FILE = "$HOME/.config/lazygit.yml";
+      LG_CONFIG_FILE = "$HOME/.config/lazygit/config.yml";
       XDG_CONFIG_HOME = "$HOME/.config";
 
       JAVA_HOME = "/home/killua/Downloads/java/jdk1.8.0_291";

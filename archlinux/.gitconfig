@@ -1,0 +1,15 @@
+[http]
+	lowSpeedLimit = 1000
+	lowSpeedTime = 60
+	postBuffer = 524288000
+[user]
+	name = Akshay Bhat
+	email = bhat7362@gmail.com
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[core]
+	excludesFiles = /home/killua/.gitignore_global
+	excludesFile = /home/killua/.gitignore_global

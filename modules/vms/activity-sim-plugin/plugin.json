@@ -1,0 +1,12 @@
+{
+    "id": "activitySim",
+    "name": "Activity Simulator",
+    "description": "Toggle simulated mouse/keyboard activity inside a VM via SSH + xdotool",
+    "version": "1.0.0",
+    "author": "killua",
+    "icon": "smart_toy",
+    "type": "widget",
+    "component": "./ActivitySimWidget.qml",
+    "settings": "./ActivitySimSettings.qml",
+    "permissions": ["settings_read", "settings_write"]
+}

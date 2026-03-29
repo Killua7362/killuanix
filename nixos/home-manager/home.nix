@@ -1,8 +1,9 @@
-{ inputs
-, lib
-, config
-, pkgs
-, ...
+{
+  inputs,
+  lib,
+  config,
+  pkgs,
+  ...
 }: {
   imports = [
     ../../modules/cross-platform
@@ -15,6 +16,7 @@
     inputs.nix-index-database.homeModules.default
     inputs.quadlet-nix.homeManagerModules.quadlet
     ../../modules/containers/quadlet.nix
+    ../../modules/vms
     inputs.spicetify-nix.homeManagerModules.default
   ];
 
@@ -22,6 +24,8 @@
   nixpkgs.overlays = [
     inputs.neovim-nightly-overlay.overlays.default
     inputs.nur.overlays.default
+    inputs.yazi.overlays.default
+    inputs.nix-yazi-flavors.overlays.default
   ];
 
   # NixOS-specific packages
@@ -35,7 +39,6 @@
     claude-code-router
     #sublime
   ];
-
 
   programs.zed-editor.package = inputs.zed-editor-flake.packages.${pkgs.stdenv.hostPlatform.system}.zed-editor-bin;
 

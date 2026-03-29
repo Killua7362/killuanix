@@ -6,6 +6,7 @@
       "https://nix-community.cachix.org"
       "https://chaotic-nyx.cachix.org"
       "https://yazi.cachix.org"
+      "https://attic.xuyh0120.win/lantian"
     ];
     extra-trusted-public-keys = [
       "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
@@ -13,6 +14,7 @@
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
       "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
+      "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
     ];
   };
 
@@ -134,6 +136,15 @@
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
     claude-code.url = "github:sadjow/claude-code-nix";
 
+    # Handheld / MSI Claw
+    nix-cachyos-kernel = {
+      url = "github:xddxdd/nix-cachyos-kernel/release";
+    };
+    jovian = {
+      url = "github:Jovian-Experiments/Jovian-NixOS";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -220,6 +231,30 @@
             })
           ];
         };
+      };
+
+      nixosConfigurations.handheld = nixpkgs.lib.nixosSystem {
+        specialArgs = { inherit inputs; };
+        modules = [
+          ./handheld/configuration.nix
+          inputs.jovian.nixosModules.jovian
+          ({ inputs, pkgs, ... }: {
+            nixpkgs.overlays = [
+              inputs.nix-cachyos-kernel.overlays.default
+            ];
+            home-manager = {
+              extraSpecialArgs = {
+                inherit inputs;
+              };
+              sharedModules = [
+                inputs.sops-nix.homeManagerModules.sops
+              ];
+              users = {
+                killua = import ./handheld/home.nix;
+              };
+            };
+          })
+        ];
       };
 
       darwinConfigurations = rec {
