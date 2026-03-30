@@ -79,6 +79,8 @@ in {
     autoStart = true;
     user = "killua";
     desktopSession = "plasma"; # "Return to Desktop" from Game Mode goes here
+    # Change to "plasma" if you prefer KDE. If the session gives a black screen,
+    # the session name may not match — run: ls /run/current-system/sw/share/wayland-sessions/
 
     # Intel GPU environment for gamescope session
     environment = {
