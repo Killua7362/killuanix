@@ -64,16 +64,11 @@ in {
   programs.steam = {
     enable = true;
     remotePlay.openFirewall = true;
-    gamescopeSession.enable = true;
-  };
-
-  # ── Gamescope ──
-  programs.gamescope = {
-    enable = true;
-    capSysNice = true;
   };
 
   # ── Jovian Steam UI — autoStart enables steamos-manager + "Switch to Desktop" ──
+  # NOTE: Do NOT enable programs.steam.gamescopeSession or programs.gamescope —
+  # Jovian handles gamescope, its session, and cap_sys_nice wrapper internally.
   jovian.steam = {
     enable = true;
     autoStart = true;
@@ -130,7 +125,6 @@ in {
   # ── Gaming packages + session-switch tool ──
   environment.systemPackages = with pkgs; [
     mangohud
-    gamescope
     protonup-qt
     lutris
     heroic
