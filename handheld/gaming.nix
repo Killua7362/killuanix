@@ -79,8 +79,9 @@ in {
     autoStart = true;
     user = "killua";
     desktopSession = "plasma"; # "Return to Desktop" from Game Mode goes here
-    # Change to "plasma" if you prefer KDE. If the session gives a black screen,
-    # the session name may not match — run: ls /run/current-system/sw/share/wayland-sessions/
+    # Plasma gives a black screen on Intel MSI Claw — using Hyprland instead.
+    # To try plasma again: change to "plasma" and rebuild.
+    # Verify session names with: ls /run/current-system/sw/share/wayland-sessions/
 
     # Intel GPU environment for gamescope session
     environment = {
@@ -92,6 +93,20 @@ in {
   # ── Override Jovian's hardcoded defaultSession so we can boot into any session ──
   # Jovian sets defaultSession = "gamescope-wayland" internally; we override it here.
   services.displayManager.defaultSession = lib.mkForce defaultSession;
+
+  # ── Fix: Make /etc/sddm.conf.d writable for steamos-manager ──
+  # NixOS turns /etc/sddm.conf.d into a read-only Nix store symlink.
+  # steamos-manager needs to write zzt-steamos-temp-login.conf there
+  # for "Switch to Desktop" to work. This replaces the symlink with a
+  # real writable directory after every activation.
+  system.activationScripts.sddmConfWritable = lib.stringAfter ["etc"] ''
+    if [ -L /etc/sddm.conf.d ]; then
+      target=$(readlink -f /etc/sddm.conf.d)
+      rm /etc/sddm.conf.d
+      mkdir -p /etc/sddm.conf.d
+      cp -aL "$target"/. /etc/sddm.conf.d/ 2>/dev/null || true
+    fi
+  '';
 
   # ── GameMode ──
   programs.gamemode = {
