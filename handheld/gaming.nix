@@ -73,8 +73,8 @@ in {
     enable = true;
     autoStart = true;
     user = "killua";
-    desktopSession = "plasma"; # "Return to Desktop" from Game Mode goes here
-    # Plasma gives a black screen on Intel MSI Claw — using Hyprland instead.
+    desktopSession = "hyprland-uwsm"; # "Return to Desktop" from Game Mode goes here
+    # Plasma gives a black screen on Intel MSI Claw — Hyprland works.
     # To try plasma again: change to "plasma" and rebuild.
     # Verify session names with: ls /run/current-system/sw/share/wayland-sessions/
 
@@ -92,8 +92,9 @@ in {
   # ── Fix: Make /etc/sddm.conf.d writable for steamos-manager ──
   # NixOS turns /etc/sddm.conf.d into a read-only Nix store symlink.
   # steamos-manager needs to write zzt-steamos-temp-login.conf there
-  # for "Switch to Desktop" to work. This replaces the symlink with a
-  # real writable directory after every activation.
+  # for "Switch to Desktop" to work.
+
+  # 1) Activation script: replaces the symlink after every nixos-rebuild
   system.activationScripts.sddmConfWritable = lib.stringAfter ["etc"] ''
     if [ -L /etc/sddm.conf.d ]; then
       target=$(readlink -f /etc/sddm.conf.d)
@@ -101,7 +102,30 @@ in {
       mkdir -p /etc/sddm.conf.d
       cp -aL "$target"/. /etc/sddm.conf.d/ 2>/dev/null || true
     fi
+    # Ensure the directory (whether new or existing) is writable
+    chmod 755 /etc/sddm.conf.d 2>/dev/null || true
   '';
+
+  # 2) Boot service: catches cases where the activation script didn't run
+  #    (e.g. reboot without rebuild). Runs before SDDM starts.
+  systemd.services.sddm-conf-writable = {
+    description = "Ensure /etc/sddm.conf.d is a writable directory for steamos-manager";
+    wantedBy = ["multi-user.target"];
+    before = ["display-manager.service"];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      if [ -L /etc/sddm.conf.d ]; then
+        target=$(readlink -f /etc/sddm.conf.d)
+        rm /etc/sddm.conf.d
+        mkdir -p /etc/sddm.conf.d
+        cp -aL "$target"/. /etc/sddm.conf.d/ 2>/dev/null || true
+      fi
+      chmod 755 /etc/sddm.conf.d 2>/dev/null || true
+    '';
+  };
 
   # ── GameMode ──
   programs.gamemode = {
