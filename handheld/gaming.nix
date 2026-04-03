@@ -1,12 +1,12 @@
 # Gaming stack — Steam, Gamescope, Game Mode, session management
 #
-# Session switching uses a .next-session file mechanism:
-#   - SDDM auto-logs into "session-dispatch" which reads ~/.next-session
-#   - If ~/.next-session contains "plasma" or "hyprland", it deletes the file
-#     and launches that desktop session
+# Session switching uses greetd + .next-session file:
+#   - greetd auto-logs in and runs the dispatcher script
+#   - Dispatcher reads ~/.next-session: if it contains "plasma" or "hyprland",
+#     deletes the file and launches that desktop session
 #   - If no ~/.next-session exists, launches gamescope (Steam Game Mode)
-#   - "Switch to Desktop" writes ~/.next-session and cleanly stops gamescope
-#   - SDDM's relogin kicks in and the dispatcher picks up the new session
+#   - "Switch to Desktop" in Steam writes ~/.next-session and stops gamescope
+#   - gamescope exits → greetd reruns dispatcher → desktop launches
 #   - Reboots always go to gamescope because .next-session is deleted on use
 #
 # Use `session-switch <plasma|hyprland|gaming>` from any session/TTY to switch.
@@ -18,84 +18,37 @@
   ...
 }: let
   # ── Session Dispatcher ──
-  # SDDM auto-logs into this. It reads ~/.next-session to decide what to launch.
+  # greetd runs this on every login. Reads ~/.next-session to decide
+  # whether to launch gamescope or a desktop environment.
   # The file is deleted after reading so reboots always default to gamescope.
-  session-dispatch = pkgs.stdenv.mkDerivation {
-    pname = "session-dispatch";
-    version = "1.0";
-
-    dontUnpack = true;
-    nativeBuildInputs = [pkgs.makeWrapper];
-
-    installPhase = let
-      dispatchScript = pkgs.writeScript "session-dispatch-start" ''
-        #!/bin/bash
-        NEXT_SESSION="$HOME/.next-session"
-        if [ -f "$NEXT_SESSION" ]; then
-          session=$(cat "$NEXT_SESSION")
-          rm -f "$NEXT_SESSION"
-
-          # Let the GPU/DRM settle after the previous compositor released it.
-          # Without this pause, the new compositor may fail to acquire DRM master
-          # on Intel (Xe) GPUs, causing a black screen.
-          sleep 2
-
-          case "$session" in
-            plasma)
-              export XDG_CURRENT_DESKTOP=KDE
-              export XDG_SESSION_DESKTOP=plasma
-              export XDG_SESSION_TYPE=wayland
-              export QT_QPA_PLATFORM=wayland
-              exec dbus-run-session startplasma-wayland
-              ;;
-            hyprland)
-              export XDG_CURRENT_DESKTOP=Hyprland
-              export XDG_SESSION_DESKTOP=hyprland
-              export XDG_SESSION_TYPE=wayland
-              exec Hyprland
-              ;;
-          esac
-        fi
-        # Default: no .next-session file means gamescope
-        exec start-gamescope-session
-      '';
-      desktopFile = pkgs.writeText "session-dispatch.desktop" ''
-        [Desktop Entry]
-        Name=Session Dispatch
-        Comment=Auto-dispatch to gamescope or desktop based on ~/.next-session
-        Exec=session-dispatch-start
-        Type=Application
-        DesktopNames=gamescope
-      '';
-    in ''
-      runHook preInstall
-
-      mkdir -p $out/bin
-      cp ${dispatchScript} $out/bin/session-dispatch-start
-      chmod +x $out/bin/session-dispatch-start
-
-      wrapProgram $out/bin/session-dispatch-start \
-        --prefix PATH : "${lib.makeBinPath [
-        pkgs.gamescope-session # start-gamescope-session
-        pkgs.kdePackages.plasma-workspace # startplasma-wayland
-        inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland # Hyprland
-        pkgs.dbus # dbus-run-session
-        pkgs.coreutils
-      ]}"
-
-      mkdir -p $out/share/wayland-sessions
-      cp ${desktopFile} $out/share/wayland-sessions/session-dispatch.desktop
-
-      runHook postInstall
-    '';
-
-    passthru.providedSessions = ["session-dispatch"];
-  };
+  session-dispatch = pkgs.writeShellScriptBin "session-dispatch-start" ''
+    NEXT_SESSION="$HOME/.next-session"
+    if [ -f "$NEXT_SESSION" ]; then
+      session=$(cat "$NEXT_SESSION")
+      rm -f "$NEXT_SESSION"
+      case "$session" in
+        plasma)
+          export XDG_CURRENT_DESKTOP=KDE
+          export XDG_SESSION_DESKTOP=plasma
+          export XDG_SESSION_TYPE=wayland
+          exec ${pkgs.kdePackages.plasma-workspace}/bin/startplasma-wayland
+          ;;
+        hyprland)
+          export XDG_CURRENT_DESKTOP=Hyprland
+          export XDG_SESSION_DESKTOP=hyprland
+          export XDG_SESSION_TYPE=wayland
+          exec ${inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland}/bin/Hyprland
+          ;;
+      esac
+    fi
+    # Default: no .next-session file means gamescope
+    exec ${pkgs.gamescope-session}/bin/start-gamescope-session
+  '';
 
   # ── steamos-session-select override ──
   # Steam calls this when user clicks "Switch to Desktop" or "Return to Gaming Mode".
-  # We write .next-session and cleanly stop the gamescope session target.
-  # SDDM's relogin (Relogin=true) automatically starts a new session after exit.
+  # We write .next-session and cleanly stop the gamescope session.
+  # When gamescope exits, greetd automatically reruns the dispatcher.
   steamos-session-select-override = pkgs.writeShellScriptBin "steamos-session-select" ''
     case "$1" in
       plasma)
@@ -109,8 +62,7 @@
         ;;
     esac
     sync
-    # Cleanly stop gamescope session — this lets gamescope release DRM/GPU
-    # resources properly. SDDM's relogin will then start a new session.
+    # Cleanly stop gamescope — greetd will rerun the dispatcher
     systemctl --user stop gamescope-session.target 2>/dev/null || true
   '';
 
@@ -118,7 +70,6 @@
   return-to-gaming = let
     script = pkgs.writeShellScriptBin "return-to-gaming-mode" ''
       rm -f "$HOME/.next-session"
-      # Use DE-native logout for clean compositor shutdown
       case "$XDG_CURRENT_DESKTOP" in
         Hyprland|hyprland)
           hyprctl dispatch exit 2>/dev/null || true
@@ -197,7 +148,7 @@
         loginctl terminate-session "$XDG_SESSION_ID" 2>/dev/null || true
         ;;
       *)
-        # From a TTY or unknown session — find and kill the graphical session
+        # From a TTY or unknown session
         loginctl terminate-session "$XDG_SESSION_ID" 2>/dev/null || true
         ;;
     esac
@@ -210,24 +161,51 @@ in {
   };
 
   # ── Jovian Steam UI ──
+  # enable = true gives us gamescope, steamos-manager, hardware support.
+  # autoStart = false disables Jovian's SDDM setup — we use greetd instead.
   jovian.steam = {
     enable = true;
-    autoStart = true;
+    autoStart = false;
     user = "killua";
-    desktopSession = "gamescope-wayland";
 
+    # Intel GPU environment for gamescope session
+    # (writes to /etc/xdg/gamescope-session/environment, works without autoStart)
     environment = {
       INTEL_DEBUG = "noccs";
       LIBVA_DRIVER_NAME = "iHD";
     };
   };
 
-  # ── Session dispatch: SDDM boots into our dispatcher ──
-  services.displayManager.defaultSession = lib.mkForce "session-dispatch";
-  services.displayManager.sessionPackages = [session-dispatch];
+  # ── greetd — replaces SDDM for session management ──
+  # greetd runs the dispatcher on every login. When the session exits,
+  # greetd reruns the dispatcher — no caching, no config file rewriting.
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = "${session-dispatch}/bin/session-dispatch-start";
+        user = "killua";
+      };
+    };
+  };
 
-  # ── Disable Jovian's steamosctl-based session switching ──
-  systemd.user.services.jovian-setup-desktop-session.enable = false;
+  # ── Replicate essential services from Jovian's autoStart ──
+  # These are needed for gamescope to work but are lost when autoStart = false.
+
+  # gamescope-session needs a clean PATH (autostart.nix lines 117-141)
+  systemd.user.services.gamescope-session = {
+    overrideStrategy = "asDropin";
+    environment.PATH = lib.mkForce null;
+  };
+
+  # Session cleanup on logout (autostart.nix lines 112-115)
+  systemd.user.services.steamos-manager-session-cleanup = {
+    overrideStrategy = "asDropin";
+    wantedBy = ["graphical-session.target"];
+  };
+
+  # XDG portal config for gamescope (autostart.nix line 144)
+  xdg.portal.configPackages = lib.mkDefault [pkgs.gamescope-session];
 
   # ── Override steamos-session-select ──
   nixpkgs.overlays = [
@@ -268,7 +246,6 @@ in {
     lutris
     heroic
     session-switch
-    session-dispatch
     steamos-session-select-override
     return-to-gaming
   ];
