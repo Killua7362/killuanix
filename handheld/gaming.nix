@@ -34,14 +34,23 @@
           rm -f "$NEXT_SESSION"
           case "$session" in
             plasma)
-              exec startplasma-wayland
+              # Set up Plasma session environment
+              export XDG_CURRENT_DESKTOP=KDE
+              export XDG_SESSION_DESKTOP=plasma
+              export XDG_SESSION_TYPE=wayland
+              export QT_QPA_PLATFORM=wayland
+              exec dbus-run-session startplasma-wayland
               ;;
             hyprland)
+              # Set up Hyprland session environment
+              export XDG_CURRENT_DESKTOP=Hyprland
+              export XDG_SESSION_DESKTOP=hyprland
+              export XDG_SESSION_TYPE=wayland
               exec Hyprland
               ;;
           esac
         fi
-        # Default: launch gamescope
+        # Default: launch gamescope (no env override needed — SDDM .desktop sets it)
         exec start-gamescope-session
       '';
       desktopFile = pkgs.writeText "session-dispatch.desktop" ''
@@ -59,12 +68,13 @@
       cp ${dispatchScript} $out/bin/session-dispatch-start
       chmod +x $out/bin/session-dispatch-start
 
-      # Ensure session launchers are in PATH
+      # Ensure session launchers and dbus tools are in PATH
       wrapProgram $out/bin/session-dispatch-start \
         --prefix PATH : "${lib.makeBinPath [
         pkgs.gamescope-session # start-gamescope-session
         pkgs.kdePackages.plasma-workspace # startplasma-wayland
         inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland # Hyprland
+        pkgs.dbus # dbus-run-session
         pkgs.coreutils
       ]}"
 
