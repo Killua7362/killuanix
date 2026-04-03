@@ -14,15 +14,12 @@
     ./hhd.nix
     ./gaming.nix
     ./wifi-fix.nix
+    ./boot.nix
     inputs.home-manager.nixosModules.home-manager
   ];
 
   # ── CachyOS Deckify Kernel (BORE scheduler, handheld patches, RCU_LAZY) ──
   boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-deckify;
-
-  # ── Boot ──
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
 
   # ── Networking ──
   networking.hostName = "handheld";
