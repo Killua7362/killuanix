@@ -22,6 +22,16 @@
   # whether to launch gamescope or a desktop environment.
   # The file is deleted after reading so reboots always default to gamescope.
   session-dispatch = pkgs.writeShellScriptBin "session-dispatch-start" ''
+    # Clean up leftover state from any previous session.
+    # Without this, switching plasma → gamescope leaves stale/failed
+    # systemd user services that prevent gamescope-session from starting
+    # (symptoms: gamescope shows black screen with cursor but no Steam).
+    ${pkgs.systemd}/bin/systemctl --user reset-failed 2>/dev/null || true
+    ${pkgs.systemd}/bin/systemctl --user stop gamescope-session.target 2>/dev/null || true
+
+    # Clear environment variables from previous desktop sessions
+    unset QT_QPA_PLATFORM XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP
+
     NEXT_SESSION="$HOME/.next-session"
     if [ -f "$NEXT_SESSION" ]; then
       session=$(cat "$NEXT_SESSION")
@@ -34,10 +44,8 @@
           exec ${pkgs.kdePackages.plasma-workspace}/bin/startplasma-wayland
           ;;
         hyprland)
-          export XDG_CURRENT_DESKTOP=Hyprland
-          export XDG_SESSION_DESKTOP=hyprland
-          export XDG_SESSION_TYPE=wayland
-          exec ${inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland}/bin/Hyprland
+          # Launch via UWSM for proper systemd session integration
+          exec ${lib.getExe config.programs.uwsm.package} start hyprland-uwsm.desktop
           ;;
       esac
     fi
