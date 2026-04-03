@@ -2,10 +2,12 @@
 #
 # Session switching uses a .next-session file mechanism:
 #   - SDDM auto-logs into "session-dispatch" which reads ~/.next-session
-#   - If ~/.next-session contains "plasma" or "hyprland", launches that desktop
+#   - If ~/.next-session contains "plasma" or "hyprland", it deletes the file
+#     and launches that desktop session
 #   - If no ~/.next-session exists, launches gamescope (Steam Game Mode)
-#   - "Switch to Desktop" in Steam writes ~/.next-session and logs out
-#   - SDDM re-logs and the dispatcher picks up the new session
+#   - "Switch to Desktop" in Steam writes ~/.next-session and restarts SDDM
+#   - SDDM starts fresh (no black screen) and the dispatcher picks up the session
+#   - Reboots always go to gamescope because .next-session is deleted on use
 #
 # Use `session-switch <plasma|hyprland|gaming>` from any session/TTY to switch.
 {
@@ -18,6 +20,7 @@
   # ── Session Dispatcher ──
   # A fake "session" that SDDM auto-logs into. It reads ~/.next-session
   # to decide whether to launch gamescope or a desktop environment.
+  # The file is deleted after reading so reboots always go to gamescope.
   session-dispatch = pkgs.stdenv.mkDerivation {
     pname = "session-dispatch";
     version = "1.0";
@@ -34,7 +37,6 @@
           rm -f "$NEXT_SESSION"
           case "$session" in
             plasma)
-              # Set up Plasma session environment
               export XDG_CURRENT_DESKTOP=KDE
               export XDG_SESSION_DESKTOP=plasma
               export XDG_SESSION_TYPE=wayland
@@ -42,7 +44,6 @@
               exec dbus-run-session startplasma-wayland
               ;;
             hyprland)
-              # Set up Hyprland session environment
               export XDG_CURRENT_DESKTOP=Hyprland
               export XDG_SESSION_DESKTOP=hyprland
               export XDG_SESSION_TYPE=wayland
@@ -50,7 +51,7 @@
               ;;
           esac
         fi
-        # Default: launch gamescope (no env override needed — SDDM .desktop sets it)
+        # Default: no .next-session file means gamescope
         exec start-gamescope-session
       '';
       desktopFile = pkgs.writeText "session-dispatch.desktop" ''
@@ -90,7 +91,8 @@
   # ── steamos-session-select override ──
   # Steam calls `steamos-session-select plasma` for "Switch to Desktop"
   # and `steamos-session-select gamescope` for "Return to Gaming Mode".
-  # This replaces the jovian-stubs version that relies on steamosctl.
+  # We restart the display manager (not just terminate session) to get a
+  # clean SDDM start — this avoids the black screen on compositor switch.
   steamos-session-select-override = pkgs.writeShellScriptBin "steamos-session-select" ''
     case "$1" in
       plasma)
@@ -105,8 +107,10 @@
         ;;
     esac
     sync
-    # Terminate the current session so SDDM re-logs
-    loginctl terminate-session "$XDG_SESSION_ID" 2>/dev/null || true
+    # Restart SDDM entirely for a clean display initialization.
+    # loginctl terminate-session causes a black screen because SDDM's
+    # relogin doesn't properly reinitialize the display between compositors.
+    sudo systemctl restart display-manager
   '';
 
   # ── Return to Gaming Mode ──
@@ -114,18 +118,7 @@
   return-to-gaming = let
     script = pkgs.writeShellScriptBin "return-to-gaming-mode" ''
       rm -f "$HOME/.next-session"
-      case "$XDG_CURRENT_DESKTOP" in
-        Hyprland|hyprland)
-          hyprctl dispatch exit
-          ;;
-        KDE)
-          qdbus org.kde.Shutdown /Shutdown logout 2>/dev/null || \
-          loginctl terminate-session "$XDG_SESSION_ID" 2>/dev/null || true
-          ;;
-        *)
-          loginctl terminate-session "$XDG_SESSION_ID" 2>/dev/null || true
-          ;;
-      esac
+      sudo systemctl restart display-manager
     '';
     desktopItem = pkgs.makeDesktopItem {
       name = "return-to-gaming-mode";
@@ -161,22 +154,21 @@
       plasma)
         echo "Switching to Plasma desktop..."
         echo "plasma" > "$HOME/.next-session"
-        loginctl terminate-session "$XDG_SESSION_ID" 2>/dev/null || true
         ;;
       hyprland)
         echo "Switching to Hyprland..."
         echo "hyprland" > "$HOME/.next-session"
-        loginctl terminate-session "$XDG_SESSION_ID" 2>/dev/null || true
         ;;
       gaming|gamescope|steam)
         echo "Switching to Steam Game Mode..."
         rm -f "$HOME/.next-session"
-        loginctl terminate-session "$XDG_SESSION_ID" 2>/dev/null || true
         ;;
       *)
         usage
         ;;
     esac
+    sync
+    sudo systemctl restart display-manager
   '';
 in {
   # ── Steam ──
@@ -211,8 +203,22 @@ in {
   # We replace this with the .next-session file mechanism
   systemd.user.services.jovian-setup-desktop-session.enable = false;
 
+  # ── Allow passwordless display-manager restart for session switching ──
+  # This lets steamos-session-select and session-switch restart SDDM without
+  # a password prompt, which is needed for clean compositor transitions.
+  security.sudo.extraRules = [
+    {
+      users = ["killua"];
+      commands = [
+        {
+          command = "/run/current-system/sw/bin/systemctl restart display-manager";
+          options = ["NOPASSWD"];
+        }
+      ];
+    }
+  ];
+
   # ── Override steamos-session-select to use .next-session instead of steamosctl ──
-  # meta.priority ensures our version shadows jovian-stubs in PATH
   nixpkgs.overlays = [
     (final: prev: {
       jovian-stubs = prev.jovian-stubs.overrideAttrs (old: {
