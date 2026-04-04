@@ -44,6 +44,7 @@
         export XDG_CURRENT_DESKTOP=Hyprland
         export XDG_SESSION_DESKTOP=Hyprland
         export XDG_SESSION_TYPE=wayland
+        export XDG_DATA_DIRS="/run/current-system/sw/share:''${XDG_DATA_DIRS:-}"
         exec ${lib.getExe config.programs.uwsm.package} start hyprland-uwsm.desktop
       '';
     }
