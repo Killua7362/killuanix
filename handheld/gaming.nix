@@ -40,7 +40,12 @@
         export XDG_SESSION_TYPE=wayland
         exec ${pkgs.kdePackages.plasma-workspace}/bin/startplasma-wayland
       '';
-      hyprland = "exec ${lib.getExe config.programs.uwsm.package} start hyprland-uwsm.desktop";
+      hyprland = ''
+        export XDG_CURRENT_DESKTOP=Hyprland
+        export XDG_SESSION_DESKTOP=Hyprland
+        export XDG_SESSION_TYPE=wayland
+        exec ${lib.getExe config.programs.uwsm.package} start hyprland-uwsm.desktop
+      '';
     }
     .${session};
 
