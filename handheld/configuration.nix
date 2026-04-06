@@ -6,7 +6,12 @@
   config,
   pkgs,
   ...
-}: {
+}: let
+  pinnedVBOX = import inputs.nixpkgs-virtualbox {
+    system = "x86_64-linux";
+    config.allowUnfree = true;
+  };
+in {
   imports = [
     ./hardware-configuration.nix
     ./intel-gpu.nix
@@ -16,14 +21,51 @@
     ./wifi-fix.nix
     ./boot.nix
     inputs.home-manager.nixosModules.home-manager
+    ../modules/containers/quadlet.nix
   ];
 
   # ── CachyOS Deckify Kernel (BORE scheduler, handheld patches, RCU_LAZY) ──
   boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-deckify;
 
+  # ── Virtualisation: Docker (rootful), Podman/Quadlet, VirtualBox, libvirtd ──
+  virtualisation.docker = {
+    enable = true;
+    daemon.settings = {
+      dns = ["8.8.8.8" "8.8.4.4"];
+    };
+  };
+
+  virtualisation.podman = {
+    enable = true;
+    dockerCompat = false; # docker is already enabled
+    defaultNetwork.settings.dns_enabled = true;
+  };
+
+  virtualisation.quadlet.enable = true;
+
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package = pkgs.qemu_kvm;
+      runAsRoot = true;
+      swtpm.enable = true;
+    };
+  };
+  programs.virt-manager.enable = true;
+
+  virtualisation.virtualbox.host.enable = true;
+  users.extraGroups.vboxusers.members = ["killua"];
+  virtualisation.virtualbox.host.enableExtensionPack = true;
+  virtualisation.virtualbox.host.package = pinnedVBOX.virtualbox;
+
+  boot.kernel.sysctl = {
+    "net.ipv4.ip_forward" = 1;
+  };
+
   # ── Networking ──
   networking.hostName = "handheld";
   networking.networkmanager.enable = true;
+  networking.networkmanager.packages = [pkgs.networkmanager-openconnect];
 
   # ── Locale / Timezone ──
   time.timeZone = "Asia/Kolkata";
@@ -93,9 +135,10 @@
     isNormalUser = true;
     openssh.authorizedKeys.keys = inputs.self.commonModules.user.userConfig.sshKeys;
     description = "killua";
-    extraGroups = ["networkmanager" "wheel" "audio" "input" "video"];
+    extraGroups = ["networkmanager" "wheel" "audio" "input" "video" "docker" "libvirtd"];
     shell = pkgs.zsh;
     linger = true;
+    autoSubUidGidRange = true;
   };
   programs.zsh.enable = true;
 
@@ -129,7 +172,7 @@
   # ── Firewall ──
   networking.firewall = {
     enable = true;
-    trustedInterfaces = ["tailscale0"];
+    trustedInterfaces = ["tailscale0" "docker0"];
     allowedUDPPorts = [41641];
   };
 
@@ -138,6 +181,10 @@
     git
     bluez-tools
     moonlight-qt
+    ocproxy
+    hubstaff
+    distrobox
+    docker-compose
   ];
 
   # ── Fonts ──

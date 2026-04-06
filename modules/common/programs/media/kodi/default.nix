@@ -269,6 +269,7 @@ in {
       SKIN_SRC="${customAddons.arcticFuseSkin}/share/kodi/addons/skin.arctic.fuse.3"
       SKIN_DST="${config.home.homeDirectory}/.kodi/addons/skin.arctic.fuse.3"
       if [ -d "$SKIN_SRC" ]; then
+        mkdir -p "${config.home.homeDirectory}/.kodi/addons"
         rm -rf "$SKIN_DST"
         cp -a "$SKIN_SRC" "$SKIN_DST"
         chmod -R u+w "$SKIN_DST"
@@ -286,9 +287,11 @@ in {
     # Pre-enable addons if DB already exists (e.g. after Kodi's first run)
     home.activation.kodiEnableAddons = lib.hm.dag.entryAfter ["writeBoundary" "kodiSkin"] ''
       KODI_DB_DIR="${config.home.homeDirectory}/.kodi/userdata/Database"
-      ADDONS_DB="$(ls "$KODI_DB_DIR"/Addons*.db 2>/dev/null | head -1)"
-      if [ -n "$ADDONS_DB" ]; then
-        ${pkgs.sqlite}/bin/sqlite3 "$ADDONS_DB" < ${enableAddonsSql}
+      if [ -d "$KODI_DB_DIR" ]; then
+        ADDONS_DB="$(ls "$KODI_DB_DIR"/Addons*.db 2>/dev/null | head -1)"
+        if [ -n "$ADDONS_DB" ]; then
+          ${pkgs.sqlite}/bin/sqlite3 "$ADDONS_DB" < ${enableAddonsSql}
+        fi
       fi
     '';
 

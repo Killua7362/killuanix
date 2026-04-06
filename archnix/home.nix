@@ -76,6 +76,9 @@ in {
     package = config.lib.nixGL.wrap inputs.hyprland.packages.${inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.stdenv.hostPlatform.system}.hyprland;
     portalPackage = hyprlandPortalPkg;
   };
+  # systemctl lives at /bin/systemctl on Arch (not in the Nix store)
+  systemd.user.systemctlPath = "/bin/systemctl";
+
   # ── Enable podman user socket (rootless) ──
   systemd.user.services.podman-socket = {
     Unit.Description = "Podman API Socket (rootless)";

@@ -82,8 +82,8 @@ in {
     version = "6.7.58";
 
     src = pkgs.fetchurl {
-      url = "https://github.com/umbrellaplug/umbrellaplug.github.io/raw/master/omega/zips/plugin.video.umbrella/plugin.video.umbrella-6.7.58.zip";
-      hash = "sha256-1dont0mrPBdjXoUIRdrKsMNZdOiJ13/fSSeUVdt1Q9Q=";
+      url = "https://github.com/umbrellaplug/umbrellaplug.github.io/raw/master/omega/zips/plugin.video.umbrella/plugin.video.umbrella-6.7.62.zip";
+      hash = "sha256-ybRnLn2MQtzmllUnaSFo5egfZaodXEOxmpbz3G5/c9c=";
     };
 
     sourceRoot = "plugin.video.umbrella";

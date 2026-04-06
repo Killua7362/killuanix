@@ -27,7 +27,7 @@
   # ║                                                              ║
   # ║  Options: "gamescope" | "plasma" | "hyprland"                ║
   # ╚══════════════════════════════════════════════════════════════╝
-  defaultSession = "gamescope";
+  defaultSession = "hyprland";
   desktopSession = "plasma";
 
   # ── Launch command for each session ──
@@ -103,6 +103,7 @@
       rm -f "$HOME/.next-session"
       case "$XDG_CURRENT_DESKTOP" in
         Hyprland|hyprland)
+	  uwsm stop
           hyprctl dispatch exit 2>/dev/null || true
           ;;
         KDE)

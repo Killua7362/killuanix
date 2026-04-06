@@ -1,23 +1,13 @@
-# Handheld Daemon (HHD) — controller emulation, TDP, RGB, power button
-# Uses the nixpkgs module: nixos/modules/services/hardware/handheld-daemon.nix
+# Handheld Daemon (HHD) — DISABLED in favor of InputPlumber (from Jovian)
+# InputPlumber handles controller emulation; steamos-manager handles TDP/power.
+# HHD and InputPlumber cannot coexist (both grab the same input devices → EBUSY loop → system freeze).
 {
   config,
   lib,
   pkgs,
   ...
 }: {
-  # ── Handheld Daemon ──
   services.handheld-daemon = {
-    enable = true;
-    user = "killua";
-    ui.enable = true;
-
-    # TDP adjustor — auto-loads acpi_call kernel module
-    adjustor.enable = true;
-  };
-
-  # ── Gamescope overlay integration ──
-  environment.sessionVariables = {
-    HHD_QAM_GAMESCOPE = "1";
+    enable = false;
   };
 }

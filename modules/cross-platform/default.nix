@@ -84,7 +84,6 @@ in {
     services.flatpak.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
 
     # targets.genericLinux.enable = lib.mkIf (pkgs.stdenv.isLinux) true;
-    systemd.user.systemctlPath = lib.mkIf (pkgs.stdenv.isLinux) "/bin/systemctl";
 
     # Flatpak packages (Linux specific)
     services.flatpak.packages = lib.mkIf (pkgs.stdenv.isLinux) [

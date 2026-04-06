@@ -14,8 +14,6 @@
     inputs.vicinae.homeManagerModules.default
     inputs.nixCats.homeModule
     inputs.nix-index-database.homeModules.default
-    inputs.quadlet-nix.homeManagerModules.quadlet
-    ../../modules/containers/quadlet.nix
     ../../modules/vms
     inputs.spicetify-nix.homeManagerModules.default
   ];
@@ -26,6 +24,7 @@
     inputs.nur.overlays.default
     inputs.yazi.overlays.default
     inputs.nix-yazi-flavors.overlays.default
+    inputs.claude-code.overlays.default
   ];
 
   # NixOS-specific packages
@@ -36,7 +35,6 @@
     #	fish
     inputs.antigravity-nix.packages.x86_64-linux.default
     #$javaPackages.compiler.openjdk8
-    claude-code-router
     #sublime
   ];
 

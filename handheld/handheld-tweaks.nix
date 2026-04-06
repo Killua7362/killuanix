@@ -87,20 +87,21 @@
   ];
 
   # ══════════════════════════════════════════════════════════════
-  # Logind — power button delegated to HHD (from steam-deckify.conf)
+  # Logind — power button (from steam-deckify.conf)
   # ══════════════════════════════════════════════════════════════
-  services.logind.extraConfig = ''
-    HandlePowerKey=ignore
-    KillUserProcesses=True
-  '';
+  services.logind.settings.Login ={
+    HandleLidSwitch = "ignore";
+    KillUserProcesses = true;
+  };
 
   # ══════════════════════════════════════════════════════════════
   # PipeWire min-quantum (from 10-min-quant.conf)
   # ══════════════════════════════════════════════════════════════
-  environment.etc."pipewire/pipewire.conf.d/10-min-quant.conf".text = ''
-    context.properties = {
+
+  services.pipewire.extraConfig.pipewire."10-min-quant".text = ''
+      context.properties = {
         default.clock.min-quantum = 256
-    }
+      }
   '';
 
   # ══════════════════════════════════════════════════════════════

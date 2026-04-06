@@ -327,7 +327,22 @@
           font "monospace"
       }
  
-      theme "onedark"
+      themes {
+        custom {
+          fg "#e2e2e2"
+          bg "#3a3a3a"
+          black "#131313"
+          red "#ac8a8c"
+          green "#8aac8b"
+          yellow "#aca98a"
+          blue "#89ceff"
+          magenta "#ac8aac"
+          cyan "#8aacab"
+          white "#e7e7e7"
+          orange "#c49ea0"
+        }
+      }
+      theme "custom"
  
       default_shell "zsh"
  

@@ -33,7 +33,7 @@ in
 
     includes = [
       {
-        condition = "hasconfig:remote.*.url:https://dev.azure.com/**";
+        condition = "hasconfig:remote.*.url:https://*@dev.azure.com/**";
         path = azureGitConfigPath;
       }
     ];

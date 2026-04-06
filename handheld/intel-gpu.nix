@@ -1,4 +1,4 @@
-# Intel Arc GPU Configuration for MSI Claw (Meteor Lake)
+# Intel Arc GPU Configuration for MSI Claw (Lunar Lake)
 # Based on CachyOS chwd Intel profile + community research
 {
   config,
@@ -6,11 +6,12 @@
   pkgs,
   ...
 }: {
-  # ── Xe driver (recommended over i915 for Meteor Lake, ~20% FPS boost) ──
+  # ── Xe driver (native for Lunar Lake, device ID 64a0) ──
   boot.initrd.kernelModules = ["xe"];
   boot.kernelParams = [
-    "xe.force_probe=7d55" # Force Xe driver for Meteor Lake iGPU
-    "i915.force_probe=!7d55" # Prevent i915 from claiming the GPU
+    # Recover from GPU hangs instead of hard-locking the system
+    # wedged_mode: 1 = log + reset GPU, 2 = try to keep running
+    "xe.wedged_mode=2"
     # No fbcon=rotate — gamescope handles rotation in DRM mode,
     # Plasma/Hyprland handle it via their own display config.
     # This keeps TTY unrotated (native portrait).

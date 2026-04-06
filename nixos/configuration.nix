@@ -17,6 +17,7 @@ in {
   imports = [
     ./hardware-configuration.nix
     inputs.home-manager.nixosModules.home-manager
+    ../modules/containers/quadlet.nix
   ];
 
   virtualisation.docker = {
@@ -24,6 +25,12 @@ in {
     daemon.settings = {
       dns = ["8.8.8.8" "8.8.4.4"];
     };
+  };
+
+  virtualisation.podman = {
+    enable = true;
+    dockerCompat = false; # docker is already enabled
+    defaultNetwork.settings.dns_enabled = true;
   };
 
   hardware.bluetooth = {

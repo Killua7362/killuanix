@@ -63,7 +63,7 @@
   # Desktop packages (Linux specific)
   desktopPackages = pkgs:
     with pkgs; [
-      pcmanfm
+      # pcmanfm — replaced by nemo (configured in utils/nemo.nix)
       unetbootin
       qbittorrent
       hakuneko
@@ -98,6 +98,9 @@
       libreoffice-qt6-fresh
       nwg-displays
       sublime4
+      loupe
+      mpv
+      papers
     ];
 
   # Development packages

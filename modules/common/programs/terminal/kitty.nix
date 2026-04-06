@@ -39,8 +39,8 @@
       cursor_text_color #c6c6c6
       foreground            #e2e2e2
       background            #131313
-      selection_foreground  #21323f
-      selection_background  #b7c9d9
+      selection_foreground  #131313
+      selection_background  #89ceff
       url_color             #89ceff
       color8   #262626
       color0   #4c4c4c

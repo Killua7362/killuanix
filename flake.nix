@@ -7,6 +7,7 @@
       "https://chaotic-nyx.cachix.org"
       "https://yazi.cachix.org"
       "https://attic.xuyh0120.win/lantian"
+      "https://cache.garnix.io"
     ];
     extra-trusted-public-keys = [
       "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
@@ -15,6 +16,7 @@
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
       "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
       "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
     ];
   };
 
@@ -237,6 +239,7 @@
         specialArgs = { inherit inputs; };
         modules = [
           ./handheld/configuration.nix
+          inputs.quadlet-nix.nixosModules.quadlet
           inputs.jovian.nixosModules.jovian
           ({ inputs, pkgs, ... }: {
             nixpkgs.overlays = [
