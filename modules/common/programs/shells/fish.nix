@@ -87,7 +87,7 @@ set -gx LG_CONFIG_FILE "$HOME/.config/lazygit/config.yml"
 set -gx XDG_CONFIG_HOME "$HOME/.config"
 set -gx XDG_DATA_DIRS "$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
-set -x PATH "/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+set -x PATH "$HOME/killuanix/scripts:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
 # set -x JAVA_HOME "$HOME/Documents/Boeing/java/jdk1.8.0_291"
 #set -x JAVA_HOME "/home/killua/Documents/Boeing/jdk1.8.0_291/"
 set -x JAVA_HOME "/home/killua/Downloads/java/jdk1.8.0_291"

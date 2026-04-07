@@ -56,12 +56,13 @@
       XDG_CONFIG_HOME = "$HOME/.config";
 
       JAVA_HOME = "/home/killua/Downloads/java/jdk1.8.0_291";
-      JBOSS_HOME = "/home/killua/Documents/Boeing/jboss-eap-7.2";
-      JBOSS_ROOT = "/home/killua/Documents/Boeing/jboss-eap-7.2";
-      EAR_LOC = "/home/killua/Documents/Boeing/jboss-eap-7.2/data/EAR";
+      JBOSS_HOME = "/home/killua/Documents/jboss-eap-7.2";
+      JBOSS_ROOT = "/home/killua/Documents/jboss-eap-7.2";
+      EAR_LOC = "/home/killua/Documents/jboss-eap-7.2/data/EAR";
       ATG_HOME = "/home/killua/ATG/ATG11.3.2";
       ATG_ROOT = "/home/killua/ATG/ATG11.3.2";
       DYNAMO_HOME = "/home/killua/ATG/ATG11.3.2/home";
+      DYNAMO_ROOT = "/home/killua/ATG/ATG11.3.2";
 
       POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD = "true";
       LANGUAGE = "en_US.UTF-8";
@@ -90,7 +91,7 @@
       fpath=(/usr/share/zsh/site-functions /usr/share/zsh/functions/Completion/{Linux,Unix} $fpath)
 
       # PATH modifications
-      export PATH="/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+      export PATH="$HOME/killuanix/scripts:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
       export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
       autoload -Uz compinit

@@ -1,0 +1,697 @@
+#!/usr/bin/env bash
+# fetch-deps: Download dependencies for any Maven or Gradle project.
+#
+# Auto-detects project type and downloads resolved dependency jars so that
+# tools like jdtls (Eclipse LSP) can resolve imports without a full build.
+#
+# For Gradle projects, it first discovers existing copy*Lib tasks defined in
+# the project's build.gradle files and runs those (they know the correct output
+# paths). If none are found, it injects a temporary task that copies resolved
+# dependencies into each submodule's lib/ directory.
+#
+# Usage:
+#   fetch-deps                        # Auto-detect and fetch in current dir
+#   fetch-deps -d /path/to/project    # Specify project directory
+#   fetch-deps -o deps/               # Custom output directory (default: lib/)
+#   fetch-deps -j /path/to/jdk        # Override JAVA_HOME for the build tool
+#   fetch-deps --sources              # Also download source jars (Maven only)
+#   fetch-deps --submodules           # Process all submodules too
+#   fetch-deps --classpath-check      # Report unresolved .classpath entries
+#   fetch-deps --list                 # List discovered modules and copy tasks
+#
+# Supports:
+#   - Maven (pom.xml)       → mvn dependency:copy-dependencies
+#   - Gradle (build.gradle) → discovers existing copy tasks OR injects one
+#   - Gradle wrapper        → uses ./gradlew if available
+#   - Multi-module projects → auto-discovers submodule build files
+#   - Eclipse .classpath    → --classpath-check reports unresolved entries
+#
+# Environment:
+#   JAVA_HOME        Java installation to use (auto-detected if not set)
+#   FETCH_DEPS_JAVA  Override JAVA_HOME specifically for this script
+
+set -euo pipefail
+
+# ─── Defaults ─────────────────────────────────────────────────────────────────
+
+PROJECT_DIR="."
+OUTPUT_DIR=""
+PROJECT_TYPE=""
+JAVA_OVERRIDE=""
+CLEAN=false
+DRY_RUN=false
+SOURCES=false
+SUBMODULES=false
+CLASSPATH_CHECK=false
+LIST_MODE=false
+SPECIFIC_MODULES=()
+
+# ─── Utility functions ───────────────────────────────────────────────────────
+
+usage() {
+    cat <<'EOF'
+Usage: fetch-deps [OPTIONS] [module...]
+
+Download project dependencies into lib/ directories.
+
+Options:
+  -d, --dir DIR          Project directory (default: current dir)
+  -o, --output DIR       Output directory name per module (default: lib/)
+  -t, --type TYPE        Force project type: maven | gradle
+  -j, --java DIR         Override JAVA_HOME for build tool
+      --sources          Also download source jars (Maven only)
+      --submodules       Process all submodules/modules
+      --classpath-check  Check Eclipse .classpath for unresolved entries
+      --list             List discovered modules and their copy tasks
+      --clean            Remove output dirs before downloading
+      --dry-run          Show commands without executing
+  -h, --help             Show this help
+
+Arguments:
+  [module...]            Specific modules to process (default: all)
+
+Examples:
+  fetch-deps                              # Root project only
+  fetch-deps --submodules                 # All submodules
+  fetch-deps --submodules base cmp        # Specific submodules only
+  fetch-deps --list                       # Show discovered tasks
+  fetch-deps --classpath-check            # Audit .classpath files
+  fetch-deps --java ~/jdk1.8.0_291       # Use specific JDK
+  fetch-deps --clean --submodules         # Clean + re-download all
+EOF
+}
+
+detect_project_type() {
+    local dir="$1"
+    if [ -f "$dir/pom.xml" ]; then
+        echo "maven"
+    elif [ -f "$dir/build.gradle" ] || [ -f "$dir/build.gradle.kts" ]; then
+        echo "gradle"
+    else
+        echo ""
+    fi
+}
+
+find_java() {
+    local candidates=(
+        "$JAVA_OVERRIDE"
+        "${FETCH_DEPS_JAVA:-}"
+        "${JAVA_HOME:-}"
+    )
+    for c in "${candidates[@]}"; do
+        [ -n "$c" ] && [ -d "$c" ] && echo "$c" && return
+    done
+    # Derive from java on PATH
+    local java_bin
+    java_bin=$(command -v java 2>/dev/null || true)
+    if [ -n "$java_bin" ]; then
+        java_bin=$(readlink -f "$java_bin")
+        echo "$(dirname "$(dirname "$java_bin")")"
+        return
+    fi
+    echo ""
+}
+
+find_gradle() {
+    local dir="$1"
+    if [ -x "$dir/gradlew" ]; then
+        echo "$dir/gradlew"
+    elif command -v gradle &>/dev/null; then
+        command -v gradle
+    else
+        echo ""
+    fi
+}
+
+find_maven() {
+    local dir="$1"
+    if [ -x "$dir/mvnw" ]; then
+        echo "$dir/mvnw"
+    elif command -v mvn &>/dev/null; then
+        command -v mvn
+    else
+        echo ""
+    fi
+}
+
+count_jars() {
+    local dir="$1"
+    [ -d "$dir" ] && find "$dir" -maxdepth 1 -name "*.jar" 2>/dev/null | wc -l || echo 0
+}
+
+# ─── Gradle: discover existing copy tasks ────────────────────────────────────
+
+# Scans build.gradle files for task definitions that look like copy-to-lib tasks.
+# Returns lines of: module_name<TAB>task_name<TAB>build_file_path
+discover_gradle_copy_tasks() {
+    local dir="$1"
+
+    # Find all build.gradle files (root + submodules)
+    while IFS= read -r build_file; do
+        local build_dir
+        build_dir=$(dirname "$build_file")
+        local mod_name
+        mod_name=$(basename "$build_dir")
+
+        # Look for tasks like: task copyBaseLib(type: Copy)
+        # or task copyFooLib(type: Copy) — common pattern for dependency copy tasks
+        while IFS= read -r task_name; do
+            echo -e "${mod_name}\t${task_name}\t${build_file}"
+        done < <(grep -oP 'task\s+\K(copy\w*Lib)\s*\(' "$build_file" 2>/dev/null | sed 's/\s*($//' || true)
+    done < <(find "$dir" -name "build.gradle" -o -name "build.gradle.kts" 2>/dev/null | sort)
+}
+
+# Also check if root build.gradle applies sub-build files (common pattern):
+#   apply from: "bdsi/base/build.gradle"
+# In this case, all tasks are available from the root project.
+root_applies_subbuilds() {
+    local dir="$1"
+    local root_build="$dir/build.gradle"
+    [ -f "$root_build" ] && grep -q 'apply from:' "$root_build" 2>/dev/null
+}
+
+# ─── Gradle fetch ─────────────────────────────────────────────────────────────
+
+fetch_gradle_with_tasks() {
+    local dir="$1"
+    local gradle_cmd="$2"
+    shift 2
+    local tasks=("$@")
+
+    if [ ${#tasks[@]} -eq 0 ]; then
+        echo "  No tasks to run."
+        return 0
+    fi
+
+    echo "  Tasks: ${tasks[*]}"
+
+    if $DRY_RUN; then
+        echo "  [dry-run] JAVA_HOME=$JAVA_DIR $gradle_cmd -p $dir ${tasks[*]}"
+        return 0
+    fi
+
+    if JAVA_HOME="$JAVA_DIR" "$gradle_cmd" -p "$dir" "${tasks[@]}" 2>&1 | tail -10; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Fallback: inject a task that copies deps per-submodule into their own lib/ dirs
+fetch_gradle_injected() {
+    local dir="$1"
+    local gradle_cmd="$2"
+    local output_name="$3"
+
+    local init_script
+    init_script=$(mktemp /tmp/fetch-deps-init.XXXXXX.gradle)
+
+    # The injected task copies each project's resolved dependencies into
+    # <project_dir>/<output_name>/ — so each submodule gets its own lib/
+    cat > "$init_script" <<GRADLE_INIT
+allprojects {
+    task fetchDepsAll {
+        doLast {
+            def outDir = new File(project.projectDir, "${output_name}")
+            outDir.mkdirs()
+
+            def copied = 0
+            project.configurations.findAll { config ->
+                try { config.canBeResolved } catch (e) { return false }
+            }.each { config ->
+                try {
+                    config.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+                        def dest = new File(outDir, artifact.file.name)
+                        if (!dest.exists()) {
+                            java.nio.file.Files.copy(
+                                artifact.file.toPath(),
+                                dest.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                            )
+                            copied++
+                        }
+                    }
+                } catch (e) {
+                    // Skip unresolvable configurations
+                }
+            }
+            if (copied > 0) {
+                println "fetch-deps: \${project.name} — copied \${copied} jars to \${outDir}"
+            }
+        }
+    }
+}
+GRADLE_INIT
+
+    echo "  Using injected fetchDepsAll task (per-submodule output)"
+
+    if $DRY_RUN; then
+        echo "  [dry-run] JAVA_HOME=$JAVA_DIR $gradle_cmd --init-script $init_script -p $dir fetchDepsAll"
+        rm -f "$init_script"
+        return 0
+    fi
+
+    local ret=0
+    if JAVA_HOME="$JAVA_DIR" "$gradle_cmd" \
+        --init-script "$init_script" \
+        -p "$dir" \
+        fetchDepsAll 2>&1 | tail -15; then
+        ret=0
+    else
+        ret=1
+    fi
+
+    rm -f "$init_script"
+    return $ret
+}
+
+# ─── Maven fetch ──────────────────────────────────────────────────────────────
+
+fetch_maven_module() {
+    local dir="$1"
+    local output="$2"
+    local mvn_cmd
+    mvn_cmd=$(find_maven "$dir")
+
+    if [ -z "$mvn_cmd" ]; then
+        echo "  Error: Maven not found. Install Maven or add mvnw to the project."
+        return 1
+    fi
+
+    echo "  Maven: $mvn_cmd"
+    echo "  Output: $output"
+
+    $CLEAN && rm -rf "$output"
+    mkdir -p "$output"
+
+    local cmd=("$mvn_cmd" -f "$dir/pom.xml"
+        "dependency:copy-dependencies"
+        "-DoutputDirectory=$output"
+        "-DoverWriteIfNewer=true"
+    )
+
+    if $DRY_RUN; then
+        echo "  [dry-run] JAVA_HOME=$JAVA_DIR ${cmd[*]}"
+        return 0
+    fi
+
+    if JAVA_HOME="$JAVA_DIR" "${cmd[@]}" 2>&1 | tail -5; then
+        echo "  Done: $(count_jars "$output") jars"
+    else
+        echo "  FAILED"
+        return 1
+    fi
+
+    if $SOURCES; then
+        echo "  Fetching sources..."
+        JAVA_HOME="$JAVA_DIR" "$mvn_cmd" -f "$dir/pom.xml" \
+            "dependency:copy-dependencies" \
+            "-DoutputDirectory=$output" \
+            "-Dclassifier=sources" \
+            "-DoverWriteIfNewer=true" 2>&1 | tail -3 || true
+    fi
+}
+
+# ─── Classpath check ─────────────────────────────────────────────────────────
+
+check_classpath() {
+    local dir="$1"
+    local found=0
+    local missing=0
+    local total=0
+
+    echo "━━━ Eclipse .classpath check ━━━"
+
+    while IFS= read -r cp_file; do
+        local cp_dir
+        cp_dir=$(dirname "$cp_file")
+        local mod_name
+        mod_name=$(basename "$cp_dir")
+        local mod_missing=0
+        local mod_total=0
+
+        while IFS= read -r jar_path; do
+            mod_total=$((mod_total + 1))
+            total=$((total + 1))
+
+            local resolved=""
+            if [[ "$jar_path" == /* ]]; then
+                # Eclipse workspace-relative path (e.g. /base/lib/foo.jar)
+                # Try: filesystem absolute, then project-root relative,
+                # then resolve /project_name/path as bdsi/project_name/path
+                if [ -f "$jar_path" ]; then
+                    resolved="$jar_path"
+                elif [ -f "$dir/$jar_path" ]; then
+                    resolved="$dir/$jar_path"
+                else
+                    # Try finding the project directory by name
+                    local ws_project
+                    ws_project=$(echo "$jar_path" | sed 's|^/\([^/]*\)/.*|\1|')
+                    local ws_rest
+                    ws_rest=$(echo "$jar_path" | sed 's|^/[^/]*/||')
+                    # Search for the project dir
+                    local found_dir
+                    found_dir=$(find "$dir" -maxdepth 3 -type d -name "$ws_project" 2>/dev/null | head -1)
+                    if [ -n "$found_dir" ] && [ -f "$found_dir/$ws_rest" ]; then
+                        resolved="$found_dir/$ws_rest"
+                    fi
+                fi
+            else
+                # Relative to the module dir
+                [ -f "$cp_dir/$jar_path" ] && resolved="$cp_dir/$jar_path"
+            fi
+
+            if [ -n "$resolved" ]; then
+                found=$((found + 1))
+            else
+                mod_missing=$((mod_missing + 1))
+                missing=$((missing + 1))
+            fi
+        done < <(grep -oP 'kind="lib" path="\K[^"]+' "$cp_file" 2>/dev/null || true)
+
+        if [ "$mod_missing" -gt 0 ]; then
+            echo "  $mod_name: $mod_missing/$mod_total libs missing"
+        elif [ "$mod_total" -gt 0 ]; then
+            echo "  $mod_name: all $mod_total libs resolved"
+        fi
+    done < <(find "$dir" -name ".classpath" -not -path "*/.metadata/*" 2>/dev/null)
+
+    echo ""
+    echo "  Total: $total entries, $found resolved, $missing missing"
+
+    # Check kind="var" entries
+    local var_count
+    var_count=$(grep -rc 'kind="var"' "$dir" --include=".classpath" 2>/dev/null | awk -F: '{s+=$2} END {print s+0}')
+    if [ "$var_count" -gt 0 ]; then
+        echo "  Classpath variables (kind=\"var\"): $var_count entries"
+        grep -roP 'kind="var" path="\K[^/]+' "$dir" --include=".classpath" 2>/dev/null | sort -u | while read -r var; do
+            echo "    - $var"
+        done
+    fi
+}
+
+# ─── Main ─────────────────────────────────────────────────────────────────────
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -d|--dir)          PROJECT_DIR="$2"; shift 2 ;;
+        -o|--output)       OUTPUT_DIR="$2"; shift 2 ;;
+        -t|--type)         PROJECT_TYPE="$2"; shift 2 ;;
+        -j|--java)         JAVA_OVERRIDE="$2"; shift 2 ;;
+        --sources)         SOURCES=true; shift ;;
+        --submodules)      SUBMODULES=true; shift ;;
+        --classpath-check) CLASSPATH_CHECK=true; shift ;;
+        --list)            LIST_MODE=true; shift ;;
+        --clean)           CLEAN=true; shift ;;
+        --dry-run)         DRY_RUN=true; shift ;;
+        -h|--help)         usage; exit 0 ;;
+        -*)                echo "Unknown option: $1"; usage; exit 1 ;;
+        *)                 SPECIFIC_MODULES+=("$1"); shift ;;
+    esac
+done
+
+# If modules specified, imply --submodules
+if [ ${#SPECIFIC_MODULES[@]} -gt 0 ]; then
+    SUBMODULES=true
+fi
+
+# Resolve project dir
+PROJECT_DIR=$(cd "$PROJECT_DIR" && pwd)
+
+# Auto-detect type
+[ -z "$PROJECT_TYPE" ] && PROJECT_TYPE=$(detect_project_type "$PROJECT_DIR")
+
+if [ -z "$PROJECT_TYPE" ]; then
+    echo "Error: Could not detect project type in $PROJECT_DIR"
+    echo "No pom.xml or build.gradle found. Use -t maven|gradle to force."
+    exit 1
+fi
+
+# Default output
+[ -z "$OUTPUT_DIR" ] && OUTPUT_DIR="lib"
+
+# Find Java
+JAVA_DIR=$(find_java)
+if [ -z "$JAVA_DIR" ]; then
+    echo "Error: No Java installation found."
+    echo "Set JAVA_HOME, FETCH_DEPS_JAVA, or use --java /path/to/jdk"
+    exit 1
+fi
+
+echo "fetch-deps"
+echo "  Project:  $PROJECT_DIR"
+echo "  Type:     $PROJECT_TYPE"
+echo "  Java:     $JAVA_DIR ($("$JAVA_DIR/bin/java" -version 2>&1 | head -1))"
+echo "  Output:   $OUTPUT_DIR"
+echo ""
+
+# ─── Classpath check mode ────────────────────────────────────────────────────
+
+if $CLASSPATH_CHECK; then
+    check_classpath "$PROJECT_DIR"
+    exit 0
+fi
+
+# ─── Gradle path ─────────────────────────────────────────────────────────────
+
+if [ "$PROJECT_TYPE" = "gradle" ]; then
+    gradle_cmd=$(find_gradle "$PROJECT_DIR")
+    if [ -z "$gradle_cmd" ]; then
+        echo "Error: Gradle not found. Install Gradle or add gradlew to the project."
+        exit 1
+    fi
+
+    # Discover existing copy tasks
+    declare -A TASK_MAP=()     # module_name -> task_name
+    declare -A TASK_FILES=()   # module_name -> build.gradle path
+    HAS_EXISTING_TASKS=false
+
+    while IFS=$'\t' read -r mod_name task_name build_file; do
+        TASK_MAP["$mod_name"]="$task_name"
+        TASK_FILES["$mod_name"]="$build_file"
+        HAS_EXISTING_TASKS=true
+    done < <(discover_gradle_copy_tasks "$PROJECT_DIR")
+
+    # Check if root applies sub-build files (tasks available from root)
+    TASKS_AT_ROOT=false
+    root_applies_subbuilds "$PROJECT_DIR" && TASKS_AT_ROOT=true
+
+    # ─── List mode ────────────────────────────────────────────────────────
+
+    if $LIST_MODE; then
+        if $HAS_EXISTING_TASKS; then
+            echo "Discovered Gradle copy tasks:"
+            printf "  %-25s %-30s %s\n" "Module" "Task" "Jars"
+            printf "  %-25s %-30s %s\n" "------" "----" "----"
+            for mod in $(echo "${!TASK_MAP[@]}" | tr ' ' '\n' | sort); do
+                build_dir=$(dirname "${TASK_FILES[$mod]}")
+                lib_dir="$build_dir/$OUTPUT_DIR"
+                count=$(count_jars "$lib_dir")
+                printf "  %-25s %-30s %s\n" "$mod" "${TASK_MAP[$mod]}" "$count jars"
+            done
+            echo ""
+            if $TASKS_AT_ROOT; then
+                echo "  Root build.gradle applies sub-builds — all tasks runnable from root."
+            fi
+        else
+            echo "No existing copy tasks found. Will use injected fetchDepsAll task."
+            echo "This copies each submodule's resolved dependencies into <module>/$OUTPUT_DIR/"
+        fi
+        exit 0
+    fi
+
+    # ─── Fetch with existing tasks ────────────────────────────────────────
+
+    if $HAS_EXISTING_TASKS; then
+        # Determine which tasks to run
+        tasks_to_run=()
+
+        if $SUBMODULES; then
+            if [ ${#SPECIFIC_MODULES[@]} -gt 0 ]; then
+                # Run only specified modules
+                for mod in "${SPECIFIC_MODULES[@]}"; do
+                    if [ -n "${TASK_MAP[$mod]+x}" ]; then
+                        tasks_to_run+=("${TASK_MAP[$mod]}")
+                    else
+                        echo "Warning: No copy task found for module '$mod'"
+                        echo "  Available: ${!TASK_MAP[*]}"
+                    fi
+                done
+            else
+                # Run all discovered tasks
+                for mod in $(echo "${!TASK_MAP[@]}" | tr ' ' '\n' | sort); do
+                    tasks_to_run+=("${TASK_MAP[$mod]}")
+                done
+            fi
+        else
+            # Root project only — find the root's task if it has one
+            root_name=$(basename "$PROJECT_DIR")
+            if [ -n "${TASK_MAP[$root_name]+x}" ]; then
+                tasks_to_run+=("${TASK_MAP[$root_name]}")
+            else
+                # No root task — run all (common for projects that apply from: sub-builds)
+                for mod in $(echo "${!TASK_MAP[@]}" | tr ' ' '\n' | sort); do
+                    tasks_to_run+=("${TASK_MAP[$mod]}")
+                done
+            fi
+        fi
+
+        if [ ${#tasks_to_run[@]} -eq 0 ]; then
+            echo "No matching tasks to run."
+            exit 0
+        fi
+
+        if $CLEAN; then
+            echo "Cleaning output directories..."
+            for mod in "${!TASK_MAP[@]}"; do
+                build_dir=$(dirname "${TASK_FILES[$mod]}")
+                lib_dir="$build_dir/$OUTPUT_DIR"
+                if [ -d "$lib_dir" ]; then
+                    $DRY_RUN && echo "  [dry-run] rm -rf $lib_dir" || rm -rf "$lib_dir"
+                fi
+            done
+        fi
+
+        echo "━━━ Running ${#tasks_to_run[@]} Gradle task(s) ━━━"
+
+        if $TASKS_AT_ROOT; then
+            # All tasks accessible from root — run in one invocation
+            if fetch_gradle_with_tasks "$PROJECT_DIR" "$gradle_cmd" "${tasks_to_run[@]}"; then
+                echo ""
+                echo "━━━ Results ━━━"
+                for mod in $(echo "${!TASK_MAP[@]}" | tr ' ' '\n' | sort); do
+                    build_dir=$(dirname "${TASK_FILES[$mod]}")
+                    lib_dir="$build_dir/$OUTPUT_DIR"
+                    count=$(count_jars "$lib_dir")
+                    [ "$count" -gt 0 ] && printf "  %-25s %s jars\n" "$mod" "$count"
+                done
+            else
+                echo ""
+                echo "FAILED. Common fixes:"
+                echo "  - Old Gradle + new Java? Try: fetch-deps --java /path/to/older/jdk"
+                echo "  - On NixOS? Try: fhs-run fetch-deps"
+                exit 1
+            fi
+        else
+            # Tasks are in separate build files — run individually
+            FAILED=()
+            for task in "${tasks_to_run[@]}"; do
+                echo "━━━ $task ━━━"
+                if ! fetch_gradle_with_tasks "$PROJECT_DIR" "$gradle_cmd" "$task"; then
+                    FAILED+=("$task")
+                fi
+                echo ""
+            done
+            if [ ${#FAILED[@]} -gt 0 ]; then
+                echo "Failed: ${FAILED[*]}"
+                exit 1
+            fi
+        fi
+
+    else
+        # ─── No existing tasks — use injected approach ────────────────────
+
+        echo "No existing copy tasks found in build files."
+        echo "Injecting fetchDepsAll task (copies deps into each submodule's $OUTPUT_DIR/)."
+        echo ""
+
+        if $CLEAN; then
+            echo "Cleaning..."
+            while IFS= read -r build_file; do
+                build_dir=$(dirname "$build_file")
+                lib_dir="$build_dir/$OUTPUT_DIR"
+                if [ -d "$lib_dir" ]; then
+                    $DRY_RUN && echo "  [dry-run] rm -rf $lib_dir" || rm -rf "$lib_dir"
+                fi
+            done < <(find "$PROJECT_DIR" -name "build.gradle" -o -name "build.gradle.kts" 2>/dev/null)
+        fi
+
+        echo "━━━ fetchDepsAll (injected) ━━━"
+        if fetch_gradle_injected "$PROJECT_DIR" "$gradle_cmd" "$OUTPUT_DIR"; then
+            echo ""
+            echo "━━━ Results ━━━"
+            while IFS= read -r build_file; do
+                build_dir=$(dirname "$build_file")
+                mod_name=$(basename "$build_dir")
+                lib_dir="$build_dir/$OUTPUT_DIR"
+                count=$(count_jars "$lib_dir")
+                [ "$count" -gt 0 ] && printf "  %-25s %s jars\n" "$mod_name" "$count"
+            done < <(find "$PROJECT_DIR" -name "build.gradle" -o -name "build.gradle.kts" 2>/dev/null | sort)
+        else
+            echo ""
+            echo "FAILED. Common fixes:"
+            echo "  - Old Gradle + new Java? Try: fetch-deps --java /path/to/older/jdk"
+            echo "  - On NixOS? Try: fhs-run fetch-deps"
+            exit 1
+        fi
+    fi
+
+# ─── Maven path ──────────────────────────────────────────────────────────────
+
+elif [ "$PROJECT_TYPE" = "maven" ]; then
+
+    if $LIST_MODE; then
+        echo "Maven project — modules:"
+        if [ -f "$PROJECT_DIR/pom.xml" ]; then
+            echo "  (root)"
+            grep -oP '<module>\K[^<]+' "$PROJECT_DIR/pom.xml" 2>/dev/null | while read -r mod; do
+                lib_dir="$PROJECT_DIR/$mod/$OUTPUT_DIR"
+                count=$(count_jars "$lib_dir")
+                printf "  %-25s %s jars\n" "$mod" "$count"
+            done
+        fi
+        exit 0
+    fi
+
+    DIRS=("$PROJECT_DIR")
+
+    if $SUBMODULES; then
+        while IFS= read -r mod; do
+            mod_dir="$PROJECT_DIR/$mod"
+            if [ -d "$mod_dir" ] && [ -f "$mod_dir/pom.xml" ]; then
+                DIRS+=("$mod_dir")
+            fi
+        done < <(grep -oP '<module>\K[^<]+' "$PROJECT_DIR/pom.xml" 2>/dev/null || true)
+    fi
+
+    # Filter by specific modules if given
+    if [ ${#SPECIFIC_MODULES[@]} -gt 0 ]; then
+        FILTERED=()
+        for dir in "${DIRS[@]}"; do
+            mod_name=$(basename "$dir")
+            for spec in "${SPECIFIC_MODULES[@]}"; do
+                if [ "$mod_name" = "$spec" ] || [ "$dir" = "$PROJECT_DIR" ]; then
+                    FILTERED+=("$dir")
+                fi
+            done
+        done
+        DIRS=("${FILTERED[@]}")
+    fi
+
+    FAILED=()
+    SUCCESS=()
+
+    for dir in "${DIRS[@]}"; do
+        rel_dir="${dir#"$PROJECT_DIR"}"
+        rel_dir="${rel_dir:-/}"
+        echo "━━━ ${rel_dir} ━━━"
+
+        output="$dir/$OUTPUT_DIR"
+        if fetch_maven_module "$dir" "$output"; then
+            SUCCESS+=("$rel_dir")
+        else
+            FAILED+=("$rel_dir")
+        fi
+        echo ""
+    done
+
+    echo "━━━ Summary ━━━"
+    echo "Success: ${SUCCESS[*]:-none}"
+    if [ ${#FAILED[@]} -gt 0 ]; then
+        echo "Failed:  ${FAILED[*]}"
+        exit 1
+    fi
+fi
+
+echo ""
+echo "Done. If using jdtls, clear the cache: rm -rf ~/.cache/nvim/jdtls/"

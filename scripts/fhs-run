@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# fhs-run: Run non-NixOS binaries (installers, proprietary scripts, etc.)
+# in an FHS-compatible environment using nix-shell + buildFHSEnv.
+#
+# NixOS doesn't have /lib, /usr/lib, or standard ld-linux paths, so
+# binary installers (InstallAnywhere, .bin, .run, .sh) typically fail.
+# This script creates a temporary FHS sandbox with common libraries.
+#
+# Usage:
+#   fhs-run <binary> [args...]
+#   fhs-run ./installer.bin
+#   fhs-run ./setup.sh --silent
+#
+# Examples:
+#   fhs-run ~/Downloads/OCPlatform11.3.2_21REL.bin
+#   fhs-run ~/Downloads/jboss-installer.jar
+#   fhs-run ./some-proprietary-tool --config /path/to/config
+
+set -euo pipefail
+
+if [ $# -eq 0 ]; then
+    echo "Usage: fhs-run <binary> [args...]"
+    echo ""
+    echo "Runs a binary in an FHS-compatible environment on NixOS."
+    echo "Useful for proprietary installers (.bin, .run, .sh) that expect"
+    echo "standard Linux paths like /lib, /usr/lib, etc."
+    exit 1
+fi
+
+BINARY="$1"
+shift
+
+# Resolve to absolute path if relative
+if [[ "$BINARY" != /* ]]; then
+    BINARY="$(pwd)/$BINARY"
+fi
+
+if [ ! -f "$BINARY" ]; then
+    echo "Error: File not found: $BINARY"
+    exit 1
+fi
+
+# Make executable if not already
+chmod +x "$BINARY" 2>/dev/null || true
+
+echo "Running in FHS environment: $BINARY $*"
+
+# Use nix-shell with buildFHSEnv to create a sandbox with common libraries
+# Add packages to targetPkgs as needed for specific installers
+exec nix-shell --impure -p '(pkgs.buildFHSEnv {
+  name = "fhs-shell";
+  targetPkgs = p: with p; [
+    # Core libraries needed by most binary installers
+    glib
+    zlib
+    libGL
+    xorg.libX11
+    xorg.libXext
+    xorg.libXrender
+    xorg.libXtst
+    xorg.libXi
+    xorg.libXrandr
+    fontconfig
+    freetype
+    alsa-lib
+
+    # Java-based installers (InstallAnywhere, etc.)
+    jdk21
+
+    # Common runtime deps
+    stdenv.cc.cc.lib
+    openssl
+    curl
+    wget
+    coreutils
+    bash
+    which
+    file
+    patchelf
+    gnugrep
+    gnused
+    gawk
+    findutils
+    util-linux
+  ];
+  runScript = "bash";
+}).env' --run "\"$BINARY\" $*"

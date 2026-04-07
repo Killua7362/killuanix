@@ -31,6 +31,49 @@ local function extend_or_override(config, custom, ...)
 	return config
 end
 
+-- Ensure DYNAMO_ROOT classpath variable is defined at the jdtls workspace level.
+-- Eclipse classpath variables (kind="var") are workspace-scoped, NOT project-scoped,
+-- so project-level .settings/org.eclipse.jdt.core.prefs is ignored by jdtls.
+local function ensure_classpath_variables(workspace_dir)
+	local dynamo_root = vim.env.DYNAMO_ROOT or "/home/killua/ATG/ATG11.3.2"
+	if dynamo_root == "" or vim.fn.isdirectory(dynamo_root) ~= 1 then
+		return
+	end
+
+	local prefs_dir = workspace_dir .. "/.metadata/.plugins/org.eclipse.core.runtime/.settings"
+	vim.fn.mkdir(prefs_dir, "p")
+	local prefs_file = prefs_dir .. "/org.eclipse.jdt.core.prefs"
+	local var_line = "org.eclipse.jdt.core.classpathVariable.DYNAMO_ROOT=" .. dynamo_root
+
+	local lines = {}
+	local has_dynamo = false
+	local f = io.open(prefs_file, "r")
+	if f then
+		for line in f:lines() do
+			if line:match("^org%.eclipse%.jdt%.core%.classpathVariable%.DYNAMO_ROOT=") then
+				has_dynamo = true
+				table.insert(lines, var_line)
+			else
+				table.insert(lines, line)
+			end
+		end
+		f:close()
+	end
+
+	if not has_dynamo then
+		if #lines == 0 then
+			table.insert(lines, "eclipse.preferences.version=1")
+		end
+		table.insert(lines, var_line)
+	end
+
+	f = io.open(prefs_file, "w")
+	if f then
+		f:write(table.concat(lines, "\n") .. "\n")
+		f:close()
+	end
+end
+
 return {
 	recommended = function()
 		return LazyVim.extras.wants({
@@ -42,6 +85,8 @@ return {
 				"pom.xml", -- Maven
 				"settings.gradle", -- Gradle
 				"settings.gradle.kts", -- Gradle
+				".project", -- Eclipse
+				".classpath", -- Eclipse
 			},
 		})
 	end,
@@ -99,8 +144,43 @@ return {
 			end
 
 			return {
+				-- For Eclipse multi-module projects, walk up to find the workspace root
+				-- (the directory containing the top-level build.gradle or the bdsi/ folder)
+				-- rather than stopping at the first .project file in a submodule.
 				root_dir = function(path)
-					return vim.fs.root(path, vim.lsp.config.jdtls.root_markers)
+					-- Use .git to find the outermost project root first.
+					-- vim.fs.root finds the NEAREST parent with a marker, so for
+					-- multi-module projects (e.g. bdsi/base/build.gradle exists),
+					-- it would stop at the submodule instead of the repo root.
+					local git_root = vim.fs.root(path, { ".git" })
+					if git_root then
+						-- Verify this git root is actually a Java project
+						local dominated_by = {
+							"build.gradle",
+							"build.gradle.kts",
+							"settings.gradle",
+							"settings.gradle.kts",
+							"pom.xml",
+							".classpath",
+							".project",
+						}
+						for _, marker in ipairs(dominated_by) do
+							if vim.fn.filereadable(git_root .. "/" .. marker) == 1 then
+								return git_root
+							end
+						end
+					end
+					-- Fallback: find nearest build marker and walk up
+					local root = vim.fs.root(path, {
+						"settings.gradle",
+						"settings.gradle.kts",
+						"build.gradle",
+						"build.gradle.kts",
+						"pom.xml",
+						".project",
+						".classpath",
+					})
+					return root
 				end,
 
 				project_name = function(root_dir)
@@ -140,7 +220,7 @@ return {
 							"-Declipse.product=org.eclipse.jdt.ls.core.product",
 							"-Dlog.protocol=true",
 							"-Dlog.level=ALL",
-							"-Xmx1g",
+							"-Xmx4g",
 							"--add-modules=ALL-SYSTEM",
 							"--add-opens",
 							"java.base/java.util=ALL-UNNAMED",
@@ -163,15 +243,44 @@ return {
 				settings = {
 					java = {
 						configuration = {
-							runtimes = {
-								{
-									name = "JavaSE-21",
-									path = "/usr/lib/jvm/java-21-openjdk",
-									default = true,
-								},
-							},
+							runtimes = (function()
+								local java_home = vim.env.JAVA_HOME
+								if not java_home or java_home == "" then
+									local java_exec = vim.fn.resolve(vim.fn.exepath("java") or "")
+									if java_exec ~= "" then
+										java_home = vim.fn.fnamemodify(java_exec, ":h:h")
+									end
+								end
+								if java_home and vim.fn.isdirectory(java_home) == 1 then
+									return {
+										{ name = "JavaSE-21", path = java_home, default = true },
+									}
+								end
+								return {
+									{ name = "JavaSE-21", path = "/usr/lib/jvm/java-21-openjdk", default = true },
+								}
+							end)(),
 							updateBuildConfiguration = "interactive",
 						},
+						eclipse = {
+							downloadSources = true,
+						},
+						import = {
+							gradle = {
+								enabled = false,
+								wrapper = { enabled = false },
+								annotationProcessing = { enabled = false },
+							},
+							maven = { enabled = false },
+							eclipse = { enabled = true },
+							exclusions = {
+								"**/node_modules/**",
+								"**/.metadata/**",
+								"**/archetype-resources/**",
+								"**/META-INF/maven/**",
+							},
+						},
+						project = {},
 						inlayHints = {
 							parameterNames = {
 								enabled = "all",
@@ -255,12 +364,32 @@ return {
 
 			local function attach_jdtls()
 				local fname = vim.api.nvim_buf_get_name(0)
+				local root_dir = opts.root_dir(fname)
+				local project_name = opts.project_name(root_dir)
+
+				-- Inject DYNAMO_ROOT classpath variable into workspace prefs before server starts
+				if project_name then
+					ensure_classpath_variables(opts.jdtls_workspace_dir(project_name))
+				end
 
 				local config = extend_or_override({
 					cmd = opts.full_cmd(opts),
-					root_dir = opts.root_dir(fname),
+					root_dir = root_dir,
 					init_options = {
 						bundles = bundles,
+						settings = {
+							java = {
+								import = {
+									eclipse = { enabled = true },
+									gradle = {
+										enabled = false,
+										wrapper = { enabled = false },
+										annotationProcessing = { enabled = false },
+									},
+									maven = { enabled = false },
+								},
+							},
+						},
 					},
 					settings = opts.settings,
 					capabilities = LazyVim.has("blink.cmp") and require("blink.cmp").get_lsp_capabilities()
