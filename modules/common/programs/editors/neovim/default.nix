@@ -38,9 +38,7 @@ in
         general = with pkgs; [
           universal-ctags
           curl
-          (pkgs.writeShellScriptBin "lazygit" ''
-            exec ${pkgs.lazygit}/bin/lazygit --use-config-file ${pkgs.writeText "lazygit_config.yml" ""} "$@"
-          '')
+          pkgs.lazygit
           ripgrep
           fd
           stdenv.cc.cc
@@ -91,6 +89,7 @@ in
           nvim-treesitter.withAllGrammars
           nvim-dap
           nvim-dap-virtual-text
+          diffview-nvim
 
           # sometimes you have to fix some names
           { plugin = catppuccin-nvim; name = "catppuccin"; }

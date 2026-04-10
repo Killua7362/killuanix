@@ -26,7 +26,7 @@
     "vm.dirty_bytes" = 268435456;
     "vm.compaction_proactiveness" = 0; # Reduce latency spikes during gaming
     "vm.max_map_count" = 2147483642; # Required by many Steam/Proton games
-    "kernel.nmi_watchdog" = 0; # Power savings
+    "kernel.nmi_watchdog" = 1; # Detect hard lockups (needed for Xe GPU hang recovery)
     "fs.file-max" = 2097152;
     "net.ipv4.tcp_fin_timeout" = 5; # Quick TCP port reuse for games
     "dev.i915.perf_stream_paranoid" = 0; # GPU perf counter access
@@ -47,7 +47,8 @@
   # Kernel modules
   # ══════════════════════════════════════════════════════════════
   # Blacklist watchdog timer (from blacklist-handheld.conf)
-  boot.blacklistedKernelModules = ["wdat_wdt"];
+  # wdat_wdt no longer blacklisted — hardware watchdog can auto-reboot on hard lockups
+  # boot.blacklistedKernelModules = ["wdat_wdt"];
 
   # Preload HID drivers to prevent Steam evdev fallback race (from hid-preload.conf)
   # Load msi-wmi-platform for MSI Claw (from CachyOS chwd MSI Claw profile)
