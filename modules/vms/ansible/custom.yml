@@ -1,0 +1,11 @@
+---
+# Edit this file to add custom provisioning tasks.
+# Run with: work-vm playbook ~/killuanix/modules/vms/ansible/custom.yml
+- hosts: work-ubuntu
+  become: true
+  tasks: []
+    # Add your custom tasks below
+    # - name: Example
+    #   apt:
+    #     name: some-package
+    #     state: present

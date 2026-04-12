@@ -1,5 +1,9 @@
-{ pkgs, config, lib, ... }:
-let
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}: let
   mcp-dockerfile = pkgs.writeText "Dockerfile" ''
     # syntax=docker/dockerfile:1
 
@@ -48,13 +52,12 @@ let
     hash = "sha256-KakvXZf0vjdqzyT+LsAKHEr4GLICGXPmxl1hZ3tI7Yg=";
   };
 
-  buildContext = pkgs.runCommand "mcp-server-context" { } ''
+  buildContext = pkgs.runCommand "mcp-server-context" {} ''
     cp -r ${mcp-server-src} $out
     chmod -R u+w $out
     cp ${dockerignore} $out/.dockerignore
   '';
-in
-{
+in {
   virtualisation.quadlet = {
     builds = {
       mcp-server = {
@@ -90,7 +93,7 @@ in
             "/run/user/1000/podman/podman.sock:/var/run/docker.sock:z"
           ];
 
-          networks = [ "portainer-net" ];
+          networks = ["portainer-net"];
 
           securityLabelDisable = true;
         };

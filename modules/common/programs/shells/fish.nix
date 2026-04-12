@@ -1,7 +1,8 @@
-{ config, pkgs, ... }:
-
 {
-
+  config,
+  pkgs,
+  ...
+}: {
   programs.fish = {
     enable = true;
     plugins = [
@@ -67,64 +68,63 @@
     };
     shellInit = ''
 
-starship init fish | source
+      starship init fish | source
 
-set -U fish_history_search_dedup 1
-set -U fish_history_save_on_exit 1
-set -g fish_confirm_history_expansion 1
-set -g fish_autosuggestion_enabled 1
-set -g fish_greeting
-set -g fish_complete_case_insensitive 1
+      set -U fish_history_search_dedup 1
+      set -U fish_history_save_on_exit 1
+      set -g fish_confirm_history_expansion 1
+      set -g fish_autosuggestion_enabled 1
+      set -g fish_greeting
+      set -g fish_complete_case_insensitive 1
 
-set -gx fish_color_valid_path --underline
-set -gx COLORTERM truecolor
-set -gx TERM xterm-256color
-set -gx EDITOR nvim
-set -gx LESS "~/.lesskey"
-set -gx MANPAGER "nvim +Man!"
-set -gx MANWIDTH 999
-set -gx LG_CONFIG_FILE "$HOME/.config/lazygit/config.yml"
-set -gx XDG_CONFIG_HOME "$HOME/.config"
-set -gx XDG_DATA_DIRS "$HOME/.nix-profile/share:$XDG_DATA_DIRS"
+      set -gx fish_color_valid_path --underline
+      set -gx COLORTERM truecolor
+      set -gx TERM xterm-256color
+      set -gx EDITOR nvim
+      set -gx LESS "~/.lesskey"
+      set -gx MANPAGER "nvim +Man!"
+      set -gx MANWIDTH 999
+      set -gx LG_CONFIG_FILE "$HOME/.config/lazygit/config.yml"
+      set -gx XDG_CONFIG_HOME "$HOME/.config"
+      set -gx XDG_DATA_DIRS "$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
-set -x PATH "$HOME/killuanix/scripts:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
-# set -x JAVA_HOME "$HOME/Documents/Boeing/java/jdk1.8.0_291"
-#set -x JAVA_HOME "/home/killua/Documents/Boeing/jdk1.8.0_291/"
-set -x JAVA_HOME "/home/killua/Downloads/java/jdk1.8.0_291"
-set -x JBOSS_HOME "/home/killua/Documents/Boeing/jboss-eap-7.2"
-set -x JBOSS_ROOT "/home/killua/Documents/Boeing/jboss-eap-7.2"
-set -x EAR_LOC "/home/killua/Documents/Boeing/jboss-eap-7.2/data/EAR"
-set -x ATG_HOME "/home/killua/ATG/ATG11.3.2"
-set -x ATG_ROOT "/home/killua/ATG/ATG11.3.2"
-set -x DYNAMO_HOME "/home/killua/ATG/ATG11.3.2/home"
+      set -x PATH "$HOME/killuanix/scripts:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+      # set -x JAVA_HOME "$HOME/Documents/Boeing/java/jdk1.8.0_291"
+      #set -x JAVA_HOME "/home/killua/Documents/Boeing/jdk1.8.0_291/"
+      set -x JAVA_HOME "/home/killua/Downloads/java/jdk1.8.0_291"
+      set -x JBOSS_HOME "/home/killua/Documents/Boeing/jboss-eap-7.2"
+      set -x JBOSS_ROOT "/home/killua/Documents/Boeing/jboss-eap-7.2"
+      set -x EAR_LOC "/home/killua/Documents/Boeing/jboss-eap-7.2/data/EAR"
+      set -x ATG_HOME "/home/killua/ATG/ATG11.3.2"
+      set -x ATG_ROOT "/home/killua/ATG/ATG11.3.2"
+      set -x DYNAMO_HOME "/home/killua/ATG/ATG11.3.2/home"
 
-set -x POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD true
-set -x LANGUAGE en_US.UTF-8
-set -x LC_ALL en_US.UTF-8
-set -x LANG en_US.UTF-8
-set -x LC_CTYPE en_US.UTF-8
-set -x FZF_DEFAULT_COMMAND "fd --type f --hidden --follow"
-set -x FZF_DEFAULT_OPTS "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672"
-set -x FZF_CTRL_T_OPTS ""
-set -x FZF_COMPLETION_OPTS "--height=60% --border --margin=1 --padding=1"
-set -x FZF_TMUX 1
+      set -x POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD true
+      set -x LANGUAGE en_US.UTF-8
+      set -x LC_ALL en_US.UTF-8
+      set -x LANG en_US.UTF-8
+      set -x LC_CTYPE en_US.UTF-8
+      set -x FZF_DEFAULT_COMMAND "fd --type f --hidden --follow"
+      set -x FZF_DEFAULT_OPTS "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672"
+      set -x FZF_CTRL_T_OPTS ""
+      set -x FZF_COMPLETION_OPTS "--height=60% --border --margin=1 --padding=1"
+      set -x FZF_TMUX 1
 
-zoxide init fish | source
-set -U fifc_fd_opts --hidden
-set -U fifc_bat_opts --style=numbers
+      zoxide init fish | source
+      set -U fifc_fd_opts --hidden
+      set -U fifc_bat_opts --style=numbers
 
-set -g fish_color_command green
-set -g fish_color_param cyan
-set -g fish_color_error red --bold
-set -g fish_color_comment brblack
-set -g fish_color_autosuggestion brblack
+      set -g fish_color_command green
+      set -g fish_color_param cyan
+      set -g fish_color_error red --bold
+      set -g fish_color_comment brblack
+      set -g fish_color_autosuggestion brblack
 
-bind ctrl-c __fish_cancel_commandline
+      bind ctrl-c __fish_cancel_commandline
 
-set -x ZELLIJ_AUTO_EXIT false
-set -x ZELLIJ_AUTO_ATTACH false
+      set -x ZELLIJ_AUTO_EXIT false
+      set -x ZELLIJ_AUTO_ATTACH false
 
-'';
+    '';
   };
-
 }

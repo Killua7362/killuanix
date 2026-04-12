@@ -1,6 +1,4 @@
-{ lib
-, ...
-}: {
+{lib, ...}: {
   wayland.windowManager.hyprland.settings = {
     dwindle = {
       preserve_split = true;
@@ -37,9 +35,9 @@
       new_status = "master";
     };
     scrolling = {
-        explicit_column_widths = "1.0, 0.5";
-        fullscreen_on_one_column = true;
-        follow_focus = true;
+      explicit_column_widths = "1.0, 0.5";
+      fullscreen_on_one_column = true;
+      follow_focus = true;
     };
   };
 }

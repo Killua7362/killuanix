@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 with lib; let
   cfg = config.security.pam;
@@ -16,32 +17,29 @@ with lib; let
   # As such, we resort to line addition/deletion in place using `sed`. We add a comment to the
   # added line that includes the name of the option, to make it easier to identify the line that
   # should be deleted when the option is disabled.
-  mkSudoTouchIdAuthScript = isEnabled:
-    let
-      file = "/etc/pam.d/sudo";
-      option = "security.pam.enableSudoTouchIdAuth";
-    in
-    ''
-      ${
-        if isEnabled
-        then ''
-          # Enable sudo Touch ID authentication, if not already enabled
-          if ! grep 'pam_tid.so' ${file} > /dev/null; then
-            sed -i "" '2i\
-          auth       sufficient     pam_tid.so # nix-darwin: ${option}
-            ' ${file}
-          fi
-        ''
-        else ''
-          # Disable sudo Touch ID authentication, if added by nix-darwin
-          if grep '${option}' ${file} > /dev/null; then
-            sed -i "" '/${option}/d' ${file}
-          fi
-        ''
-      }
-    '';
-in
-{
+  mkSudoTouchIdAuthScript = isEnabled: let
+    file = "/etc/pam.d/sudo";
+    option = "security.pam.enableSudoTouchIdAuth";
+  in ''
+    ${
+      if isEnabled
+      then ''
+        # Enable sudo Touch ID authentication, if not already enabled
+        if ! grep 'pam_tid.so' ${file} > /dev/null; then
+          sed -i "" '2i\
+        auth       sufficient     pam_tid.so # nix-darwin: ${option}
+          ' ${file}
+        fi
+      ''
+      else ''
+        # Disable sudo Touch ID authentication, if added by nix-darwin
+        if grep '${option}' ${file} > /dev/null; then
+          sed -i "" '/${option}/d' ${file}
+        fi
+      ''
+    }
+  '';
+in {
   options = {
     security.pam.enableSudoTouchIdAuth = mkEnableOption ''
       Enable sudo authentication with Touch ID

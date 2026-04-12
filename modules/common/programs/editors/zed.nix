@@ -1,10 +1,10 @@
-{ pkgs
-, lib
-, inputs
-, config
-, ...
-}:
 {
+  pkgs,
+  lib,
+  inputs,
+  config,
+  ...
+}: {
   programs.zed-editor = {
     enable = true;
     extensions = [
@@ -15,7 +15,7 @@
       "dracula"
       "opencode"
     ];
-    extraPackages = [ pkgs.nixd ];
+    extraPackages = [pkgs.nixd];
 
     userSettings = {
       vim_mode = true;

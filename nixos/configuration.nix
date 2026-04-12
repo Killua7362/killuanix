@@ -9,15 +9,12 @@
     command = "${lib.getExe config.programs.uwsm.package} start hyprland-uwsm.desktop";
     user = "killua";
   };
-  pinnedVBOX = import inputs.nixpkgs-virtualbox {
-    system = "x86_64-linux";
-    config.allowUnfree = true;
-  };
 in {
   imports = [
     ./hardware-configuration.nix
     inputs.home-manager.nixosModules.home-manager
     ../modules/containers/quadlet.nix
+    ../modules/vms/system.nix
   ];
 
   virtualisation.docker = {
@@ -80,7 +77,7 @@ in {
 
   networking.firewall = {
     enable = true;
-    trustedInterfaces = ["tailscale0" "docker0"];
+    trustedInterfaces = ["tailscale0" "docker0" "virbr0"];
     allowedUDPPorts = [41641 21116 1194];
     allowedUDPPortRanges = [
       {
@@ -125,7 +122,7 @@ in {
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_IN";
   #networking.networkmanager.plugins = [ "openconnect" ];
-  networking.networkmanager.packages = [pkgs.networkmanager-openconnect];
+  networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
 
   networking.resolvconf.dnsExtensionMechanism = false;
   i18n.extraLocaleSettings = {
@@ -152,7 +149,7 @@ in {
 
   services.printing.enable = true;
 
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
 
   security.rtkit.enable = true;
 
@@ -166,6 +163,14 @@ in {
     pulse.enable = true;
     jack.enable = true;
     wireplumber.enable = true;
+    extraConfig.pipewire-pulse."30-network-tcp" = {
+      "pulse.cmd" = [
+        {
+          cmd = "load-module";
+          args = "module-native-protocol-tcp port=4713 auth-anonymous=1 listen=0.0.0.0";
+        }
+      ];
+    };
   };
 
   services.xserver.libinput.enable = true;
@@ -285,21 +290,9 @@ in {
     nerd-fonts.hack
   ];
 
-  virtualisation.libvirtd = {
-    enable = true;
-    qemu = {
-      package = pkgs.qemu_kvm;
-      runAsRoot = true;
-      swtpm.enable = true;
-    };
-  };
-  programs.virt-manager.enable = true;
-
-  virtualisation.virtualbox.host.enable = true;
-  users.extraGroups.vboxusers.members = ["killua"];
-  virtualisation.virtualbox.host.enableExtensionPack = true;
-  virtualisation.virtualbox.host.package = pinnedVBOX.virtualbox;
   virtualisation.quadlet.enable = true;
+  boot.blacklistedKernelModules = ["kvm_intel" "kvm"];
+
   services.dbus.packages = [pkgs.blueman pkgs.openvpn3];
   programs.hyprland = {
     enable = true;

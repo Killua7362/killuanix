@@ -7,8 +7,8 @@
     enable = true;
   };
 
-  programs.dankMaterialShell.plugins.activitySim = {
+  programs.dankMaterialShell.plugins.vmManager = {
     enable = true;
-    src = ../../../../vms/activity-sim-plugin;
+    src = ../../../../vms/vm-manager-plugin;
   };
 }

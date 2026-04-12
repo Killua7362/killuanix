@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   system.activationScripts.postUserActivation.text = ''
     #install cheatsheet globally
        if [[ ! -f "/usr/local/bin/cheat.sh" ]]; then

@@ -1,6 +1,9 @@
-{ config, pkgs, lib, ... }:
-
 {
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   # ╔══════════════════════════════════════════════════════════════════╗
   # ║  User Packages (managed by Home Manager on BOTH systems)         ║
   # ╚══════════════════════════════════════════════════════════════════╝
@@ -32,7 +35,6 @@
   # ║  Works on both Arch and NixOS — user-level overrides             ║
   # ╚══════════════════════════════════════════════════════════════════╝
   xdg.configFile = {
-
     # ── PipeWire Core ─────────────────────────────────────────────
     "pipewire/pipewire.conf.d/99-custom.conf".text = ''
       context.properties = {
@@ -217,6 +219,5 @@
           }
       ]
     '';
-
   };
 }

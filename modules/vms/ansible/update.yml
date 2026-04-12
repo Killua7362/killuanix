@@ -1,0 +1,22 @@
+---
+- hosts: work-ubuntu
+  become: true
+  tasks:
+    - name: Update apt cache and upgrade packages
+      apt:
+        update_cache: true
+        upgrade: dist
+
+    - name: Remove unused packages
+      apt:
+        autoremove: true
+
+    - name: Check if reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Notify about pending reboot
+      debug:
+        msg: "A reboot is required to complete updates"
+      when: reboot_required.stat.exists

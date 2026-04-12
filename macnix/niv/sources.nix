@@ -3,53 +3,50 @@ let
   #
   # The fetchers. fetch_<type> fetches specs of type <type>.
   #
-  fetch_file = pkgs: name: spec:
-    let
-      name' = sanitizeName name + "-src";
-    in
+  fetch_file = pkgs: name: spec: let
+    name' = sanitizeName name + "-src";
+  in
     if spec.builtin or true
     then
       builtins_fetchurl
-        {
-          inherit (spec) url sha256;
-          name = name';
-        }
+      {
+        inherit (spec) url sha256;
+        name = name';
+      }
     else
       pkgs.fetchurl {
         inherit (spec) url sha256;
         name = name';
       };
 
-  fetch_tarball = pkgs: name: spec:
-    let
-      name' = sanitizeName name + "-src";
-    in
+  fetch_tarball = pkgs: name: spec: let
+    name' = sanitizeName name + "-src";
+  in
     if spec.builtin or true
     then
       builtins_fetchTarball
-        {
-          name = name';
-          inherit (spec) url sha256;
-        }
+      {
+        name = name';
+        inherit (spec) url sha256;
+      }
     else
       pkgs.fetchzip {
         name = name';
         inherit (spec) url sha256;
       };
 
-  fetch_git = name: spec:
-    let
-      ref =
-        if spec ? ref
-        then spec.ref
-        else if spec ? branch
-        then "refs/heads/${spec.branch}"
-        else if spec ? tag
-        then "refs/tags/${spec.tag}"
-        else
-          abort
-            "In git source '${name}': Please specify `ref`, `tag` or `branch`!";
-    in
+  fetch_git = name: spec: let
+    ref =
+      if spec ? ref
+      then spec.ref
+      else if spec ? branch
+      then "refs/heads/${spec.branch}"
+      else if spec ? tag
+      then "refs/tags/${spec.tag}"
+      else
+        abort
+        "In git source '${name}': Please specify `ref`, `tag` or `branch`!";
+  in
     builtins.fetchGit {
       url = spec.repo;
       inherit (spec) rev;
@@ -82,21 +79,20 @@ let
       ((x: builtins.elemAt (builtins.match "\\.*(.*)" x) 0) name)));
 
   # The set of packages used when specs are fetched using non-builtins.
-  mkPkgs = sources: system:
-    let
-      sourcesNixpkgs =
-        import
-          (builtins_fetchTarball { inherit (sources.nixpkgs) url sha256; })
-          {
-            inherit system;
-          };
-      hasNixpkgsPath = builtins.any (x: x.prefix == "nixpkgs") builtins.nixPath;
-      hasThisAsNixpkgsPath = <nixpkgs> == ./.;
-    in
+  mkPkgs = sources: system: let
+    sourcesNixpkgs =
+      import
+      (builtins_fetchTarball {inherit (sources.nixpkgs) url sha256;})
+      {
+        inherit system;
+      };
+    hasNixpkgsPath = builtins.any (x: x.prefix == "nixpkgs") builtins.nixPath;
+    hasThisAsNixpkgsPath = <nixpkgs> == ./.;
+  in
     if builtins.hasAttr "nixpkgs" sources
     then sourcesNixpkgs
     else if hasNixpkgsPath && !hasThisAsNixpkgsPath
-    then import <nixpkgs> { }
+    then import <nixpkgs> {}
     else
       abort ''
         Please specify either <nixpkgs> (through -I or NIX_PATH=nixpkgs=...) or
@@ -121,26 +117,25 @@ let
     then fetch_builtin-url name
     else
       abort
-        "ERROR: niv spec ${name} has unknown type ${builtins.toJSON spec.type}";
+      "ERROR: niv spec ${name} has unknown type ${builtins.toJSON spec.type}";
 
   # If the environment variable NIV_OVERRIDE_${name} is set, then use
   # the path directly as opposed to the fetched source.
-  replace = name: drv:
-    let
-      saneName =
-        stringAsChars
-          (c:
-            if isNull (builtins.match "[a-zA-Z0-9]" c)
-            then "_"
-            else c)
-          name;
-      ersatz = builtins.getEnv "NIV_OVERRIDE_${saneName}";
-    in
+  replace = name: drv: let
+    saneName =
+      stringAsChars
+      (c:
+        if isNull (builtins.match "[a-zA-Z0-9]" c)
+        then "_"
+        else c)
+      name;
+    ersatz = builtins.getEnv "NIV_OVERRIDE_${saneName}";
+  in
     if ersatz == ""
     then drv
     else
-    # this turns the string into an actual Nix path (for both absolute and
-    # relative paths)
+      # this turns the string into an actual Nix path (for both absolute and
+      # relative paths)
       if builtins.substring 0 1 ersatz == "/"
       then /. + ersatz
       else /. + builtins.getEnv "PWD" + "/${ersatz}";
@@ -151,17 +146,17 @@ let
   mapAttrs =
     builtins.mapAttrs or (f: set:
       with builtins;
-      listToAttrs (map
-        (attr: {
-          name = attr;
-          value = f attr set.${attr};
-        })
-        (attrNames set)));
+        listToAttrs (map
+          (attr: {
+            name = attr;
+            value = f attr set.${attr};
+          })
+          (attrNames set)));
 
   # https://github.com/NixOS/nixpkgs/blob/0258808f5744ca980b9a1f24fe0b1e6f0fecee9c/lib/lists.nix#L295
   range = first: last:
     if first > last
-    then [ ]
+    then []
     else builtins.genList (n: first + n) (last - first + 1);
 
   # https://github.com/NixOS/nixpkgs/blob/0258808f5744ca980b9a1f24fe0b1e6f0fecee9c/lib/strings.nix#L257
@@ -177,71 +172,68 @@ let
   optionalAttrs = cond: as:
     if cond
     then as
-    else { };
+    else {};
 
   # fetchTarball version that is compatible between all the versions of Nix
-  builtins_fetchTarball =
-    { url
-    , name ? null
-    , sha256
-    ,
-    } @ attrs:
-    let
-      inherit (builtins) lessThan nixVersion fetchTarball;
-    in
+  builtins_fetchTarball = {
+    url,
+    name ? null,
+    sha256,
+  } @ attrs: let
+    inherit (builtins) lessThan nixVersion fetchTarball;
+  in
     if lessThan nixVersion "1.12"
     then
       fetchTarball
-        ({ inherit url; } // (optionalAttrs (!isNull name) { inherit name; }))
+      ({inherit url;} // (optionalAttrs (!isNull name) {inherit name;}))
     else fetchTarball attrs;
 
   # fetchurl version that is compatible between all the versions of Nix
-  builtins_fetchurl =
-    { url
-    , name ? null
-    , sha256
-    ,
-    } @ attrs:
-    let
-      inherit (builtins) lessThan nixVersion fetchurl;
-    in
+  builtins_fetchurl = {
+    url,
+    name ? null,
+    sha256,
+  } @ attrs: let
+    inherit (builtins) lessThan nixVersion fetchurl;
+  in
     if lessThan nixVersion "1.12"
     then
       fetchurl
-        ({ inherit url; } // (optionalAttrs (!isNull name) { inherit name; }))
+      ({inherit url;} // (optionalAttrs (!isNull name) {inherit name;}))
     else fetchurl attrs;
 
   # Create the final "sources" from the config
   mkSources = config:
     mapAttrs
-      (name: spec:
-        if builtins.hasAttr "outPath" spec
-        then
-          abort
-            "The values in sources.json should not have an 'outPath' attribute"
-        else spec // { outPath = replace name (fetch config.pkgs name spec); })
-      config.sources;
+    (name: spec:
+      if builtins.hasAttr "outPath" spec
+      then
+        abort
+        "The values in sources.json should not have an 'outPath' attribute"
+      else spec // {outPath = replace name (fetch config.pkgs name spec);})
+    config.sources;
 
   # The "config" used by the fetchers
-  mkConfig =
-    { sourcesFile ? if builtins.pathExists ./sources.json
+  mkConfig = {
+    sourcesFile ?
+      if builtins.pathExists ./sources.json
       then ./sources.json
-      else null
-    , sources ? if isNull sourcesFile
-      then { }
-      else builtins.fromJSON (builtins.readFile sourcesFile)
-    , system ? builtins.currentSystem
-    , pkgs ? mkPkgs sources system
-    ,
-    }: rec {
-      # The sources, i.e. the attribute set of spec name to spec
-      inherit sources;
+      else null,
+    sources ?
+      if isNull sourcesFile
+      then {}
+      else builtins.fromJSON (builtins.readFile sourcesFile),
+    system ? builtins.currentSystem,
+    pkgs ? mkPkgs sources system,
+  }: rec {
+    # The sources, i.e. the attribute set of spec name to spec
+    inherit sources;
 
-      # The "pkgs" (evaluated nixpkgs) to use for e.g. non-builtin fetchers
-      inherit pkgs;
-    };
+    # The "pkgs" (evaluated nixpkgs) to use for e.g. non-builtin fetchers
+    inherit pkgs;
+  };
 in
-mkSources (mkConfig { })
+  mkSources (mkConfig {})
   // {
-  __functor = _: settings: mkSources (mkConfig settings);
-}
+    __functor = _: settings: mkSources (mkConfig settings);
+  }

@@ -1,6 +1,7 @@
-{ pkgs
-, config
-, ...
+{
+  pkgs,
+  config,
+  ...
 }: {
   xdg.configFile = {
     "/home/killua/.lesskey" = {

@@ -1,8 +1,9 @@
-{ pkgs
-, lib
-, inputs
-, config
-, ...
+{
+  pkgs,
+  lib,
+  inputs,
+  config,
+  ...
 }: {
   imports = [
     ./env.nix
@@ -21,7 +22,7 @@
 
   wayland.windowManager.hyprland = {
     enable = true;
-    systemd.variables = [ "--all" ];
+    systemd.variables = ["--all"];
     systemd.enable = false; # for uwsm
     xwayland.enable = true;
     extraConfig = ''
@@ -32,11 +33,9 @@
       }
     '';
     plugins = [
-
     ];
     settings = {
       "$mod" = "SUPER";
     };
   };
-
 }

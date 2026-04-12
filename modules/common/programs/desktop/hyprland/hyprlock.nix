@@ -1,14 +1,15 @@
-{ config, pkgs, ... }:
-
-let
+{
+  config,
+  pkgs,
+  ...
+}: let
   # Variables
   entry_background_color = "rgba(131313FF)";
   entry_color = "rgba(89ceffFF)";
   text_color = "rgba(FFFFFFDD)";
   font_family = "Rubik";
   font_family_clock = "Rubik Extrabold";
-in
-{
+in {
   programs.hyprlock = {
     enable = true;
     settings = {

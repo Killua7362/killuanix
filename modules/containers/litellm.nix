@@ -200,25 +200,25 @@ in {
   home.activation.litellmEnv = lib.hm.dag.entryAfter ["writeBoundary" "sopsNix"] (let
     envDir = "${config.xdg.configHome}/litellm";
   in ''
-        mkdir -p "${envDir}"
+    mkdir -p "${envDir}"
 
-        NVIDIA_KEY=""
-        GOOGLE_KEY=""
-        MISTRAL_KEY=""
-        MISTRAL_CODESTRAL_KEY=""
+    NVIDIA_KEY=""
+    GOOGLE_KEY=""
+    MISTRAL_KEY=""
+    MISTRAL_CODESTRAL_KEY=""
 
-        [ -f "${config.sops.secrets."nvidia_api_key".path}" ] && NVIDIA_KEY=$(cat "${config.sops.secrets."nvidia_api_key".path}")
-        [ -f "${config.sops.secrets."google_studio_key".path}" ] && GOOGLE_KEY=$(cat "${config.sops.secrets."google_studio_key".path}")
-        [ -f "${config.sops.secrets."mistral_api_key".path}" ] && MISTRAL_KEY=$(cat "${config.sops.secrets."mistral_api_key".path}")
-        [ -f "${config.sops.secrets."mistral_codestral_api_key".path}" ] && MISTRAL_CODESTRAL_KEY=$(cat "${config.sops.secrets."mistral_codestral_api_key".path}")
+    [ -f "${config.sops.secrets."nvidia_api_key".path}" ] && NVIDIA_KEY=$(cat "${config.sops.secrets."nvidia_api_key".path}")
+    [ -f "${config.sops.secrets."google_studio_key".path}" ] && GOOGLE_KEY=$(cat "${config.sops.secrets."google_studio_key".path}")
+    [ -f "${config.sops.secrets."mistral_api_key".path}" ] && MISTRAL_KEY=$(cat "${config.sops.secrets."mistral_api_key".path}")
+    [ -f "${config.sops.secrets."mistral_codestral_api_key".path}" ] && MISTRAL_CODESTRAL_KEY=$(cat "${config.sops.secrets."mistral_codestral_api_key".path}")
 
-        printf '%s\n' \
-          "NVIDIA_API_KEY=$NVIDIA_KEY" \
-          "GOOGLE_API_KEY=$GOOGLE_KEY" \
-          "MISTRAL_API_KEY=$MISTRAL_KEY" \
-          "MISTRAL_CODESTRAL_API_KEY=$MISTRAL_CODESTRAL_KEY" \
-          > "${envDir}/env"
+    printf '%s\n' \
+      "NVIDIA_API_KEY=$NVIDIA_KEY" \
+      "GOOGLE_API_KEY=$GOOGLE_KEY" \
+      "MISTRAL_API_KEY=$MISTRAL_KEY" \
+      "MISTRAL_CODESTRAL_API_KEY=$MISTRAL_CODESTRAL_KEY" \
+      > "${envDir}/env"
 
-        chmod 600 "${envDir}/env"
+    chmod 600 "${envDir}/env"
   '');
 }

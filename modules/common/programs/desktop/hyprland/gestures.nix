@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{lib, ...}: {
   wayland.windowManager.hyprland.settings = {
     gestures = {
       workspace_swipe_distance = 700;

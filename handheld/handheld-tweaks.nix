@@ -90,7 +90,7 @@
   # ══════════════════════════════════════════════════════════════
   # Logind — power button (from steam-deckify.conf)
   # ══════════════════════════════════════════════════════════════
-  services.logind.settings.Login ={
+  services.logind.settings.Login = {
     HandleLidSwitch = "ignore";
     KillUserProcesses = true;
   };
@@ -100,9 +100,9 @@
   # ══════════════════════════════════════════════════════════════
 
   services.pipewire.extraConfig.pipewire."10-min-quant".text = ''
-      context.properties = {
-        default.clock.min-quantum = 256
-      }
+    context.properties = {
+      default.clock.min-quantum = 256
+    }
   '';
 
   # ══════════════════════════════════════════════════════════════

@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   boot.loader.systemd-boot.enable = false;
   boot.loader.grub = {
     enable = true;
@@ -11,7 +10,7 @@
     timeoutStyle = "menu";
     splashImage = null;
     gfxmodeEfi = "1920x1080";
-#    theme = "${pkgs.distro-grub-themes}/nixos";
+    #    theme = "${pkgs.distro-grub-themes}/nixos";
     extraEntries = ''
       menuentry "Windows Boot Manager (on /dev/nvme0n1p1)" --class windows --class os {
         savedefault

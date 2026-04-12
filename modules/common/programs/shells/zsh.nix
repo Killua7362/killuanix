@@ -1,6 +1,9 @@
-{ config, pkgs, lib, ... }:
-
 {
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   programs.zsh = {
     enable = true;
     enableCompletion = false;
@@ -43,6 +46,7 @@
       "annepro2_tools" = "/home/killua/repo/AnnePro2-Tools/target/release/annepro2_tools";
       "d" = "nvim -d";
       "restart-desktop" = "systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal pipewire pipewire-pulse wireplumber";
+      "lgw" = "lazygit -g \"$(git rev-parse --git-common-dir)\" -w .";
     };
 
     sessionVariables = {
@@ -82,138 +86,138 @@
 
     initContent = lib.mkAfter ''
 
-    if [ -e "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]; then
-      . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
-    fi
+      if [ -e "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]; then
+        . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+      fi
 
-    export PATH="$HOME/.nix-profile/bin:$PATH"
+      export PATH="$HOME/.nix-profile/bin:$PATH"
 
-      fpath=(/usr/share/zsh/site-functions /usr/share/zsh/functions/Completion/{Linux,Unix} $fpath)
+        fpath=(/usr/share/zsh/site-functions /usr/share/zsh/functions/Completion/{Linux,Unix} $fpath)
 
-      # PATH modifications
-      export PATH="$HOME/killuanix/scripts:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
-      export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
+        # PATH modifications
+        export PATH="$HOME/killuanix/scripts:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+        export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
-      autoload -Uz compinit
-      eval $(starship init zsh)
-      eval $(zoxide init zsh)
+        autoload -Uz compinit
+        eval $(starship init zsh)
+        eval $(zoxide init zsh)
 
-      # Re-source plugins AFTER zsh-vi-mode initializes so keybindings survive
-      zvm_after_init() {
-        [[ -n "\'\'$\{functions[fzf_history_search]\}" ]] && \
-          bindkey -M viins '^R' fzf_history_search
-      }
+        # Re-source plugins AFTER zsh-vi-mode initializes so keybindings survive
+        zvm_after_init() {
+          [[ -n "\'\'$\{functions[fzf_history_search]\}" ]] && \
+            bindkey -M viins '^R' fzf_history_search
+        }
 
-      # Colemak remappings for zsh vi mode (mirrors neovim keymaps.lua)
-      zvm_after_lazy_keybindings() {
-        # NEIO navigation (replaces HJKL)
-        bindkey -M vicmd 'n' vi-backward-char        # n → h (left)
-        bindkey -M vicmd 'e' down-line-or-history     # e → j (down)
-        bindkey -M vicmd 'i' up-line-or-history       # i → k (up)
-        bindkey -M vicmd 'o' vi-forward-char          # o → l (right)
+        # Colemak remappings for zsh vi mode (mirrors neovim keymaps.lua)
+        zvm_after_lazy_keybindings() {
+          # NEIO navigation (replaces HJKL)
+          bindkey -M vicmd 'n' vi-backward-char        # n → h (left)
+          bindkey -M vicmd 'e' down-line-or-history     # e → j (down)
+          bindkey -M vicmd 'i' up-line-or-history       # i → k (up)
+          bindkey -M vicmd 'o' vi-forward-char          # o → l (right)
 
-        # Displaced keys
-        bindkey -M vicmd 'u' vi-insert                # u → i (insert)
-        bindkey -M vicmd 'U' vi-insert-bol            # U → I (insert at bol)
-        bindkey -M vicmd 'y' vi-open-line-below       # y → o (open line below)
-        bindkey -M vicmd 'Y' vi-open-line-above       # Y → O (open line above)
-        bindkey -M vicmd 'j' vi-forward-word-end      # j → e (end of word)
-        bindkey -M vicmd 'h' vi-repeat-search         # h → n (next search)
-        bindkey -M vicmd 'H' vi-rev-repeat-search     # H → N (prev search)
-        bindkey -M vicmd 'k' undo                     # k → u (undo)
-        bindkey -M vicmd 'l' vi-yank                  # l → y (yank)
+          # Displaced keys
+          bindkey -M vicmd 'u' vi-insert                # u → i (insert)
+          bindkey -M vicmd 'U' vi-insert-bol            # U → I (insert at bol)
+          bindkey -M vicmd 'y' vi-open-line-below       # y → o (open line below)
+          bindkey -M vicmd 'Y' vi-open-line-above       # Y → O (open line above)
+          bindkey -M vicmd 'j' vi-forward-word-end      # j → e (end of word)
+          bindkey -M vicmd 'h' vi-repeat-search         # h → n (next search)
+          bindkey -M vicmd 'H' vi-rev-repeat-search     # H → N (prev search)
+          bindkey -M vicmd 'k' undo                     # k → u (undo)
+          bindkey -M vicmd 'l' vi-yank                  # l → y (yank)
 
-        # Visual mode
-        bindkey -M visual 'n' vi-backward-char
-        bindkey -M visual 'e' down-line-or-history
-        bindkey -M visual 'i' up-line-or-history
-        bindkey -M visual 'o' vi-forward-char
-        bindkey -M visual 'j' vi-forward-word-end
-      }
+          # Visual mode
+          bindkey -M visual 'n' vi-backward-char
+          bindkey -M visual 'e' down-line-or-history
+          bindkey -M visual 'i' up-line-or-history
+          bindkey -M visual 'o' vi-forward-char
+          bindkey -M visual 'j' vi-forward-word-end
+        }
 
-      zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
-      zstyle ':completion:*:git-checkout:*' sort false
-      zstyle ':completion:*:descriptions' format '[%d]'
-      zstyle ':completion:*' menu no
-      zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
-      zstyle ':fzf-tab:*' switch-group '<' '>'
+        zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+        zstyle ':completion:*:git-checkout:*' sort false
+        zstyle ':completion:*:descriptions' format '[%d]'
+        zstyle ':completion:*' menu no
+        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+        zstyle ':fzf-tab:*' switch-group '<' '>'
 
-      # Functions (converted from fish)
-      nix_switch() {
-        pushd ~/killuanix/
-        TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
-        TERM=xterm-256color ./result/activate
-        popd
-      }
+        # Functions (converted from fish)
+        nix_switch() {
+          pushd ~/killuanix/
+          TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
+          TERM=xterm-256color ./result/activate
+          popd
+        }
 
-      boeingvpn() {
-        openconnect \
-            --protocol=gp \
-            --user=dj216f \
-            --usergroup=gateway \
-            --script-tun \
-            --script "ocproxy -D 1080 -v" \
-            https://ta.as2.cbc.vpn.boeing.net
-      }
+        boeingvpn() {
+          openconnect \
+              --protocol=gp \
+              --user=dj216f \
+              --usergroup=gateway \
+              --script-tun \
+              --script "ocproxy -D 1080 -v" \
+              https://ta.as2.cbc.vpn.boeing.net
+        }
 
-      chrome-socks() {
-        google-chrome \
-          --proxy-server="socks5://127.0.0.1:1080" \
-          --proxy-bypass-list="<-loopback>" \
-          --user-data-dir="$HOME/.config/teams-vpn-chrome" \
-          --no-first-run \
-          --ignore-certificate-errors
-      }
+        chrome-socks() {
+          google-chrome \
+            --proxy-server="socks5://127.0.0.1:1080" \
+            --proxy-bypass-list="<-loopback>" \
+            --user-data-dir="$HOME/.config/teams-vpn-chrome" \
+            --no-first-run \
+            --ignore-certificate-errors
+        }
 
-      pacsave() {
-        pushd ~/killuanix/archnix/aconfmgr/
-        ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes save
-        popd
-      }
+        pacsave() {
+          pushd ~/killuanix/archnix/aconfmgr/
+          ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes save
+          popd
+        }
 
-      pacapply() {
-        pushd ~/killuanix/archnix/aconfmgr/
-        ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes apply
-        popd
-      }
+        pacapply() {
+          pushd ~/killuanix/archnix/aconfmgr/
+          ./aconfmgr -c ~/.config/aconfmgr --aur-helper yay --yes apply
+          popd
+        }
 
-      # Tmux functions (need arguments, so functions instead of aliases)
-      ta() { tmux a -t "$1"; }
-      td() { tmux kill-session -t "$1"; }
+        # Tmux functions (need arguments, so functions instead of aliases)
+        ta() { tmux a -t "$1"; }
+        td() { tmux kill-session -t "$1"; }
 
-      # Disable greeting (zsh doesn't have this by default anyway)
-      # Key bindings
-      bindkey '^C' send-break
-      
-      bindkey -M viins "^[[H" beginning-of-line
-      bindkey -M viins "^[[F" end-of-line
-      
-      bindkey -M viins '^[[1;5C' forward-word   # Ctrl+Right
-      bindkey -M viins '^[[1;5D' backward-word  # Ctrl+Left
+        # Disable greeting (zsh doesn't have this by default anyway)
+        # Key bindings
+        bindkey '^C' send-break
 
-      bindkey "\'\'$\{key[Up]\}" up-line-or-search
+        bindkey -M viins "^[[H" beginning-of-line
+        bindkey -M viins "^[[F" end-of-line
 
-      # command-not-found disable
-      # [[ ! -v functions[command_not_found_handler] ]] || unfunction command_not_found_handler
+        bindkey -M viins '^[[1;5C' forward-word   # Ctrl+Right
+        bindkey -M viins '^[[1;5D' backward-word  # Ctrl+Left
 
-      bindkey -M emacs "^ " globalias
-      bindkey -M viins "^ " globalias
-      bindkey -M emacs " " magic-space
-      bindkey -M viins " " magic-space
+        bindkey "\'\'$\{key[Up]\}" up-line-or-search
 
-      opencode() {
-        local PROJ="$(basename "$(pwd)")"
-        local NAME="open-code-''${PROJ}"
- 
-        podman run --userns=keep-id --rm --tty --interactive \
-          --name "''${NAME}" \
-          --add-host=host.docker.internal:host-gateway \
-          -v "''${HOME}/.local/state/opencode:/home/node/.local/state/opencode" \
-          -v "''${HOME}/.local/share/opencode:/home/node/.local/share/opencode" \
-          -v "''${HOME}/.config/opencode:/home/node/.config/opencode" \
-          -v "$(pwd):/app:rw" \
-          open-code "''$@"
-      }
+        # command-not-found disable
+        # [[ ! -v functions[command_not_found_handler] ]] || unfunction command_not_found_handler
+
+        bindkey -M emacs "^ " globalias
+        bindkey -M viins "^ " globalias
+        bindkey -M emacs " " magic-space
+        bindkey -M viins " " magic-space
+
+        opencode() {
+          local PROJ="$(basename "$(pwd)")"
+          local NAME="open-code-''${PROJ}"
+
+          podman run --userns=keep-id --rm --tty --interactive \
+            --name "''${NAME}" \
+            --add-host=host.docker.internal:host-gateway \
+            -v "''${HOME}/.local/state/opencode:/home/node/.local/state/opencode" \
+            -v "''${HOME}/.local/share/opencode:/home/node/.local/share/opencode" \
+            -v "''${HOME}/.config/opencode:/home/node/.config/opencode" \
+            -v "$(pwd):/app:rw" \
+            open-code "''$@"
+        }
 
     '';
     antidote = {

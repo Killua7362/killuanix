@@ -1,8 +1,9 @@
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }: {
   programs.kitty = {
     enable = lib.mkDefault (pkgs.stdenv.isLinux);

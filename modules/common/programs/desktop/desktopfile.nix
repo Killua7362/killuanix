@@ -1,8 +1,9 @@
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }: {
   xdg.desktopEntries.google-chrome-sock = {
     name = "google-chrome-sock";
@@ -18,7 +19,7 @@
     icon = "google-chrome";
     terminal = false;
     type = "Application";
-    categories = [ "Network" "WebBrowser" ];
-    mimeType = [ "x-scheme-handler/google-chrome" ];
+    categories = ["Network" "WebBrowser"];
+    mimeType = ["x-scheme-handler/google-chrome"];
   };
 }

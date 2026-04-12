@@ -9,6 +9,7 @@
 }: {
   imports = [
     ../modules/cross-platform
+    ../modules/vms
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dank-material-shell
     inputs.chaotic.homeManagerModules.default

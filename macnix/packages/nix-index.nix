@@ -1,8 +1,9 @@
 # Additional configuration for `nix-index` to enable `command-not-found` functionality with Fish.
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }: {
   config = lib.mkIf config.programs.nix-index.enable {
     programs.fish.interactiveShellInit = ''

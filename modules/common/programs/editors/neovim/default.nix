@@ -1,10 +1,10 @@
-{ inputs
-, lib
-, config
-, pkgs
-, ...
-}:
-let
+{
+  inputs,
+  lib,
+  config,
+  pkgs,
+  ...
+}: let
   utils = inputs.nixCats.utils;
   # Build mcp-hub from npm
   mcp-hub = pkgs.buildNpmPackage {
@@ -18,16 +18,27 @@ let
     };
     npmDepsHash = "sha256-nyenuxsKRAL0PU/UPSJsz8ftHIF+LBTGdygTqxti38g="; # Run once to get the hash
   };
-in
-{
+in {
   nixCats = {
     enable = true;
-    addOverlays = /* (import ./overlays inputs) ++ */ [
-      (utils.standardPluginOverlay inputs)
-    ];
-    packageNames = [ "nvim" ];
+    addOverlays =
+      /*
+      (import ./overlays inputs) ++
+      */
+      [
+        (utils.standardPluginOverlay inputs)
+      ];
+    packageNames = ["nvim"];
     luaPath = ./.;
-    categoryDefinitions.replace = ({ pkgs, settings, categories, extra, name, mkPlugin, ... }@packageDef: {
+    categoryDefinitions.replace = {
+      pkgs,
+      settings,
+      categories,
+      extra,
+      name,
+      mkPlugin,
+      ...
+    } @ packageDef: {
       lspsAndRuntimeDeps = {
         java = with pkgs; [
           jdt-language-server
@@ -90,12 +101,25 @@ in
           nvim-dap
           nvim-dap-virtual-text
           diffview-nvim
+          git-worktree-nvim
 
           # sometimes you have to fix some names
-          { plugin = catppuccin-nvim; name = "catppuccin"; }
-          { plugin = mini-ai; name = "mini.ai"; }
-          { plugin = mini-icons; name = "mini.icons"; }
-          { plugin = mini-pairs; name = "mini.pairs"; }
+          {
+            plugin = catppuccin-nvim;
+            name = "catppuccin";
+          }
+          {
+            plugin = mini-ai;
+            name = "mini.ai";
+          }
+          {
+            plugin = mini-icons;
+            name = "mini.icons";
+          }
+          {
+            plugin = mini-pairs;
+            name = "mini.pairs";
+          }
           # you could do this within the lazy spec instead if you wanted
           # and get the new names from `:NixCats pawsible` debug command
         ];
@@ -107,15 +131,19 @@ in
         ];
       };
 
-      environmentVariables = { };
+      environmentVariables = {};
 
-      python3.libraries = { };
+      python3.libraries = {};
 
-      extraWrapperArgs = { };
-    });
+      extraWrapperArgs = {};
+    };
 
     packageDefinitions.replace = {
-      nvim = { pkgs, name, ... }: {
+      nvim = {
+        pkgs,
+        name,
+        ...
+      }: {
         settings = {
           suffix-path = true;
           suffix-LD = true;
@@ -133,7 +161,7 @@ in
           lombok = "${pkgs.lombok}/share/java/lombok.jar";
           java_debug_adapter = "${pkgs.vscode-extensions.vscjava.vscode-java-debug}/share/vscode/extensions/vscjava.vscode-java-debug";
           java_test = "${pkgs.vscode-extensions.vscjava.vscode-java-test}/share/vscode/extensions/vscjava.vscode-java-test";
-          python = "${pkgs.python3.withPackages (ps: [ ps.debugpy ])}/bin/python";
+          python = "${pkgs.python3.withPackages (ps: [ps.debugpy])}/bin/python";
           lldb = "${pkgs.lldb}/bin/lldb-vscode";
           codelldb = "${pkgs.vscode-extensions.vadimcn.vscode-lldb}/share/vscode/extensions/vadimcn.vscode-lldb/adapter/codelldb";
           delve = "${pkgs.delve}/bin/dlv";
@@ -142,6 +170,5 @@ in
         };
       };
     };
-
   };
 }

@@ -1,0 +1,39 @@
+---
+- hosts: work-ubuntu
+  become: true
+  tasks:
+    - name: Ensure OpenConnect is installed
+      apt:
+        name:
+          - openconnect
+          - vpnc-scripts
+        state: present
+
+    - name: Start VPN
+      shell: |
+        systemctl start openconnect-vpn || echo "No VPN service configured. Create /etc/systemd/system/openconnect-vpn.service first."
+      when: vpn_action == "start"
+
+    - name: Stop VPN
+      shell: |
+        systemctl stop openconnect-vpn 2>/dev/null || killall openconnect 2>/dev/null || echo "VPN not running"
+      when: vpn_action == "stop"
+
+    - name: Check VPN status
+      shell: |
+        if systemctl is-active openconnect-vpn 2>/dev/null; then
+          echo "VPN is active"
+          ip addr show tun0 2>/dev/null || true
+        elif pgrep openconnect >/dev/null 2>&1; then
+          echo "OpenConnect process running"
+          ip addr show tun0 2>/dev/null || true
+        else
+          echo "VPN is not running"
+        fi
+      register: vpn_status
+      when: vpn_action == "status"
+
+    - name: Show VPN status
+      debug:
+        msg: "{{ vpn_status.stdout_lines }}"
+      when: vpn_action == "status"

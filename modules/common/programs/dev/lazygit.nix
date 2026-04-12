@@ -1,13 +1,16 @@
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }: {
   programs.lazygit = {
     enable = true;
     settings = {
       git = {
+        autoFetch = false;
+        autoRefresh = false;
         pagers = [
           {
             colorArg = "always";
@@ -23,26 +26,18 @@
           prompts = [
             {
               type = "input";
-              title = "Create a new worktree from {{ .CheckedOutBranch.Name }} with what name?";
+              title = "New branch name for worktree from {{ .CheckedOutBranch.Name }}";
               key = "Name";
               initialValue = "";
             }
           ];
-          command = "git worktree add ../{{ .Form.Name }} {{ .CheckedOutBranch.Name }} -b {{ .Form.Name }}";
+          command = "git worktree add \"$(git rev-parse --git-common-dir)/../{{ .Form.Name }}\" {{ .CheckedOutBranch.Name }} -b {{ .Form.Name }}";
         }
         {
-          key = "N";
+          key = "w";
           context = "localBranches";
-          description = "Create new worktree from selected branch";
-          prompts = [
-            {
-              type = "input";
-              title = "Create a new worktree from {{ .SelectedLocalBranch.Name }} with what name?";
-              key = "Name";
-              initialValue = "";
-            }
-          ];
-          command = "git worktree add ../{{ .Form.Name }} {{ .SelectedLocalBranch.Name }} -b {{ .Form.Name }}";
+          description = "Create worktree from selected branch";
+          command = "git worktree add \"$(git rev-parse --git-common-dir)/../$(echo '{{ .SelectedLocalBranch.Name }}' | tr '/' '_')\" {{ .SelectedLocalBranch.Name }}";
         }
         {
           key = "D";
@@ -130,7 +125,7 @@
           increaseRenameSimilarityThreshold = ")";
           decreaseRenameSimilarityThreshold = "(";
           openDiffTool = "<c-t>";
-          jumpToBlock = [ "1" "2" "3" "4" "5" ];
+          jumpToBlock = ["1" "2" "3" "4" "5"];
         };
         status = {
           checkForUpdate = "k";
@@ -139,7 +134,7 @@
         };
         files = {
           commitChanges = "c";
-          commitChangesWithoutHook = "w";
+          commitChangesWithoutHook = "<c-w>";
           amendLastCommit = "A";
           commitChangesWithEditor = "C";
           findBaseCommitForFixup = "<c-f>";
@@ -212,20 +207,17 @@
           renameStash = "r";
         };
         commitFiles = {
-
           checkoutCommitFile = "c";
         };
         main = {
           toggleSelectHunk = "a";
           pickBothHunks = "b";
           editSelectHunk = "J";
-
         };
         submodules = {
           init = "u";
           update = "k";
           bulkMenu = "b";
-
         };
         commitMessage = {
           commitMenu = "<c-o>";

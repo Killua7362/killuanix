@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{lib, ...}: {
   wayland.windowManager.hyprland.settings = {
     general = {
       "col.active_border" = "rgba(777777AA)";

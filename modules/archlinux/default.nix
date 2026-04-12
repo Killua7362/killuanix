@@ -1,12 +1,14 @@
-{ pkgs, lib, ... }:
-
 {
+  pkgs,
+  lib,
+  ...
+}: {
   nixpkgs.hostPlatform = "x86_64-linux";
   # ── Container registry config ──
   environment.etc = {
     "containers/policy.json" = {
       text = builtins.toJSON {
-        default = [{ type = "insecureAcceptAnything"; }];
+        default = [{type = "insecureAcceptAnything";}];
       };
     };
 

@@ -1,14 +1,13 @@
-{ config
-, pkgs
-, lib
-, inputs
-, ...
-}:
-let
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}: let
   userConfig = inputs.self.commonModules.user.userConfig;
   azureGitConfigPath = "${config.home.homeDirectory}/.config/git/config-azure";
-in
-{
+in {
   sops.templates."config-azure" = {
     content = ''
       [user]

@@ -6,12 +6,7 @@
   config,
   pkgs,
   ...
-}: let
-  pinnedVBOX = import inputs.nixpkgs-virtualbox {
-    system = "x86_64-linux";
-    config.allowUnfree = true;
-  };
-in {
+}: {
   imports = [
     ./hardware-configuration.nix
     ./intel-gpu.nix
@@ -22,6 +17,7 @@ in {
     ./boot.nix
     inputs.home-manager.nixosModules.home-manager
     ../modules/containers/quadlet.nix
+    ../modules/vms/system.nix
   ];
 
   # ── CachyOS Deckify Kernel (BORE scheduler, handheld patches, RCU_LAZY) ──
@@ -43,20 +39,7 @@ in {
 
   virtualisation.quadlet.enable = true;
 
-  virtualisation.libvirtd = {
-    enable = true;
-    qemu = {
-      package = pkgs.qemu_kvm;
-      runAsRoot = true;
-      swtpm.enable = true;
-    };
-  };
-  programs.virt-manager.enable = true;
-
-  virtualisation.virtualbox.host.enable = true;
-  users.extraGroups.vboxusers.members = ["killua"];
-  virtualisation.virtualbox.host.enableExtensionPack = true;
-  virtualisation.virtualbox.host.package = pinnedVBOX.virtualbox;
+  boot.blacklistedKernelModules = ["kvm_intel" "kvm"];
 
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = 1;
@@ -65,7 +48,7 @@ in {
   # ── Networking ──
   networking.hostName = "handheld";
   networking.networkmanager.enable = true;
-  networking.networkmanager.packages = [pkgs.networkmanager-openconnect];
+  networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
 
   # ── Locale / Timezone ──
   time.timeZone = "Asia/Kolkata";
@@ -100,7 +83,7 @@ in {
   };
 
   # ── Audio: PipeWire ──
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
@@ -111,6 +94,14 @@ in {
     pulse.enable = true;
     jack.enable = true;
     wireplumber.enable = true;
+    extraConfig.pipewire-pulse."30-network-tcp" = {
+      "pulse.cmd" = [
+        {
+          cmd = "load-module";
+          args = "module-native-protocol-tcp port=4713 auth-anonymous=1 listen=0.0.0.0";
+        }
+      ];
+    };
   };
 
   # ── Bluetooth ──
@@ -172,7 +163,7 @@ in {
   # ── Firewall ──
   networking.firewall = {
     enable = true;
-    trustedInterfaces = ["tailscale0" "docker0"];
+    trustedInterfaces = ["tailscale0" "docker0" "virbr0"];
     allowedUDPPorts = [41641];
   };
 

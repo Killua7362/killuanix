@@ -1,8 +1,9 @@
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }: {
   programs.yazi = {
     enable = true;
@@ -11,8 +12,10 @@
     keymap = lib.importTOML ./keymap.toml;
     theme = lib.importTOML ./theme.toml;
     flavors = {
-      inherit (pkgs.yaziFlavors)
-        vscode-dark-plus;
+      inherit
+        (pkgs.yaziFlavors)
+        vscode-dark-plus
+        ;
     };
     plugins = {
       inherit (pkgs.yaziPlugins) mount;
@@ -34,5 +37,4 @@
   #     };
   #   };
   # };
-
 }

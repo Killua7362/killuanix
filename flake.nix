@@ -86,7 +86,6 @@
     vicinae-extensions.url = "github:vicinaehq/extensions";
     vicinae.url = "github:vicinaehq/vicinae";
 
-
     nixCats.url = "github:BirdeeHub/nixCats-nvim";
 
     opencode-flake.url = "github:aodhanhayter/opencode-flake";
@@ -164,87 +163,60 @@
     };
   };
 
-  outputs =
-    inputs @ { self
-    , flake-utils
-    , homemanager
-    , home-manager
-    , nixpkgs
-    , neovim-nightly-overlay
-    , nur
-    , emacs
-    , darwin
-    , mk-darwin-system
-    , nix-flatpak
-    , nixospkgs
-    , nixgl
-    , system-manager
-    , ...
-    }:
-    let
-      inherit (darwin.lib) darwinSystem;
-      inherit
-        (inputs.nixpkgs-unstable.lib)
-        attrValues
-        makeOverridable
-        optionalAttrs
-        singleton
-        ;
+  outputs = inputs @ {
+    self,
+    flake-utils,
+    homemanager,
+    home-manager,
+    nixpkgs,
+    neovim-nightly-overlay,
+    nur,
+    emacs,
+    darwin,
+    mk-darwin-system,
+    nix-flatpak,
+    nixospkgs,
+    nixgl,
+    system-manager,
+    ...
+  }: let
+    inherit (darwin.lib) darwinSystem;
+    inherit
+      (inputs.nixpkgs-unstable.lib)
+      attrValues
+      makeOverridable
+      optionalAttrs
+      singleton
+      ;
 
-      systems = [
-        "aarch64-linux"
-        "i686-linux"
-        "x86_64-linux"
-        "aarch64-darwin"
-        "x86_64-darwin"
-      ];
+    systems = [
+      "aarch64-linux"
+      "i686-linux"
+      "x86_64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
+    ];
 
-      forAllSystems = nixpkgs.lib.genAttrs systems;
-    in
-    {
-      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
-      customOverlays = import ./overlays { inherit inputs; };
-      nixosModules = import ./modules/nixos;
-      homeManagerModules = import ./modules/home-manager;
-      commonModules = import ./modules/common;
-      crossPlatformModules = import ./modules/cross-platform;
+    forAllSystems = nixpkgs.lib.genAttrs systems;
+  in {
+    formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+    customOverlays = import ./overlays {inherit inputs;};
+    nixosModules = import ./modules/nixos;
+    homeManagerModules = import ./modules/home-manager;
+    commonModules = import ./modules/common;
+    crossPlatformModules = import ./modules/cross-platform;
 
-      nixosConfigurations = {
-        killua = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            ./nixos/configuration.nix
-            inputs.quadlet-nix.nixosModules.quadlet
-            ({ inputs
-             , pkgs
-             , ...
-             }: {
-              home-manager = {
-                extraSpecialArgs = {
-                  inherit inputs;
-                };
-                sharedModules = [
-                  inputs.sops-nix.homeManagerModules.sops
-                ];
-                users = {
-                  killua = import ./nixos/home-manager/home.nix;
-                };
-              };
-            })
-          ];
-        };
-      };
-
-      nixosConfigurations.handheld = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
+    nixosConfigurations = {
+      killua = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs;};
         modules = [
-          ./handheld/configuration.nix
+          ./nixos/configuration.nix
           inputs.quadlet-nix.nixosModules.quadlet
-          inputs.jovian.nixosModules.jovian
-          ({ inputs, pkgs, ... }: {
-            nixpkgs.overlays = [
-              inputs.nix-cachyos-kernel.overlays.default
-            ];
+          ({
+            inputs,
+            pkgs,
+            ...
+          }: {
             home-manager = {
               extraSpecialArgs = {
                 inherit inputs;
@@ -253,51 +225,81 @@
                 inputs.sops-nix.homeManagerModules.sops
               ];
               users = {
-                killua = import ./handheld/home.nix;
+                killua = import ./nixos/home-manager/home.nix;
               };
             };
           })
         ];
       };
+    };
 
-      darwinConfigurations = rec {
-        macnix = darwinSystem {
-          system = "aarch64-darwin";
-          modules = [
-            homemanager.darwinModules.home-manager
-            ./macnix/packages/nix-index.nix
-            ./macnix/settings.nix
-            ./macnix/brew.nix
-            ./macnix/packages
-            ./macnix
+    nixosConfigurations.handheld = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./handheld/configuration.nix
+        inputs.quadlet-nix.nixosModules.quadlet
+        inputs.jovian.nixosModules.jovian
+        ({
+          inputs,
+          pkgs,
+          ...
+        }: {
+          nixpkgs.overlays = [
+            inputs.nix-cachyos-kernel.overlays.default
           ];
-        };
-      };
+          home-manager = {
+            extraSpecialArgs = {
+              inherit inputs;
+            };
+            sharedModules = [
+              inputs.sops-nix.homeManagerModules.sops
+            ];
+            users = {
+              killua = import ./handheld/home.nix;
+            };
+          };
+        })
+      ];
+    };
 
-      systemConfigs.default = system-manager.lib.makeSystemConfig {
+    darwinConfigurations = rec {
+      macnix = darwinSystem {
+        system = "aarch64-darwin";
         modules = [
-          ./modules/archlinux/default.nix
+          homemanager.darwinModules.home-manager
+          ./macnix/packages/nix-index.nix
+          ./macnix/settings.nix
+          ./macnix/brew.nix
+          ./macnix/packages
+          ./macnix
         ];
       };
+    };
 
-      homeManagerConfigurations = {
-        archnix = home-manager.lib.homeManagerConfiguration {
-          pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
-          extraSpecialArgs = {
-            inherit inputs nixgl;
-          };
-          modules = [
-            inputs.chaotic.homeManagerModules.default
-            inputs.nix-flatpak.homeManagerModules.nix-flatpak
-            inputs.vicinae.homeManagerModules.default
-            inputs.nixCats.homeModule
-            inputs.dms.homeModules.dank-material-shell
-            inputs.nix-index-database.homeModules.default
-            inputs.quadlet-nix.homeManagerModules.quadlet
-            # inputs.nix-yazi-plugins.legacyPackages.x86_64-linux.homeManagerModules.default # TODO: Revisit in future
-            ./archnix/home.nix
-          ];
+    systemConfigs.default = system-manager.lib.makeSystemConfig {
+      modules = [
+        ./modules/archlinux/default.nix
+      ];
+    };
+
+    homeManagerConfigurations = {
+      archnix = home-manager.lib.homeManagerConfiguration {
+        pkgs = inputs.nixpkgs-unstable.legacyPackages.x86_64-linux;
+        extraSpecialArgs = {
+          inherit inputs nixgl;
         };
+        modules = [
+          inputs.chaotic.homeManagerModules.default
+          inputs.nix-flatpak.homeManagerModules.nix-flatpak
+          inputs.vicinae.homeManagerModules.default
+          inputs.nixCats.homeModule
+          inputs.dms.homeModules.dank-material-shell
+          inputs.nix-index-database.homeModules.default
+          inputs.quadlet-nix.homeManagerModules.quadlet
+          # inputs.nix-yazi-plugins.legacyPackages.x86_64-linux.homeManagerModules.default # TODO: Revisit in future
+          ./archnix/home.nix
+        ];
       };
     };
+  };
 }

@@ -1,8 +1,9 @@
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }: {
   programs.qutebrowser = {
     enable = lib.mkDefault (pkgs.stdenv.isLinux);
@@ -96,7 +97,7 @@
       downloads.location.prompt = false;
 
       # -- URL / Start page --
-      url.start_pages = [ "about:blank" ];
+      url.start_pages = ["about:blank"];
       url.default_page = "about:blank";
 
       # -- Fonts --
@@ -237,8 +238,8 @@
 
       # -- Misc (match Firefox prefs) --
       auto_save.session = true; # persist tabs across restarts
-      confirm_quit = [ "downloads" ];
-      editor.command = [ "kitty" "nvim" "{file}" "-c" "normal {line}G{column0}l" ];
+      confirm_quit = ["downloads"];
+      editor.command = ["kitty" "nvim" "{file}" "-c" "normal {line}G{column0}l"];
     };
 
     # keyMappings disabled — qutebrowser chains mappings, so cycles like

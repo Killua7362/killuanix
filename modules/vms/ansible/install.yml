@@ -1,0 +1,9 @@
+---
+- hosts: work-ubuntu
+  become: true
+  tasks:
+    - name: Install requested packages
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: true

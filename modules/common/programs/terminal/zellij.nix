@@ -1,5 +1,8 @@
-{ config, pkgs, ... }:
 {
+  config,
+  pkgs,
+  ...
+}: {
   programs.zellij = {
     enable = true;
     extraConfig = ''
@@ -156,7 +159,7 @@
                   SwitchToMode "normal"
               }
           }
-          // "locked" 
+          // "locked"
           shared_except "tmux" {
               bind "Ctrl a" { SwitchToMode "tmux"; }
           }
@@ -194,7 +197,7 @@
               bind "Alt i" { MoveFocusOrTab "up"; }
               bind "Alt w" { CloseFocus; }
           }
-      //"locked" 
+      //"locked"
           shared_except "move" {
               bind "Ctrl h" { SwitchToMode "move"; }
               bind "Ctrl m" { SwitchToMode "move"; }
@@ -207,7 +210,7 @@
           shared_except  "scroll" "search" "tmux" {
               bind "Ctrl a" { SwitchToMode "tmux"; }
           }
-          //"locked" 
+          //"locked"
           shared_except "scroll" "search" {
               bind "Ctrl s" { SwitchToMode "scroll"; }
           }
@@ -314,7 +317,7 @@
           }
           autolock location="https://github.com/fresh2dev/zellij-autolock/releases/latest/download/zellij-autolock.wasm" {
               is_enabled true
-              triggers "nvim|vim|git|fzf|zoxide|atuin|git-forgit"
+              triggers "nvim|vim|git|fzf|zoxide|atuin|git-forgit|lazygit"
               reaction_seconds "0.3"
               print_to_log true
           }
@@ -326,7 +329,7 @@
       web_client {
           font "monospace"
       }
- 
+
       themes {
         custom {
           fg "#e2e2e2"
@@ -343,9 +346,9 @@
         }
       }
       theme "custom"
- 
+
       default_shell "zsh"
- 
+
       copy_command "wl-copy"                    // wayland
       show_startup_tips false
 
@@ -355,4 +358,3 @@
     '';
   };
 }
-

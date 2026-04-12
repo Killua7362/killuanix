@@ -1,5 +1,8 @@
-{ lib, pkgs, ... }:
-let
+{
+  lib,
+  pkgs,
+  ...
+}: let
   once = [
     "dms run"
     # fcitx5
@@ -12,16 +15,17 @@ let
     "sunshine"
   ];
   always = [
-
   ];
-in
-{
+in {
   wayland.windowManager.hyprland.settings = {
-    exec-once = (map (x: "uwsm app -- ${x}") once) ++ [
-      "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE"
-    ];
-    exec = (map (x: "uwsm app -- ${x}") always) ++ [
-
-    ];
+    exec-once =
+      (map (x: "uwsm app -- ${x}") once)
+      ++ [
+        "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE"
+      ];
+    exec =
+      (map (x: "uwsm app -- ${x}") always)
+      ++ [
+      ];
   };
 }

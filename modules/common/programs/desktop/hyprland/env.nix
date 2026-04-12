@@ -1,5 +1,4 @@
-{ lib, ... }:
-let
+{lib, ...}: let
   envAttrs = {
     QT_IM_MODULE = "fcitx";
     XMODIFIERS = "@im=fcitx";
@@ -27,8 +26,7 @@ let
     WAYLAND_DISPLAY = "wayland-1";
     env = "GDK_SCALE,1";
   };
-in
-{
+in {
   wayland.windowManager.hyprland.settings = {
     env = lib.mapAttrsToList (name: value: "${name},${value}") envAttrs;
   };

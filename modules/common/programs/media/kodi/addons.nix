@@ -119,7 +119,12 @@ in {
   };
 
   # ── Seren and dependencies ──
-  seren = {context-seren, unidecode, beautifulsoup4, myconnpy}:
+  seren = {
+    context-seren,
+    unidecode,
+    beautifulsoup4,
+    myconnpy,
+  }:
     kodiPkgs.buildKodiAddon {
       pname = "seren";
       namespace = "plugin.video.seren";

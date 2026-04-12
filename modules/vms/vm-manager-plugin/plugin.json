@@ -1,0 +1,12 @@
+{
+    "id": "vmManager",
+    "name": "VM Manager",
+    "description": "Work VM status, controls, and activity simulator",
+    "version": "1.0.0",
+    "author": "killua",
+    "icon": "computer",
+    "type": "widget",
+    "component": "./VmManagerWidget.qml",
+    "settings": "./VmManagerSettings.qml",
+    "permissions": ["settings_read", "settings_write"]
+}

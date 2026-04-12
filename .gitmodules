@@ -5,3 +5,6 @@
 [submodule "archnix/aconfmgr"]
 	path = archnix/aconfmgr
 	url = https://github.com/Killua7362/aconfmgr.git
+[submodule "Notes"]
+	path = Notes
+	url = https://github.com/Killua7362/Notes.git

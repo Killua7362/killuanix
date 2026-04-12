@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{lib, ...}: {
   wayland.windowManager.hyprland.settings = {
     bindd = [
       "Super, Period, Emoji >> clipboard, global, quickshell:overviewEmojiToggle"

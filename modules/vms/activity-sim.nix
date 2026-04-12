@@ -1,11 +1,26 @@
-{pkgs, ...}: let
+{
+  pkgs,
+  config,
+  ...
+}: let
+  keysFile = "${config.home.homeDirectory}/killuanix/modules/vms/activity-keys.conf";
+
   activity-sim = pkgs.writeShellScriptBin "activity-sim" ''
     set -euo pipefail
+    export PATH="${pkgs.sshpass}/bin:$PATH"
 
     VM_USER="''${ACTIVITY_SIM_USER:-user}"
     VM_HOST="''${ACTIVITY_SIM_HOST:-192.168.122.100}"
+    VM_PASS="''${ACTIVITY_SIM_PASS:-work123}"
     PID_FILE="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/activity-sim.pid"
-    SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes"
+    MODE_FILE="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/activity-sim.mode"
+    KEYS_FILE="${keysFile}"
+    export SSHPASS="$VM_PASS"
+    SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5"
+
+    vm_ssh() {
+      ${pkgs.sshpass}/bin/sshpass -e ssh $SSH_OPTS "$VM_USER@$VM_HOST" "$@"
+    }
 
     is_running() {
       if [ -f "$PID_FILE" ]; then
@@ -19,62 +34,120 @@
       return 1
     }
 
+    get_mode() {
+      if [ -f "$MODE_FILE" ]; then
+        cat "$MODE_FILE"
+      else
+        echo "normal"
+      fi
+    }
+
     do_status() {
       if is_running; then
-        echo '{"running":true}'
+        echo "{\"running\":true,\"mode\":\"$(get_mode)\"}"
       else
-        echo '{"running":false}'
+        echo '{"running":false,"mode":"stopped"}'
       fi
     }
 
     do_start() {
+      local mode="''${1:-normal}"
+
+      # Stop existing if running
       if is_running; then
-        echo '{"running":true}'
-        return 0
+        do_stop > /dev/null
       fi
+
+      echo "$mode" > "$MODE_FILE"
+
+      # Mute VM audio on host
+      vm_ssh "DISPLAY=:0 pactl set-sink-mute @DEFAULT_SINK@ 1" 2>/dev/null || true
 
       (
         while true; do
-          # Random delay between 3-15 seconds
-          sleep $((RANDOM % 13 + 3))
+          current_mode=$(cat "$MODE_FILE" 2>/dev/null || echo "normal")
 
-          # Pick a random action
-          action=$((RANDOM % 4))
-          case $action in
-            0)
-              # Random absolute mouse move
-              x=$((RANDOM % 1200 + 100))
-              y=$((RANDOM % 700 + 100))
-              ssh $SSH_OPTS "$VM_USER@$VM_HOST" "DISPLAY=:0 xdotool mousemove $x $y" 2>/dev/null || true
+          case "$current_mode" in
+            typing)
+              # Typing mode: rapid random keypresses to look like typing
+              chars=("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" "space" "BackSpace" "period" "comma" "Return")
+              # Type 3-8 chars in quick succession
+              burst=$((RANDOM % 6 + 3))
+              for ((b=0; b<burst; b++)); do
+                key=''${chars[$((RANDOM % ''${#chars[@]}))]}
+                vm_ssh "DISPLAY=:0 xdotool key $key" 2>/dev/null || true
+                sleep 0.$((RANDOM % 3 + 1))
+              done
+              # Occasional mouse move between bursts (30% chance)
+              if [ $((RANDOM % 3)) -eq 0 ]; then
+                x=$((RANDOM % 1200 + 100))
+                y=$((RANDOM % 700 + 100))
+                vm_ssh "DISPLAY=:0 xdotool mousemove $x $y" 2>/dev/null || true
+              fi
+              # Pause between bursts (like thinking)
+              sleep 0.$((RANDOM % 5 + 3))
               ;;
-            1)
-              # Relative mouse move
-              dx=$((RANDOM % 200 - 100))
-              dy=$((RANDOM % 200 - 100))
-              ssh $SSH_OPTS "$VM_USER@$VM_HOST" "DISPLAY=:0 xdotool mousemove_relative -- $dx $dy" 2>/dev/null || true
+            custom)
+              # Custom keys mode: read keys from config file
+              if [ -f "$KEYS_FILE" ] && [ -s "$KEYS_FILE" ]; then
+                mapfile -t custom_keys < <(grep -v '^#' "$KEYS_FILE" | grep -v '^$')
+                if [ ''${#custom_keys[@]} -gt 0 ]; then
+                  key=''${custom_keys[$((RANDOM % ''${#custom_keys[@]}))]}
+                  vm_ssh "DISPLAY=:0 xdotool key $key" 2>/dev/null || true
+                fi
+              fi
+              sleep 0.$((RANDOM % 5 + 3))
               ;;
-            2)
-              # Safe keypress (arrows, space, tab)
-              keys=("Left" "Right" "Up" "Down" "space" "Tab")
-              key=''${keys[$((RANDOM % ''${#keys[@]}))]}
-              ssh $SSH_OPTS "$VM_USER@$VM_HOST" "DISPLAY=:0 xdotool key $key" 2>/dev/null || true
-              ;;
-            3)
-              # Mouse move + small pause + another move (looks like browsing)
-              x=$((RANDOM % 1200 + 100))
-              y=$((RANDOM % 700 + 100))
-              ssh $SSH_OPTS "$VM_USER@$VM_HOST" "DISPLAY=:0 xdotool mousemove $x $y" 2>/dev/null || true
-              sleep $((RANDOM % 3 + 1))
-              x2=$((RANDOM % 1200 + 100))
-              y2=$((RANDOM % 700 + 100))
-              ssh $SSH_OPTS "$VM_USER@$VM_HOST" "DISPLAY=:0 xdotool mousemove $x2 $y2" 2>/dev/null || true
+            *)
+              # Normal mode: mouse + keyboard mix, faster intervals
+              action=$((RANDOM % 5))
+              case $action in
+                0|1)
+                  # Mouse move
+                  x=$((RANDOM % 1200 + 100))
+                  y=$((RANDOM % 700 + 100))
+                  vm_ssh "DISPLAY=:0 xdotool mousemove $x $y" 2>/dev/null || true
+                  ;;
+                2)
+                  # Mouse move + click
+                  x=$((RANDOM % 1200 + 100))
+                  y=$((RANDOM % 700 + 100))
+                  vm_ssh "DISPLAY=:0 xdotool mousemove $x $y click 1" 2>/dev/null || true
+                  ;;
+                3)
+                  # Keypress from file or defaults
+                  if [ -f "$KEYS_FILE" ] && [ -s "$KEYS_FILE" ]; then
+                    mapfile -t file_keys < <(grep -v '^#' "$KEYS_FILE" | grep -v '^$')
+                    if [ ''${#file_keys[@]} -gt 0 ]; then
+                      key=''${file_keys[$((RANDOM % ''${#file_keys[@]}))]}
+                    else
+                      keys=("Left" "Right" "Up" "Down" "space" "Tab")
+                      key=''${keys[$((RANDOM % ''${#keys[@]}))]}
+                    fi
+                  else
+                    keys=("Left" "Right" "Up" "Down" "space" "Tab")
+                    key=''${keys[$((RANDOM % ''${#keys[@]}))]}
+                  fi
+                  vm_ssh "DISPLAY=:0 xdotool key $key" 2>/dev/null || true
+                  ;;
+                4)
+                  # Scroll
+                  dir=$((RANDOM % 2))
+                  if [ $dir -eq 0 ]; then
+                    vm_ssh "DISPLAY=:0 xdotool click 4" 2>/dev/null || true
+                  else
+                    vm_ssh "DISPLAY=:0 xdotool click 5" 2>/dev/null || true
+                  fi
+                  ;;
+              esac
+              sleep 0.$((RANDOM % 5 + 3))
               ;;
           esac
         done
       ) &
 
       echo $! > "$PID_FILE"
-      echo '{"running":true}'
+      echo "{\"running\":true,\"mode\":\"$mode\"}"
     }
 
     do_stop() {
@@ -82,28 +155,50 @@
         local pid
         pid=$(cat "$PID_FILE")
         kill "$pid" 2>/dev/null || true
-        # Also kill any child ssh processes
         pkill -P "$pid" 2>/dev/null || true
         rm -f "$PID_FILE"
       fi
-      echo '{"running":false}'
+      rm -f "$MODE_FILE"
+      # Unmute VM audio on host
+      vm_ssh "DISPLAY=:0 pactl set-sink-mute @DEFAULT_SINK@ 0" 2>/dev/null || true
+      echo '{"running":false,"mode":"stopped"}'
     }
 
     do_toggle() {
       if is_running; then
         do_stop
       else
-        do_start
+        do_start normal
       fi
     }
 
     case "''${1:-status}" in
-      start)  do_start ;;
-      stop)   do_stop ;;
-      toggle) do_toggle ;;
-      status) do_status ;;
+      start)   do_start "''${2:-normal}" ;;
+      stop)    do_stop ;;
+      toggle)  do_toggle ;;
+      status)  do_status ;;
+      typing)  do_start typing ;;
+      custom)  do_start custom ;;
+      mode)
+        if is_running && [ -n "''${2:-}" ]; then
+          echo "''${2}" > "$MODE_FILE"
+          echo "Mode switched to ''${2}"
+        else
+          echo "Current mode: $(get_mode)"
+        fi
+        ;;
       *)
-        echo "Usage: activity-sim {start|stop|toggle|status}" >&2
+        echo "Usage: activity-sim {start|stop|toggle|status|typing|custom|mode <normal|typing|custom>}" >&2
+        echo ""
+        echo "Modes:"
+        echo "  normal  - Mouse moves + keypresses (from keys file or defaults)"
+        echo "  typing  - Rapid random keypresses (looks like typing)"
+        echo "  custom  - Only presses keys from $KEYS_FILE"
+        echo ""
+        echo "Keys file: $KEYS_FILE"
+        echo "  One xdotool key name per line. Lines starting with # are ignored."
+        echo ""
+        echo "Switch mode while running: activity-sim mode typing"
         exit 1
         ;;
     esac

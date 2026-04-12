@@ -13,7 +13,6 @@ in {
     inputs.sops-nix.homeManagerModules.sops
     ../modules/cross-platform
     ./users/dots-manage.nix
-    ../modules/containers/quadlet.nix
     ../modules/vms
     inputs.spicetify-nix.homeManagerModules.default
   ];
