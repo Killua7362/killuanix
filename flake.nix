@@ -137,6 +137,24 @@
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
     claude-code.url = "github:sadjow/claude-code-nix";
 
+    # Declarative MCP server catalog (Home Manager integration)
+    mcp-servers-nix = {
+      url = "github:natsukium/mcp-servers-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Official Anthropic skills repository — consumed as plain source
+    anthropics-skills = {
+      url = "github:anthropics/skills";
+      flake = false;
+    };
+
+    # agentient/vibekit — cherry-picked skills (see modules/common/programs/dev/claude.nix)
+    vibekit = {
+      url = "github:agentient/vibekit";
+      flake = false;
+    };
+
     # Handheld / MSI Claw
     nix-cachyos-kernel = {
       url = "github:xddxdd/nix-cachyos-kernel/release";
@@ -278,7 +296,7 @@
 
     systemConfigs.default = system-manager.lib.makeSystemConfig {
       modules = [
-        ./modules/archlinux/default.nix
+        ./archnix/system-manager.nix
       ];
     };
 
@@ -295,7 +313,6 @@
           inputs.nixCats.homeModule
           inputs.dms.homeModules.dank-material-shell
           inputs.nix-index-database.homeModules.default
-          inputs.quadlet-nix.homeManagerModules.quadlet
           # inputs.nix-yazi-plugins.legacyPackages.x86_64-linux.homeManagerModules.default # TODO: Revisit in future
           ./archnix/home.nix
         ];

@@ -5,4 +5,5 @@
   overlays = import ./overlays.nix;
   overrides = import ./overrides.nix;
   programs = import ./programs.nix;
+  mcpServers = import ./mcp-servers.nix;
 }

@@ -16,7 +16,9 @@
     ./wifi-fix.nix
     ./boot.nix
     inputs.home-manager.nixosModules.home-manager
-    ../modules/containers/quadlet.nix
+    inputs.sops-nix.nixosModules.sops
+    ../modules/common/sops-system.nix
+    ../modules/containers
     ../modules/vms/system.nix
   ];
 
@@ -36,8 +38,6 @@
     dockerCompat = false; # docker is already enabled
     defaultNetwork.settings.dns_enabled = true;
   };
-
-  virtualisation.quadlet.enable = true;
 
   boot.blacklistedKernelModules = ["kvm_intel" "kvm"];
 
@@ -112,6 +112,10 @@
       General = {
         Enable = "Source,Sink,Media,Socket";
         Experimental = true;
+        # Enables BlueZ Experimental ISO socket (LE Audio / BAP / LC3)
+        # plus Jovian/SteamOS's own UUID — KernelExperimental accepts a
+        # comma-separated list, mkForce to override Jovian's single value.
+        KernelExperimental = lib.mkForce "6fbaf188-05e0-496a-9885-d6ddfdb4e03e,15c0a148-c273-11ea-b3de-0242ac130004";
         FastConnectable = true;
       };
       Policy = {

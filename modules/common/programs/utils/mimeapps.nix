@@ -8,12 +8,12 @@
       enable = true;
       defaultApplications = {
         # Browser
-        "text/html" = ["firefox.desktop"];
-        "x-scheme-handler/http" = ["firefox.desktop"];
-        "x-scheme-handler/https" = ["firefox.desktop"];
-        "x-scheme-handler/about" = ["firefox.desktop"];
-        "x-scheme-handler/unknown" = ["firefox.desktop"];
-        "application/xhtml+xml" = ["firefox.desktop"];
+        "text/html" = ["firefox-nightly.desktop"];
+        "x-scheme-handler/http" = ["firefox-nightly.desktop"];
+        "x-scheme-handler/https" = ["firefox-nightly.desktop"];
+        "x-scheme-handler/about" = ["firefox-nightly.desktop"];
+        "x-scheme-handler/unknown" = ["firefox-nightly.desktop"];
+        "application/xhtml+xml" = ["firefox-nightly.desktop"];
 
         # File manager
         "inode/directory" = ["nemo.desktop"];

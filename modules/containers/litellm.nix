@@ -1,63 +1,28 @@
+# LiteLLM + MCP Runtime (NixOS, rootful Quadlet).
+#
+# Builds a container image that bundles LiteLLM with every MCP server declared
+# in modules/common/mcp-servers.nix, pre-warmed via npx/uvx at image build time
+# (no Nix hashes for individual MCP packages — podman handles the npm/PyPI fetch).
+#
+# API keys are read from sops-nix system-level secrets (see modules/common/sops-system.nix).
+# A oneshot service assembles /run/litellm/env from the decrypted files.
 {
   pkgs,
   config,
   lib,
+  inputs,
   ...
 }: let
-  # ── Declarative MCP server definitions ──
-  # Add entries here to install into the container AND register with Claude.
-  #
-  # Fields:
-  #   runtime  — "npx" or "uvx"
-  #   package  — npm package name or PyPI package name
-  #   args     — extra CLI args appended after the package (optional)
-  #   env      — environment variables passed to Claude (optional)
-  mcpServers = {
-    filesystem = {
-      runtime = "npx";
-      package = "@modelcontextprotocol/server-filesystem";
-      args = [config.home.homeDirectory];
-    };
+  registry = inputs.self.commonModules.mcpServers;
 
-    fetch = {
-      runtime = "uvx";
-      package = "mcp-server-fetch";
-    };
-
-    memory = {
-      runtime = "npx";
-      package = "@modelcontextprotocol/server-memory";
-      env.MEMORY_FILE_PATH = "${config.xdg.dataHome}/claude/memory.json";
-    };
-
-    sequential-thinking = {
-      runtime = "npx";
-      package = "@modelcontextprotocol/server-sequential-thinking";
-    };
-  };
-
-  # ── Derived MCP values ──
-  npxPackages = lib.unique (lib.mapAttrsToList (_: s: s.package) (lib.filterAttrs (_: s: s.runtime == "npx") mcpServers));
-  uvxPackages = lib.unique (lib.mapAttrsToList (_: s: s.package) (lib.filterAttrs (_: s: s.runtime == "uvx") mcpServers));
+  # ── Derived MCP install lines ──
+  npxPackages = lib.unique (lib.mapAttrsToList (_: s: s.package) (lib.filterAttrs (_: s: s.runtime == "npx") registry));
+  uvxPackages = lib.unique (lib.mapAttrsToList (_: s: s.package) (lib.filterAttrs (_: s: s.runtime == "uvx") registry));
 
   npxInstallLines = lib.concatMapStringsSep "\n" (p: "RUN npx -y ${p} --help </dev/null &>/dev/null || true") npxPackages;
   uvxInstallLines = lib.concatMapStringsSep "\n" (p: "RUN uvx ${p} --help </dev/null &>/dev/null || true") uvxPackages;
 
-  claudeMcpServers = lib.mapAttrs (_: s: let
-    runtimeArgs =
-      if s.runtime == "npx"
-      then ["npx" "-y" s.package]
-      else ["uvx" s.package];
-    extraArgs = s.args or [];
-  in
-    {
-      command = "podman";
-      args = ["exec" "-i" "litellm"] ++ runtimeArgs ++ extraArgs;
-    }
-    // lib.optionalAttrs (s ? env) {env = s.env;})
-  mcpServers;
-
-  # ── LiteLLM config ──
+  # ── LiteLLM proxy config ──
   litellmConfig = pkgs.writeText "litellm-config.yaml" (builtins.toJSON {
     model_list = [
       {
@@ -101,25 +66,33 @@
     };
   });
 
-  # ── Combined LiteLLM + MCP container image ──
+  # ── Combined LiteLLM + MCP image ──
+  # Built from python:3.12-slim so we control the base distro. Upstream
+  # ghcr.io/berriai/litellm:main-latest recently switched to a minimal base
+  # without apt-get, which broke the previous layered approach.
   dockerfile = pkgs.writeText "Dockerfile.litellm-mcp" ''
-    FROM ghcr.io/berriai/litellm:main-latest
+    FROM python:3.12-slim
 
-    USER root
-
+    # System deps + Node.js 22 (for npx MCP servers)
     RUN apt-get update && apt-get install -y --no-install-recommends \
         curl ca-certificates git \
       && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
       && apt-get install -y --no-install-recommends nodejs \
       && rm -rf /var/lib/apt/lists/*
 
-    # Install uv (provides uvx)
+    # uv (provides uvx for PyPI MCP servers)
     RUN curl -LsSf https://astral.sh/uv/install.sh | sh
     ENV PATH="/root/.local/bin:$PATH"
 
-    # Pre-install MCP servers (generated from mcpServers attrset)
+    # LiteLLM proxy
+    RUN pip install --no-cache-dir "litellm[proxy]"
+
+    # Pre-warm MCP servers (auto-generated from modules/common/mcp-servers.nix)
     ${npxInstallLines}
     ${uvxInstallLines}
+
+    EXPOSE 4000
+    ENTRYPOINT ["litellm"]
   '';
 
   buildContext = let
@@ -130,9 +103,10 @@
       cp ${dockerfile} $out/Dockerfile
       cp ${dockerignore} $out/.dockerignore
     '';
-in {
-  programs.claude-code.mcpServers = claudeMcpServers;
 
+  # Map sops secret names to decrypted runtime paths (NixOS sops-nix default).
+  sopsPath = name: config.sops.secrets.${name}.path;
+in {
   virtualisation.quadlet = {
     builds.litellm = {
       buildConfig = {
@@ -150,25 +124,19 @@ in {
 
       containerConfig = {
         image = "localhost/litellm-mcp:latest";
-        publishPorts = [
-          "4000:4000"
-        ];
+        publishPorts = ["4000:4000"];
         volumes = [
           "${litellmConfig}:/app/config.yaml:ro,z"
-          "${config.home.homeDirectory}:${config.home.homeDirectory}:z"
+          "/home/killua:/home/killua:z"
           "mcp-npm-cache:/root/.npm"
           "mcp-uv-cache:/root/.local/share/uv"
         ];
         environments = {
           LITELLM_MASTER_KEY = "sk-litellm-local";
         };
-        environmentFiles = [
-          "${config.xdg.configHome}/litellm/env"
-        ];
+        environmentFiles = ["/run/litellm/env"];
         exec = "--config /app/config.yaml --port 4000";
-        labels = [
-          "io.containers.autoupdate=registry"
-        ];
+        labels = ["io.containers.autoupdate=registry"];
       };
 
       serviceConfig = {
@@ -182,10 +150,12 @@ in {
           "network-online.target"
           "podman.socket"
           "litellm-build.service"
+          "litellm-env.service"
         ];
         Requires = [
           "podman.socket"
           "litellm-build.service"
+          "litellm-env.service"
         ];
       };
     };
@@ -196,29 +166,32 @@ in {
     };
   };
 
-  # LiteLLM env file with API keys from sops
-  home.activation.litellmEnv = lib.hm.dag.entryAfter ["writeBoundary" "sopsNix"] (let
-    envDir = "${config.xdg.configHome}/litellm";
-  in ''
-    mkdir -p "${envDir}"
+  # Assemble /run/litellm/env from sops-decrypted secrets before the container starts.
+  # sops-nix materialises secrets to /run/secrets/ during NixOS activation (not via
+  # a systemd unit), so by the time any [Install] WantedBy=multi-user.target service
+  # starts the files already exist. No explicit dependency on a sops unit is needed.
+  systemd.services.litellm-env = {
+    description = "Assemble LiteLLM env file from sops secrets";
+    wantedBy = ["multi-user.target"];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      RuntimeDirectory = "litellm";
+      RuntimeDirectoryMode = "0700";
+    };
+    script = ''
+      read_secret() {
+        local path="$1"
+        [ -f "$path" ] && cat "$path" || echo ""
+      }
 
-    NVIDIA_KEY=""
-    GOOGLE_KEY=""
-    MISTRAL_KEY=""
-    MISTRAL_CODESTRAL_KEY=""
-
-    [ -f "${config.sops.secrets."nvidia_api_key".path}" ] && NVIDIA_KEY=$(cat "${config.sops.secrets."nvidia_api_key".path}")
-    [ -f "${config.sops.secrets."google_studio_key".path}" ] && GOOGLE_KEY=$(cat "${config.sops.secrets."google_studio_key".path}")
-    [ -f "${config.sops.secrets."mistral_api_key".path}" ] && MISTRAL_KEY=$(cat "${config.sops.secrets."mistral_api_key".path}")
-    [ -f "${config.sops.secrets."mistral_codestral_api_key".path}" ] && MISTRAL_CODESTRAL_KEY=$(cat "${config.sops.secrets."mistral_codestral_api_key".path}")
-
-    printf '%s\n' \
-      "NVIDIA_API_KEY=$NVIDIA_KEY" \
-      "GOOGLE_API_KEY=$GOOGLE_KEY" \
-      "MISTRAL_API_KEY=$MISTRAL_KEY" \
-      "MISTRAL_CODESTRAL_API_KEY=$MISTRAL_CODESTRAL_KEY" \
-      > "${envDir}/env"
-
-    chmod 600 "${envDir}/env"
-  '');
+      umask 077
+      {
+        printf 'NVIDIA_API_KEY=%s\n' "$(read_secret ${sopsPath "nvidia_api_key"})"
+        printf 'GOOGLE_API_KEY=%s\n'  "$(read_secret ${sopsPath "google_studio_key"})"
+        printf 'MISTRAL_API_KEY=%s\n' "$(read_secret ${sopsPath "mistral_api_key"})"
+        printf 'MISTRAL_CODESTRAL_API_KEY=%s\n' "$(read_secret ${sopsPath "mistral_codestral_api_key"})"
+      } > /run/litellm/env
+    '';
+  };
 }

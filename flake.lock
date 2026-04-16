@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "anthropics-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776112662,
+        "narHash": "sha256-L/zqUOcZu0wE+Uw9shyA0jCFi8Ff0vj/ijj+KOjRkYI=",
+        "owner": "anthropics",
+        "repo": "skills",
+        "rev": "0f7c287eaf0d4fa511cb871bb55e2a7862251fbb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anthropics",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "antigravity-nix": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -1267,6 +1283,26 @@
         "type": "github"
       }
     },
+    "mcp-servers-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775901136,
+        "narHash": "sha256-5J+54o9YDgAeY1iYuSN7kVt0cTB90x4zO5whqdPg3Tw=",
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "59335c80be7b719df7b6e6473f14424b1e6647df",
+        "type": "github"
+      },
+      "original": {
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "type": "github"
+      }
+    },
     "mk-darwin-system": {
       "inputs": {
         "flake-utils": "flake-utils_6",
@@ -2279,6 +2315,7 @@
     },
     "root": {
       "inputs": {
+        "anthropics-skills": "anthropics-skills",
         "antigravity-nix": "antigravity-nix",
         "arkenfox": "arkenfox",
         "chaotic": "chaotic",
@@ -2295,6 +2332,7 @@
         "hyprland": "hyprland",
         "hyprland-plugins": "hyprland-plugins",
         "jovian": "jovian_2",
+        "mcp-servers-nix": "mcp-servers-nix",
         "mk-darwin-system": "mk-darwin-system",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nix-cachyos-kernel": "nix-cachyos-kernel",
@@ -2324,6 +2362,7 @@
         "spicetify-nix": "spicetify-nix",
         "system-manager": "system-manager",
         "uv2nix": "uv2nix",
+        "vibekit": "vibekit",
         "vicinae": "vicinae",
         "vicinae-extensions": "vicinae-extensions",
         "yazi": "yazi",
@@ -2778,6 +2817,22 @@
       "original": {
         "owner": "pyproject-nix",
         "repo": "uv2nix",
+        "type": "github"
+      }
+    },
+    "vibekit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1772654965,
+        "narHash": "sha256-hNw8OuohBv1gbCYwodSH/Xm0Las6WWjIsJpXRiQRAFA=",
+        "owner": "agentient",
+        "repo": "vibekit",
+        "rev": "81e6ca3c0a72fe23259eb09979b0f7cf5f4ed60a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "agentient",
+        "repo": "vibekit",
         "type": "github"
       }
     },

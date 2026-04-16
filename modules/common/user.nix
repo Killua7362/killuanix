@@ -11,6 +11,8 @@
 
     sessionVariables = {
       EDITOR = "nvim";
+      BROWSER = "firefox-nightly";
+      DEFAULT_BROWSER = "firefox-nightly";
       TERM = "xterm-256color";
       COLORTERM = "truecolor";
       LANGUAGE = "en_US.UTF-8";

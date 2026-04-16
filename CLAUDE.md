@@ -37,7 +37,7 @@ nix fmt
 | `nixosConfigurations.killua` | `nixos/configuration.nix` | NixOS system config; Home Manager wired in as a NixOS module (`nixos/home-manager/home.nix`) |
 | `homeManagerConfigurations.archnix` | `archnix/home.nix` | Standalone HM for Arch Linux |
 | `darwinConfigurations.macnix` | `macnix/default.nix` | nix-darwin system + HM |
-| `systemConfigs.default` | `modules/archlinux/default.nix` | `system-manager` config for Arch (container registry, podman, lingering) |
+| `systemConfigs.default` | `archnix/system-manager.nix` | `system-manager` config for Arch (container registry, podman, lingering) |
 
 ### Module layers
 

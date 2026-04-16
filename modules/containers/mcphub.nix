@@ -1,9 +1,6 @@
-{
-  pkgs,
-  config,
-  lib,
-  ...
-}: let
+# MCP Hub — NixOS stub, not imported by default.
+# To enable: add `./mcphub.nix` to imports in ./default.nix
+{pkgs, ...}: let
   mcp-dockerfile = pkgs.writeText "Dockerfile" ''
     # syntax=docker/dockerfile:1
 
@@ -58,70 +55,60 @@
     cp ${dockerignore} $out/.dockerignore
   '';
 in {
-  virtualisation.quadlet = {
-    builds = {
-      mcp-server = {
-        buildConfig = {
-          tag = "localhost/mcp-server:latest";
-          file = "${mcp-dockerfile}";
-          workdir = "${buildContext}";
-          pull = "missing";
-        };
-        serviceConfig = {
-          TimeoutStartSec = 900;
-        };
-
-        unitConfig = {
-          Description = "Build MCP Server OCI image";
-        };
-      };
-    };
-
-    containers = {
-      mcp-server = {
-        autoStart = false;
-
-        containerConfig = {
-          image = "localhost/mcp-server:latest";
-
-          publishPorts = [
-            "31415:31415"
-          ];
-
-          volumes = [
-            "${config.xdg.configHome}/mcp-server/mcp-servers.json:/config/mcp-servers.json:ro,z"
-            "/run/user/1000/podman/podman.sock:/var/run/docker.sock:z"
-          ];
-
-          networks = ["portainer-net"];
-
-          securityLabelDisable = true;
-        };
-
-        serviceConfig = {
-          Restart = "always";
-          TimeoutStartSec = 600;
-        };
-
-        unitConfig = {
-          Description = "MCP Server - Model Context Protocol";
-          After = [
-            "network-online.target"
-            "podman.socket"
-            "mcp-server-build.service"
-          ];
-          Requires = [
-            "podman.socket"
-            "mcp-server-build.service"
-          ];
-        };
-      };
-    };
+  environment.etc."mcp-server/mcp-servers.json".text = builtins.toJSON {
+    servers = [];
   };
-  xdg.configFile."mcp-server/mcp-servers.json" = {
-    text = builtins.toJSON {
-      servers = [
-      ];
+
+  virtualisation.quadlet = {
+    builds.mcp-server = {
+      buildConfig = {
+        tag = "localhost/mcp-server:latest";
+        file = "${mcp-dockerfile}";
+        workdir = "${buildContext}";
+        pull = "missing";
+      };
+
+      serviceConfig.TimeoutStartSec = 900;
+      unitConfig.Description = "Build MCP Server OCI image";
+    };
+
+    containers.mcp-server = {
+      autoStart = false;
+
+      containerConfig = {
+        image = "localhost/mcp-server:latest";
+
+        publishPorts = [
+          "31415:31415"
+        ];
+
+        volumes = [
+          "/etc/mcp-server/mcp-servers.json:/config/mcp-servers.json:ro,z"
+          "/var/run/docker.sock:/var/run/docker.sock:z"
+        ];
+
+        networks = ["portainer-net"];
+
+        securityLabelDisable = true;
+      };
+
+      serviceConfig = {
+        Restart = "always";
+        TimeoutStartSec = 600;
+      };
+
+      unitConfig = {
+        Description = "MCP Server - Model Context Protocol";
+        After = [
+          "network-online.target"
+          "podman.socket"
+          "mcp-server-build.service"
+        ];
+        Requires = [
+          "podman.socket"
+          "mcp-server-build.service"
+        ];
+      };
     };
   };
 }

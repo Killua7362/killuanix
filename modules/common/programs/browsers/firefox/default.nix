@@ -418,19 +418,20 @@ in {
           // Sandbox needs to be disabled in release and Beta versions
           user_pref("general.config.sandbox_enabled", false);
           user_pref("accessibility.force_disabled",1);
-          user_pref("natsumi.theme.type", "colorful")
-          user_pref("natsumi.urlbar.do-not-float", true)
-          user_pref("sidebar.verticalTabs", true)
-          user_pref("sidebar.verticalTabs.dragToPinPromo.dismissed", true)
-          user_pref("browser.link.open_newwindow", 3)
-          user_pref("browser.ctrlTab.sortByRecentlyUsed", true)
-          user_pref("browser.tabs.insertAfterCurrent", true)
-          user_pref("browser.tabs.insertAfterCurrentExceptPinned", true)
-          user_pref("browser.tabs.closeWindowWithLastTab", false)
-          user_pref("media.videocontrols.picture-in-picture.video-toggle.always-show", true)
-          user_pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true)
-          user_pref("media.videocontrols.picture-in-picture.video-toggle.has-used", true)
-          user_pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled", true)
+          user_pref("natsumi.theme.type", "colorful");
+          user_pref("natsumi.urlbar.do-not-float", true);
+          user_pref("natsumi.urlbar.always-expanded", true);
+          user_pref("sidebar.verticalTabs", true);
+          user_pref("sidebar.verticalTabs.dragToPinPromo.dismissed", true);
+          user_pref("browser.link.open_newwindow", 3);
+          user_pref("browser.ctrlTab.sortByRecentlyUsed", true);
+          user_pref("browser.tabs.insertAfterCurrent", true);
+          user_pref("browser.tabs.insertAfterCurrentExceptPinned", true);
+          user_pref("browser.tabs.closeWindowWithLastTab", false);
+          user_pref("media.videocontrols.picture-in-picture.video-toggle.always-show", true);
+          user_pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
+          user_pref("media.videocontrols.picture-in-picture.video-toggle.has-used", true);
+          user_pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled", true);
         '';
       };
     };

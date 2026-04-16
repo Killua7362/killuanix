@@ -11,8 +11,9 @@
     inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;
   };
 in {
-  programs.claude-code.enable = true;
-
+  # Custom code-index MCP server (not in the mcp-servers-nix catalog).
+  # Secrets come from sops-nix. `programs.claude-code.enable` + skills are
+  # configured in ./claude.nix; skills themselves live alongside it under ./skills.
   programs.claude-code.mcpServers.code-index = {
     command = "${code-index-mcp}/bin/code-index-mcp";
     env = {
@@ -21,6 +22,4 @@ in {
       NVIDIA_API_KEY_FILE = config.sops.secrets."nvidia_api_key".path;
     };
   };
-
-  programs.claude-code.skillsDir = ./skills;
 }

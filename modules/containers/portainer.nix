@@ -1,9 +1,5 @@
-{
-  pkgs,
-  config,
-  lib,
-  ...
-}: {
+{...}: {
+  # ── Portainer CE (rootful, using docker socket) ──
   virtualisation.quadlet.containers.portainer = {
     autoStart = true;
 
@@ -15,13 +11,11 @@
       ];
       volumes = [
         "portainer_data:/data"
-        # Mount the rootless podman socket so Portainer can manage containers
-        "/run/user/1000/podman/podman.sock:/var/run/docker.sock:z"
+        "/var/run/docker.sock:/var/run/docker.sock:z"
       ];
       labels = [
         "io.containers.autoupdate=registry"
       ];
-      securityLabelDisable = true; # needed for socket access
     };
 
     serviceConfig = {
@@ -31,8 +25,7 @@
 
     unitConfig = {
       Description = "Portainer CE - Container Management";
-      After = ["network-online.target" "podman.socket"];
-      Requires = ["podman.socket"];
+      After = ["network-online.target"];
     };
   };
 }

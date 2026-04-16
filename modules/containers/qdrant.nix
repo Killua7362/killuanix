@@ -1,9 +1,12 @@
-{
-  pkgs,
-  config,
-  lib,
-  ...
-}: {
+# Qdrant Vector DB — NixOS stub, not imported by default.
+# To enable: add `./qdrant.nix` to imports in ./default.nix
+{...}: {
+  systemd.tmpfiles.rules = [
+    "d /var/lib/qdrant 0755 root root -"
+    "d /var/lib/qdrant/storage 0755 root root -"
+    "d /var/lib/qdrant/snapshots 0755 root root -"
+  ];
+
   virtualisation.quadlet.containers.qdrant = {
     autoStart = true;
 
@@ -14,8 +17,8 @@
         "6334:6334" # gRPC
       ];
       volumes = [
-        "${config.xdg.dataHome}/qdrant/storage:/qdrant/storage:z"
-        "${config.xdg.dataHome}/qdrant/snapshots:/qdrant/snapshots:z"
+        "/var/lib/qdrant/storage:/qdrant/storage:z"
+        "/var/lib/qdrant/snapshots:/qdrant/snapshots:z"
       ];
       labels = [
         "io.containers.autoupdate=registry"

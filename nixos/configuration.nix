@@ -13,7 +13,9 @@ in {
   imports = [
     ./hardware-configuration.nix
     inputs.home-manager.nixosModules.home-manager
-    ../modules/containers/quadlet.nix
+    inputs.sops-nix.nixosModules.sops
+    ../modules/common/sops-system.nix
+    ../modules/containers
     ../modules/vms/system.nix
   ];
 
@@ -38,6 +40,8 @@ in {
       General = {
         Enable = "Source,Sink,Media,Socket";
         Experimental = true;
+        # Enables BlueZ Experimental ISO socket — required for LE Audio (BAP/LC3)
+        KernelExperimental = "6fbaf188-05e0-496a-9885-d6ddfdb4e03e";
         FastConnectable = true;
       };
       Policy = {
@@ -290,7 +294,6 @@ in {
     nerd-fonts.hack
   ];
 
-  virtualisation.quadlet.enable = true;
   boot.blacklistedKernelModules = ["kvm_intel" "kvm"];
 
   services.dbus.packages = [pkgs.blueman pkgs.openvpn3];
