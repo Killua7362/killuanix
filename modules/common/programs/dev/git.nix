@@ -35,6 +35,10 @@ in {
         condition = "hasconfig:remote.*.url:https://*@dev.azure.com/**";
         path = azureGitConfigPath;
       }
+      {
+        condition = "hasconfig:remote.*.url:https://*@dev.azure.com/**";
+        path = azureGitConfigPath;
+      }
     ];
   };
 }

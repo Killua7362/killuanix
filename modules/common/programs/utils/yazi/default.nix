@@ -11,6 +11,9 @@
     settings = lib.importTOML ./yazi.toml;
     keymap = lib.importTOML ./keymap.toml;
     theme = lib.importTOML ./theme.toml;
+    package = inputs.yazi.packages.${pkgs.system}.default.override {
+      _7zz = pkgs._7zz-rar;  # Support for RAR extraction
+    };
     flavors = {
       inherit
         (pkgs.yaziFlavors)
@@ -21,6 +24,7 @@
       inherit (pkgs.yaziPlugins) mount;
     };
   };
+
 
   # programs.yazi.yaziPlugins = {
   #   enable = true;

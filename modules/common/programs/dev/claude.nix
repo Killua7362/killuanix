@@ -55,11 +55,61 @@
 
   allSkills = (lib.foldl' (acc: root: acc // collectSkills root) {} skillRoots) // extraSkills;
 
-  # Map each registry entry to a Claude Code mcpServers spec using the
-  # mcp-servers-nix binary. `env`/`args` passthrough when set.
-  mkClaudeServer = _: def:
-    {command = lib.getExe mcp.${def.mcpServerNix};}
-    // lib.optionalAttrs (def ? args) {inherit (def) args;}
+  # Wrapper for git-sourced MCP servers. The fetched source lives in the Nix
+  # store (read-only), but uv/pipx/npm need a writable project dir to create
+  # .venv / node_modules / etc. On first run we copy the repo into
+  # $XDG_CACHE_HOME/mcp-servers/<name>-<rev>/ and run the launcher from there.
+  # The rev is part of the path, so bumping gitSource.rev triggers a fresh copy.
+  #
+  # To add a new runtime (pipx-run, npm-run, …), extend the `launcher` branch.
+  mkGitServer = {
+    name,
+    gitSource,
+    runtime,
+    entrypoint,
+  }: let
+    src = pkgs.fetchFromGitHub gitSource;
+    launcher =
+      if runtime == "uv-run"
+      then ''exec ${lib.getExe pkgs.uv} run python ${lib.escapeShellArg entrypoint} "$@"''
+      else throw "claude.nix: unsupported git-source runtime '${runtime}' for MCP server '${name}'";
+    runtimeInputs =
+      if runtime == "uv-run"
+      then [pkgs.uv]
+      else [];
+  in
+    pkgs.writeShellApplication {
+      name = "mcp-${name}";
+      inherit runtimeInputs;
+      text = ''
+        workdir="''${XDG_CACHE_HOME:-$HOME/.cache}/mcp-servers/${name}-${gitSource.rev}"
+        if [ ! -e "$workdir/.ready" ]; then
+          mkdir -p "$workdir"
+          cp -rL --no-preserve=mode,ownership "${src}/." "$workdir/"
+          touch "$workdir/.ready"
+        fi
+        cd "$workdir"
+        ${launcher}
+      '';
+    };
+
+  # Map each registry entry to a Claude Code mcpServers spec. Catalog entries
+  # resolve to the natsukium binary; git-sourced entries resolve to a wrapper
+  # script (see mkGitServer). `env`/`args` passthrough when set.
+  mkClaudeServer = name: def:
+    (
+      if def ? gitSource
+      then {
+        command = lib.getExe (mkGitServer {
+          inherit name;
+          inherit (def) gitSource runtime entrypoint;
+        });
+      }
+      else {
+        command = lib.getExe mcp.${def.mcpServerNix};
+      }
+    )
+    // lib.optionalAttrs (def ? args && !(def ? gitSource)) {inherit (def) args;}
     // lib.optionalAttrs (def ? env) {inherit (def) env;};
 in {
   programs.claude-code = {

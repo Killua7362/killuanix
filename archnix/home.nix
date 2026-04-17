@@ -31,6 +31,7 @@ in {
     inputs.claude-code.overlays.default
   ];
 
+  systemd.user.systemctlPath = "/bin/systemctl";
   targets.genericLinux.nixGL.packages = import nixgl {inherit pkgs;};
   targets.genericLinux.nixGL.defaultWrapper = "mesa";
   targets.genericLinux.nixGL.installScripts = ["mesa"];

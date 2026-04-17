@@ -62,7 +62,7 @@ in {
     useRoutingFeatures = "client";
     extraUpFlags = ["--accept-dns=false"]; # Disable Tailscale DNS override
   };
-  #  services.flatpak.enable = true;
+  services.flatpak.enable = true;
   services.sunshine = {
     enable = true;
     autoStart = true;
