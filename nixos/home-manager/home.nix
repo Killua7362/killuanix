@@ -7,6 +7,7 @@
 }: {
   imports = [
     ../../modules/cross-platform
+    ../../modules/common/programs/notes
     ./users/dots-manage.nix
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dank-material-shell
@@ -25,6 +26,7 @@
     inputs.yazi.overlays.default
     inputs.nix-yazi-flavors.overlays.default
     inputs.claude-code.overlays.default
+    inputs.nixpille-obsidian-community-plugins.overlays.default
   ];
 
   # NixOS-specific packages

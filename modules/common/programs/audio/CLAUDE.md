@@ -12,9 +12,11 @@ Home Manager module for audio tooling, PipeWire/WirePlumber configuration, Bluet
 
 ## Packages (shared.nix)
 
-**GUI:** pavucontrol, pwvucontrol, helvum, qpwgraph, blueman
+**Audio GUI:** pavucontrol, pwvucontrol, crosspipe, qpwgraph
 
-**CLI/TUI:** pamixer, playerctl, pulsemixer
+**Audio CLI/TUI:** pamixer, playerctl, pulsemixer
+
+**Bluetooth GUI:** blueman
 
 ## User Services (shared.nix)
 
@@ -26,10 +28,10 @@ Home Manager module for audio tooling, PipeWire/WirePlumber configuration, Bluet
 
 All config is written as XDG config drop-ins under `~/.config/pipewire/` and `~/.config/wireplumber/`, so it works on both NixOS and Arch.
 
-- **PipeWire core** -- 48 kHz default rate (allows 44.1/96 kHz), quantum 1024, real-time scheduling (nice -11, rt prio 88).
+- **PipeWire core** -- 48 kHz default rate (allows 44.1/96 kHz), quantum 1024 (min 512, max 2048), real-time scheduling (nice -11, rt prio 88).
 - **PulseAudio bridge** -- Per-application latency rules: browsers/Electron get 1024/48000; gaming processes (Steam, Gamescope, Wine/Proton) get 512/48000.
 - **JACK bridge** -- 256/48000 latency, short names, monitor merging enabled.
-- **Bluetooth (WirePlumber)** -- Enables SBC-XQ, mSBC, hardware volume, auto-switch to HSP/HFP on mic request, preferred codec order (LDAC > aptX HD > aptX > AAC > SBC-XQ > SBC > LC3).
+- **Bluetooth (WirePlumber)** -- Enables SBC-XQ, mSBC, hardware volume, native HFP/HSP backend, auto-switch to HSP/HFP on mic request, preferred codec order (LDAC > aptX HD > aptX > aptX LL > AAC > SBC-XQ > SBC > FastStream > LC3plus > LC3). A separate rule auto-connects `a2dp_sink` and enables hardware volume on `hfp_ag`/`hsp_ag`/`a2dp_sink` for all BlueZ cards.
 - **ALSA tuning** -- Period size 1024, headroom 1024, resample quality 10, suspend disabled. HDMI and loopback outputs are hidden.
 
 ## Spotify (spotify.nix)

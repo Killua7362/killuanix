@@ -2,7 +2,9 @@
   config,
   pkgs,
   ...
-}: {
+}: let
+  p = config.theme.palette;
+in {
   programs.zellij = {
     enable = true;
     extraConfig = ''
@@ -317,7 +319,7 @@
           }
           autolock location="https://github.com/fresh2dev/zellij-autolock/releases/latest/download/zellij-autolock.wasm" {
               is_enabled true
-              triggers "nvim|vim|git|fzf|zoxide|atuin|git-forgit|lazygit"
+              triggers "nvim|vim|git|fzf|zoxide|atuin|git-forgit|lazygit|claude"
               reaction_seconds "0.3"
               print_to_log true
           }
@@ -332,22 +334,146 @@
 
       themes {
         custom {
-          fg "#e2e2e2"
-          bg "#3a3a3a"
-          black "#131313"
-          red "#ac8a8c"
-          green "#8aac8b"
-          yellow "#aca98a"
-          blue "#89ceff"
-          magenta "#ac8aac"
-          cyan "#8aacab"
-          white "#e7e7e7"
-          orange "#c49ea0"
+          fg "${p.fg}"
+          bg "${p.zellij_bg}"
+          black "${p.bg}"
+          red "${p.color1}"
+          green "${p.color2}"
+          yellow "${p.color3}"
+          blue "${p.color4}"
+          magenta "${p.color5}"
+          cyan "${p.color6}"
+          white "${p.color15}"
+          orange "${p.color9}"
+
+          text_unselected {
+            base "${p.fg}"
+            background "${p.zellij_bg}"
+            emphasis_0 "${p.color4}"
+            emphasis_1 "${p.color9}"
+            emphasis_2 "${p.color3}"
+            emphasis_3 "${p.color5}"
+          }
+          text_selected {
+            base "${p.bg}"
+            background "${p.color4}"
+            emphasis_0 "${p.color9}"
+            emphasis_1 "${p.color3}"
+            emphasis_2 "${p.color2}"
+            emphasis_3 "${p.color5}"
+          }
+          ribbon_selected {
+            base "${p.bg}"
+            background "${p.color4}"
+            emphasis_0 "${p.color9}"
+            emphasis_1 "${p.color3}"
+            emphasis_2 "${p.color2}"
+            emphasis_3 "${p.color5}"
+          }
+          ribbon_unselected {
+            base "${p.fg}"
+            background "${p.zellij_bg}"
+            emphasis_0 "${p.color4}"
+            emphasis_1 "${p.color9}"
+            emphasis_2 "${p.color3}"
+            emphasis_3 "${p.color5}"
+          }
+          table_title {
+            base "${p.color4}"
+            background "${p.zellij_bg}"
+            emphasis_0 "${p.color9}"
+            emphasis_1 "${p.color3}"
+            emphasis_2 "${p.color2}"
+            emphasis_3 "${p.color5}"
+          }
+          table_cell_selected {
+            base "${p.bg}"
+            background "${p.color4}"
+            emphasis_0 "${p.color9}"
+            emphasis_1 "${p.color3}"
+            emphasis_2 "${p.color2}"
+            emphasis_3 "${p.color5}"
+          }
+          table_cell_unselected {
+            base "${p.fg}"
+            background "${p.zellij_bg}"
+            emphasis_0 "${p.color4}"
+            emphasis_1 "${p.color9}"
+            emphasis_2 "${p.color3}"
+            emphasis_3 "${p.color5}"
+          }
+          list_selected {
+            base "${p.bg}"
+            background "${p.color4}"
+            emphasis_0 "${p.color9}"
+            emphasis_1 "${p.color3}"
+            emphasis_2 "${p.color2}"
+            emphasis_3 "${p.color5}"
+          }
+          list_unselected {
+            base "${p.fg}"
+            background "${p.zellij_bg}"
+            emphasis_0 "${p.color4}"
+            emphasis_1 "${p.color9}"
+            emphasis_2 "${p.color3}"
+            emphasis_3 "${p.color5}"
+          }
+          exit_code_success {
+            base "${p.color2}"
+            background "${p.zellij_bg}"
+            emphasis_0 "${p.color4}"
+            emphasis_1 "${p.color9}"
+            emphasis_2 "${p.color3}"
+            emphasis_3 "${p.color5}"
+          }
+          exit_code_error {
+            base "${p.color1}"
+            background "${p.zellij_bg}"
+            emphasis_0 "${p.color4}"
+            emphasis_1 "${p.color9}"
+            emphasis_2 "${p.color3}"
+            emphasis_3 "${p.color5}"
+          }
+          multiplayer_user_colors {
+            player_1 "${p.color4}"
+            player_2 "${p.color5}"
+            player_3 "${p.color6}"
+            player_4 "${p.color3}"
+            player_5 "${p.color9}"
+            player_6 "${p.color2}"
+            player_7 "${p.color1}"
+            player_8 "${p.color12}"
+            player_9 "${p.color13}"
+            player_10 "${p.color14}"
+          }
+          frame_selected {
+            base "${p.color0}"
+            emphasis_0 "${p.color9}"
+            emphasis_1 "${p.color3}"
+            emphasis_2 "${p.color2}"
+            emphasis_3 "${p.color5}"
+          }
+          frame_highlight {
+            base "${p.color9}"
+            emphasis_0 "${p.color1}"
+            emphasis_1 "${p.color3}"
+            emphasis_2 "${p.color2}"
+            emphasis_3 "${p.color5}"
+          }
         }
       }
       theme "custom"
 
       default_shell "zsh"
+      default_layout "default"
+
+      pane_frames true
+      ui {
+          pane_frames {
+              rounded_corners true
+              hide_session_name false
+          }
+      }
 
       copy_command "wl-copy"                    // wayland
       show_startup_tips false

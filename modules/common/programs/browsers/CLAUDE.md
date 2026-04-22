@@ -20,9 +20,9 @@ Shared Home Manager module that configures web browsers across all platforms.
 
 ## Qutebrowser Key Layout
 
-Qutebrowser uses `keyMappings` to globally remap vim-style defaults to Colemak-DH:
+Qutebrowser is remapped to Colemak-DH via explicit `keyBindings` (not `keyMappings`, which is left empty because its chained resolution creates cycles):
 
-- `n/e/i/o` map to `h/j/k/l` (left/down/up/right)
-- Displaced keys (`h`, `k`, `j`, `l`, `u`) are reassigned to preserve next-match, undo, end-of-word, yank, and insert functionality
-- Half-page scroll bound to `{` / `}`, tab navigation to `N` / `O`
+- `n/e/i/o` map to scroll left/down/up/right (replacing vim `h/j/k/l`)
+- Displaced keys reassigned: `h` = search-next, `k` = undo, `u` = enter insert mode, `y` = open prompt, and `l` is unbound so the keychains `ll/lt/ld/lp` yank URL/title/domain/pretty-url
+- Half-page scroll bound to `{` / `}`, tab navigation to `N` / `O`, back/forward on `E` / `I`
 - Hint characters use Colemak home row: `arstneio`

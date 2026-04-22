@@ -4,7 +4,7 @@
 #   - modules/common/programs/dev/claude.nix    (Home Manager → Claude Code)
 #   - modules/containers/litellm.nix            (NixOS → LiteLLM container image)
 #
-# Two entry shapes are supported:
+# Three entry shapes are supported:
 #
 # 1) Catalog entry (natsukium/mcp-servers-nix):
 #    mcpServerNix  - package name exposed by natsukium/mcp-servers-nix
@@ -26,6 +26,18 @@
 #
 #    To bump: `git ls-remote <url> HEAD` for the new rev, then
 #    `nix-prefetch-github <owner> <repo> --rev <rev>` for the hash.
+#
+# 3) npx-direct entry (for Node.js servers not yet in the natsukium catalog):
+#    npxDirect.package - npm package name, resolved lazily on first call via
+#                        `npx --yes <package>` (mirrors ruflo-cli.nix). No
+#                        Nix-level version pin — npm caches under $XDG_CACHE_HOME.
+#    runtime           - "npx-direct" (informational; also excludes these from
+#                        the LiteLLM pre-warm list).
+#    env               - environment variables (optional). Nix-path-dependent
+#                        values (e.g. chromium path for puppeteer) must be
+#                        declared in the `mcpEnvOverrides` attrset in
+#                        modules/common/programs/dev/claude.nix, not here, since
+#                        this file has no `pkgs` in scope.
 {
   filesystem = {
     mcpServerNix = "mcp-server-filesystem";
@@ -62,5 +74,34 @@
     };
     runtime = "uv-run";
     entrypoint = "src/main.py";
+    # Upstream is unmaintained at this rev. Local fixes:
+    #   - create_document(doc_type="calc") now produces a real empty file
+    #     (previously wrote 0-byte via touch()).
+    #   - New write_spreadsheet_data tool for populating .xlsx / .ods cells.
+    patches = [./programs/dev/patches/mcp-libre-calc-and-write.patch];
+  };
+
+  # yctimlin/mcp_excalidraw — MCP tools for creating and editing .excalidraw
+  # JSON scenes, plus an optional WebSocket canvas server for live sync.
+  # Browse diagrams at http://localhost:8899 (container defined in
+  # modules/containers/excalidraw.nix).
+  excalidraw = {
+    npxDirect.package = "mcp-excalidraw-server";
+    runtime = "npx-direct";
+    env = {
+      # Distinct port so the MCP's embedded canvas server doesn't collide
+      # with anything else binding :3000 (common dev-server default).
+      PORT = "3031";
+      EXPRESS_SERVER_URL = "http://localhost:3031";
+    };
+  };
+
+  # @peng-shawn/mermaid-mcp-server — renders Mermaid source to PNG/SVG via
+  # puppeteer. The PUPPETEER_EXECUTABLE_PATH override lives in claude.nix
+  # (needs pkgs.chromium at eval time). Companion live-editor container at
+  # http://localhost:8898 (modules/containers/mermaid-live.nix).
+  mermaid = {
+    npxDirect.package = "@peng-shawn/mermaid-mcp-server";
+    runtime = "npx-direct";
   };
 }

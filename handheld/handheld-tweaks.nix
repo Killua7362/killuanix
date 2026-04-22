@@ -41,7 +41,14 @@
     "transparent_hugepage=always" # Gaming performance
     "mem_sleep_default=s2idle" # Meteor Lake uses S0ix (no S3)
     "usbcore.autosuspend=-1" # Disable USB autosuspend — prevents mice/keyboards from disconnecting when idle
+    "split_lock_detect=warn" # Warn instead of panicking on kernel-space split locks
   ];
+
+  # ══════════════════════════════════════════════════════════════
+  # Crash capture — archive EFI/pstore panic records on next boot
+  # so hard-freeze debugging has a trail in /var/lib/systemd/pstore
+  # ══════════════════════════════════════════════════════════════
+  systemd.services.systemd-pstore.wantedBy = ["sysinit.target"];
 
   # ══════════════════════════════════════════════════════════════
   # Kernel modules

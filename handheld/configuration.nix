@@ -125,6 +125,15 @@
   };
   services.blueman.enable = true;
 
+  # Intel Lunar Lake BT controller drops the ACL link when HFP/SCO initializes,
+  # symptom: "Unable to get Hands-Free Voice gateway SDP record: Host is down"
+  # in bluetoothd logs + the bluez_card vanishing from pactl. Disabling USB
+  # autosuspend on the BT adapter is the most commonly reported workaround.
+  # If this doesn't help, revert this block and drop HFP from WP's roles list.
+  boot.extraModprobeConfig = ''
+    options btusb enable_autosuspend=N
+  '';
+
   # ── User ──
   users.users.killua = {
     isNormalUser = true;

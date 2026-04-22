@@ -3,6 +3,11 @@
     ./portainer.nix
     ./searxng.nix
     ./litellm.nix
+    ./icloud-drive.nix
+    ./excalidraw.nix
+    ./mermaid-live.nix
+    ./homepage.nix
+    ./qdrant.nix
   ];
 
   # ── quadlet-nix: Rootful container orchestration ──

@@ -14,6 +14,7 @@
       google_studio_key = {};
       mistral_api_key = {};
       mistral_codestral_api_key = {};
+      icloud_email = {};
     };
   };
 }

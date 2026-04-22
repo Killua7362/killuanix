@@ -45,7 +45,7 @@ lua/
 
 ### Entry Point (`init.lua`)
 
-Sets up nixCatsUtils, bootstraps lazy.nvim (with Nix path resolution), imports LazyVim base plugins plus extras (luasnip, mini-surround, dap.core, mini-diff, lang.java, lang.typescript), disables Mason when under nixCats, configures treesitter to skip installs on Nix, and loads all files from `plugins/`.
+Sets up nixCatsUtils, bootstraps lazy.nvim (with Nix path resolution), imports LazyVim base plugins plus extras (luasnip, mini-surround, dap.core, lang.java, lang.typescript), disables Mason when under nixCats, configures treesitter to skip installs on Nix, and loads all files from `plugins/`.
 
 ## Plugin Listing
 
@@ -56,6 +56,8 @@ Sets up nixCatsUtils, bootstraps lazy.nvim (with Nix path resolution), imports L
 | `codecompanion.lua` | codecompanion.nvim | LLM chat/inline assistant with multiple adapters (DeepSeek variants, Qwen, Kimi, GLM) via Chutes API; includes history extension, markview rendering, and img-clip |
 | `conform.lua` | conform.nvim | Formatter configuration: stylua (Lua), fish_indent, shfmt (shell), sqlfluff (SQL/PostgreSQL) |
 | `dap.lua` | nvim-dap | Debug Adapter Protocol with nixCats-aware adapter setup for Python (debugpy), C/C++/Rust (lldb/codelldb), Go (delve), JS/TS (node), Bash (bashdb), Lua; uses nvim-dap-view for UI |
+| `diffview.lua` | diffview.nvim | Git diff/file-history viewer with Colemak-adapted panel keys (e/i for next/prev entry); `<leader>gd/gh/gH/gq` to open, history, all-history, close |
+| `git-worktree.lua` | git-worktree.nvim | Git worktree management via snacks picker; `<leader>gw` list, `<leader>gW` switch to existing branch, `<leader>gN` create new branch worktree |
 | `gitsigns.lua` | gitsigns.nvim | Git gutter signs, hunk navigation/staging/reset, blame, diff |
 | `java.lua` | nvim-jdtls | Java LSP with nixCats-aware paths for jdtls, lombok, debug adapter, and test bundles; which-key integration for extract/organize/test commands |
 | `lsp.lua` | nvim-lspconfig | LSP server overrides (adds qmlls with qmlls6 command) |

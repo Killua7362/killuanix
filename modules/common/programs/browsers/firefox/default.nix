@@ -121,6 +121,11 @@ in {
           (extension "umatrix" "uMatrix@raymondhill.net")
           (extension "libredirect" "7esoorv3@alefvanoon.anonaddy.me")
           (extension "clearurls" "{74145f27-f039-47ce-a470-a662b129930a}")
+          # Pywalfox: dynamic theming from wallpaper via DMS/matugen.
+          # Requires `pywalfox install` once after first run to register the
+          # native-messaging host. The native app is provided by
+          # pkgs.pywalfox-native (declared in theming/matugen.nix).
+          (extension "pywalfox" "pywalfox@frewacom.org")
         ];
       # To add additional extensions, find it on addons.mozilla.org, find
       # the short ID in the url (like https://addons.mozilla.org/en-US/firefox/addon/!SHORT_ID!/)
@@ -144,7 +149,113 @@ in {
           darkreader
           fastforwardteam
           violentmonkey
+          web-clipper-obsidian
+          multi-account-containers
+          temporary-containers
+          canvasblocker
+          consent-o-matic
+          libredirect
+          header-editor
+          user-agent-string-switcher
+          hoppscotch
+          refined-github
+          single-file
+          stylus
+          dearrow
         ];
+
+        bookmarks = {
+          force = true;
+          settings = [
+            {
+              name = "Self-hosted";
+              toolbar = true;
+              bookmarks = [
+                {
+                  name = "Dashboard";
+                  url = "http://localhost:8880";
+                }
+                {
+                  name = "Excalidraw";
+                  url = "http://localhost:8899";
+                }
+                {
+                  name = "Mermaid Live";
+                  url = "http://localhost:8898";
+                }
+                {
+                  name = "Portainer";
+                  url = "https://localhost:9443";
+                }
+                {
+                  name = "SearXNG";
+                  url = "http://localhost:8888";
+                }
+                {
+                  name = "LiteLLM";
+                  url = "http://localhost:4000";
+                }
+                {
+                  name = "Qdrant";
+                  url = "http://localhost:6333/dashboard";
+                }
+                {
+                  name = "MCP Hub";
+                  url = "http://localhost:31415";
+                }
+              ];
+            }
+            {
+              name = "Userscripts";
+              bookmarks = [
+                {
+                  name = "Bypass Paywalls Clean";
+                  url = "https://greasyfork.org/scripts/438684/code/Bypass%20Paywalls%20Clean.user.js";
+                }
+                {
+                  name = "AdsBypasser";
+                  url = "https://greasyfork.org/scripts/9254/code/AdsBypasser.user.js";
+                }
+                {
+                  name = "Old Reddit Always";
+                  url = "https://greasyfork.org/scripts/407165/code/Old%20Reddit%20Always.user.js";
+                }
+                {
+                  name = "Reddit Expando";
+                  url = "https://greasyfork.org/scripts/19849/code/Reddit%20Expando.user.js";
+                }
+                {
+                  name = "GitHub Code Folding";
+                  url = "https://greasyfork.org/scripts/389615/code/Github%20Code%20Folding.user.js";
+                }
+                {
+                  name = "Hide Google AI Overviews";
+                  url = "https://greasyfork.org/scripts/494261/code/Hide%20Google%20AI%20Overviews.user.js";
+                }
+                {
+                  name = "DuckDuckGo No AI";
+                  url = "https://greasyfork.org/scripts/486324/code/DuckDuckGo%20No%20AI.user.js";
+                }
+                {
+                  name = "Control Panel for Twitter";
+                  url = "https://greasyfork.org/scripts/450093/code/Control%20Panel%20for%20Twitter.user.js";
+                }
+                {
+                  name = "Twitter Media Downloader";
+                  url = "https://greasyfork.org/scripts/36434/code/Twitter%20Media%20Downloader.user.js";
+                }
+                {
+                  name = "Direct Download from Google Images";
+                  url = "https://greasyfork.org/scripts/14108/code/Direct%20Download%20from%20Google%20Image%20Search.user.js";
+                }
+                {
+                  name = "Anti-Adblock Killer";
+                  url = "https://greasyfork.org/scripts/735/code/Anti-Adblock%20Killer.user.js";
+                }
+              ];
+            }
+          ];
+        };
 
         search = {
           force = true;
@@ -238,6 +349,12 @@ in {
 
         extraConfig = ''
           user_pref("userChromeJS.persistent_domcontent_callback", true);
+
+          //// start-up homepage — self-hosted dashboard container
+          //// (modules/containers/homepage.nix). browser.startup.page is already
+          //// 1 via arkenfox 0102, so the browser opens this on launch.
+          user_pref("browser.startup.homepage", "http://localhost:8880");
+
           ////// ⚠️ REQUIRED PREFS
 
           // only required if you're using any of my scripts that use eval().

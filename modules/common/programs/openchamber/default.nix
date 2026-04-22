@@ -7,7 +7,7 @@
   fetchurl,
   python3,
   pkg-config,
-  nodePackages,
+  node-gyp,
 }: let
   version = "1.8.5";
 in
@@ -36,7 +36,7 @@ in
     nativeBuildInputs = [
       python3
       pkg-config
-      nodePackages.node-gyp
+      node-gyp
     ];
 
     npmDepsHash = "sha256-wyr0OJdAeYCK5ZIMGKYmLtkUw7O77zsmpKXkVFVOuLo=";

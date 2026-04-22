@@ -22,7 +22,7 @@
 
       # System utilities
       tldr
-      neofetch
+      fastfetch
       cachix
       git-crypt
       nix-prefetch-github

@@ -27,9 +27,9 @@ Home Manager module for Kodi media center with custom addons, Arctic Fuse skin, 
 ## Launcher
 
 `kodiWrapped` is a `symlinkJoin` that replaces the `kodi` binary with a shell script that:
-1. Bootstraps/updates the Addons SQLite DB (creates schema + enables managed addons)
-2. Configures `guisettings.xml` (unknown sources, no addon notifications, update mode)
-3. Resets skinvariables generator hash to force shortcut rebuild
+1. Configures `guisettings.xml` (unknown sources, no addon notifications, update mode)
+2. Resets skinvariables generator hash to force shortcut rebuild
+3. Bootstraps/updates the Addons SQLite DB (creates schema + enables managed addons)
 4. Sets SSL cert env vars for Python addons
 5. Launches Kodi, then cleans up zombie processes on exit
 

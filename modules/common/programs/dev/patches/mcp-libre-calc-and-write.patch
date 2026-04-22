@@ -1,0 +1,128 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 9946741..0c9fc27 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -22,6 +22,7 @@ dependencies = [
+     "httpx>=0.28.1",
+     "mcp[cli]>=1.10.1",
+     "pydantic>=2.0.0",
++    "openpyxl>=3.1.0",
+ ]
+ 
+ [project.scripts]
+diff --git a/src/libremcp.py b/src/libremcp.py
+index 4167bd9..a621ef2 100644
+--- a/src/libremcp.py
++++ b/src/libremcp.py
+@@ -233,6 +233,28 @@ def create_document(path: str, doc_type: str = "writer", content: str = "") -> D
+  </office:body>
+ </office:document-content>'''
+                             zf.writestr('content.xml', content_xml)
++                    elif doc_type == "calc":
++                        # Create a real empty spreadsheet. openpyxl writes xlsx
++                        # natively; for ods (or any other target suffix) write
++                        # xlsx first, then convert via soffice.
++                        import openpyxl
++                        wb = openpyxl.Workbook()
++                        if path_obj.suffix.lower() == ".xlsx":
++                            wb.save(path_obj)
++                        else:
++                            with tempfile.TemporaryDirectory() as tmp_dir:
++                                seed = Path(tmp_dir) / "seed.xlsx"
++                                wb.save(seed)
++                                target_fmt = path_obj.suffix.lower().lstrip(".") or "ods"
++                                _run_libreoffice_command([
++                                    '--headless', '--convert-to', target_fmt,
++                                    '--outdir', str(path_obj.parent), str(seed),
++                                ])
++                                converted = path_obj.parent / ("seed." + target_fmt)
++                                if converted.exists():
++                                    converted.replace(path_obj)
++                                else:
++                                    path_obj.touch()
+                     else:
+                         # For other formats, create empty file
+                         path_obj.touch()
+@@ -471,6 +493,82 @@ def read_spreadsheet_data(path: str, sheet_name: Optional[str] = None, max_rows:
+         raise RuntimeError(f"Failed to read spreadsheet: {str(e)}")
+ 
+ 
++@mcp.tool()
++def write_spreadsheet_data(
++    path: str,
++    data: List[List[Any]],
++    sheet_name: Optional[str] = None,
++    start_cell: str = "A1",
++) -> DocumentInfo:
++    """Write data to a LibreOffice Calc spreadsheet.
++
++    Creates the file if it does not exist. Supports .xlsx (native, via
++    openpyxl) and .ods (round-trip: load/save xlsx, convert via soffice).
++
++    Args:
++        path: Path to the spreadsheet (.xlsx or .ods).
++        data: 2D list of cell values (list of rows).
++        sheet_name: Sheet to write to. Creates the sheet if missing.
++                    If omitted, writes to the active/first sheet.
++        start_cell: Top-left cell to begin writing (e.g. "A1", "B3").
++    """
++    import openpyxl
++    from openpyxl.utils.cell import coordinate_from_string, column_index_from_string
++
++    path_obj = Path(path)
++    path_obj.parent.mkdir(parents=True, exist_ok=True)
++    suffix = path_obj.suffix.lower()
++    is_ods = suffix == ".ods"
++
++    def _load_or_new(xlsx_path):
++        if xlsx_path.exists() and xlsx_path.stat().st_size > 0:
++            return openpyxl.load_workbook(xlsx_path), False
++        return openpyxl.Workbook(), True
++
++    with tempfile.TemporaryDirectory() as tmp_dir:
++        work_path = path_obj if not is_ods else Path(tmp_dir) / (path_obj.stem + ".xlsx")
++
++        if is_ods and path_obj.exists() and path_obj.stat().st_size > 0:
++            _run_libreoffice_command([
++                '--headless', '--convert-to', 'xlsx',
++                '--outdir', tmp_dir, str(path_obj),
++            ])
++
++        wb, is_new = _load_or_new(work_path)
++
++        if sheet_name:
++            if sheet_name in wb.sheetnames:
++                ws = wb[sheet_name]
++            elif is_new and wb.active.max_row == 1 and wb.active.max_column == 1 and wb.active.cell(1, 1).value is None:
++                # Rename the empty default sheet rather than creating a second one.
++                ws = wb.active
++                ws.title = sheet_name
++            else:
++                ws = wb.create_sheet(sheet_name)
++        else:
++            ws = wb.active
++
++        col_letter, start_row = coordinate_from_string(start_cell)
++        start_col = column_index_from_string(col_letter)
++
++        for r_offset, row in enumerate(data):
++            for c_offset, value in enumerate(row):
++                ws.cell(row=start_row + r_offset, column=start_col + c_offset, value=value)
++
++        wb.save(work_path)
++
++        if is_ods:
++            _run_libreoffice_command([
++                '--headless', '--convert-to', 'ods',
++                '--outdir', str(path_obj.parent), str(work_path),
++            ])
++            converted = path_obj.parent / (work_path.stem + ".ods")
++            if converted.exists() and converted != path_obj:
++                converted.replace(path_obj)
++
++    return _get_document_info(str(path_obj))
++
++
+ @mcp.tool()
+ def insert_text_at_position(path: str, text: str, position: str = "end") -> DocumentInfo:
+     """Insert text into a LibreOffice Writer document

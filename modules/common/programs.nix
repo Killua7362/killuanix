@@ -18,6 +18,9 @@ in {
     ../common/programs/audio
     ../common/programs/media
     ../common/programs/utils
+    ../common/programs/theming
+    ../common/programs/mail
+    ../common/programs/diagrams
   ];
 
   config = {

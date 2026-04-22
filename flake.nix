@@ -143,6 +143,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Obsidian community plugins/themes overlay — exposes pkgs.obsidianPlugins.*
+    nixpille-obsidian-community-plugins = {
+      url = "github:cjavad/nixpille-obsidian-community-plugins";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Official Anthropic skills repository — consumed as plain source
     anthropics-skills = {
       url = "github:anthropics/skills";
@@ -152,6 +158,21 @@
     # agentient/vibekit — cherry-picked skills (see modules/common/programs/dev/claude.nix)
     vibekit = {
       url = "github:agentient/vibekit";
+      flake = false;
+    };
+
+    # ruvnet/ruflo — Claude Flow v3.5 (agents, commands, skills, CLI).
+    # Wired in via modules/common/programs/dev/claude-resources.nix and
+    # modules/common/programs/dev/ruflo-cli.nix.
+    ruflo = {
+      url = "github:ruvnet/ruflo/01070ede81fa6fbae93d01c347bec1af5d6c17f0";
+      flake = false;
+    };
+
+    # wshobson/agents — Claude Code plugin marketplace (78 plugins, 184 agents,
+    # 98 commands, 150 skills). Flattened into ~/.claude/ by claude-resources.nix.
+    wshobson-agents = {
+      url = "github:wshobson/agents/27a7ed95755a5c3a2948694343a8e2cd7a7ef6fb";
       flake = false;
     };
 

@@ -67,8 +67,21 @@
     gitSource,
     runtime,
     entrypoint,
+    patches ? [],
   }: let
-    src = pkgs.fetchFromGitHub gitSource;
+    rawSrc = pkgs.fetchFromGitHub gitSource;
+    src =
+      if patches == []
+      then rawSrc
+      else
+        pkgs.applyPatches {
+          name = "${gitSource.repo}-${gitSource.rev}-patched";
+          src = rawSrc;
+          inherit patches;
+        };
+    # Key the writable workdir on the store-path hash of `src`, so patch
+    # edits (not just rev bumps) invalidate stale copies.
+    srcKey = builtins.substring 0 12 (baseNameOf "${src}");
     launcher =
       if runtime == "uv-run"
       then ''exec ${lib.getExe pkgs.uv} run python ${lib.escapeShellArg entrypoint} "$@"''
@@ -82,7 +95,7 @@
       name = "mcp-${name}";
       inherit runtimeInputs;
       text = ''
-        workdir="''${XDG_CACHE_HOME:-$HOME/.cache}/mcp-servers/${name}-${gitSource.rev}"
+        workdir="''${XDG_CACHE_HOME:-$HOME/.cache}/mcp-servers/${name}-${srcKey}"
         if [ ! -e "$workdir/.ready" ]; then
           mkdir -p "$workdir"
           cp -rL --no-preserve=mode,ownership "${src}/." "$workdir/"
@@ -93,24 +106,60 @@
       '';
     };
 
+  # Wrapper for `npxDirect` MCP servers — lazy `npx --yes <pkg>` invocation,
+  # mirroring the ruflo-cli.nix pattern. No Nix-level version pinning; npm
+  # resolves on first call and caches under $XDG_CACHE_HOME. Used for
+  # Node-based MCP servers that aren't in natsukium's catalog yet.
+  mkNpxDirectServer = name: package:
+    pkgs.writeShellApplication {
+      name = "mcp-${name}";
+      runtimeInputs = [pkgs.nodejs_20];
+      text = ''
+        export NPM_CONFIG_CACHE="''${XDG_CACHE_HOME:-$HOME/.cache}/mcp-npx/npm-cache"
+        export NPM_CONFIG_PREFIX="''${XDG_CACHE_HOME:-$HOME/.cache}/mcp-npx/npm-prefix"
+        mkdir -p "$NPM_CONFIG_CACHE" "$NPM_CONFIG_PREFIX/lib" "$NPM_CONFIG_PREFIX/bin"
+        exec npx --yes ${lib.escapeShellArg package} "$@"
+      '';
+    };
+
+  # Per-server environment overrides for registry entries whose env values
+  # depend on Nix-store paths (e.g. a chromium binary for puppeteer). These
+  # can't live in modules/common/mcp-servers.nix because that file is a plain
+  # attrset with no `pkgs` in scope.
+  mcpEnvOverrides = {
+    mermaid = {
+      PUPPETEER_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true";
+    };
+  };
+
   # Map each registry entry to a Claude Code mcpServers spec. Catalog entries
   # resolve to the natsukium binary; git-sourced entries resolve to a wrapper
-  # script (see mkGitServer). `env`/`args` passthrough when set.
-  mkClaudeServer = name: def:
+  # script (see mkGitServer); npxDirect entries resolve to a lazy npx shim
+  # (see mkNpxDirectServer). `env`/`args` passthrough when set, merged with
+  # any Nix-path-dependent overrides from mcpEnvOverrides.
+  mkClaudeServer = name: def: let
+    mergedEnv = (def.env or {}) // (mcpEnvOverrides.${name} or {});
+  in
     (
       if def ? gitSource
       then {
-        command = lib.getExe (mkGitServer {
-          inherit name;
-          inherit (def) gitSource runtime entrypoint;
-        });
+        command = lib.getExe (mkGitServer ({
+            inherit name;
+            inherit (def) gitSource runtime entrypoint;
+          }
+          // lib.optionalAttrs (def ? patches) {inherit (def) patches;}));
+      }
+      else if def ? npxDirect
+      then {
+        command = lib.getExe (mkNpxDirectServer name def.npxDirect.package);
       }
       else {
         command = lib.getExe mcp.${def.mcpServerNix};
       }
     )
-    // lib.optionalAttrs (def ? args && !(def ? gitSource)) {inherit (def) args;}
-    // lib.optionalAttrs (def ? env) {inherit (def) env;};
+    // lib.optionalAttrs (def ? args && !(def ? gitSource) && !(def ? npxDirect)) {inherit (def) args;}
+    // lib.optionalAttrs (mergedEnv != {}) {env = mergedEnv;};
 in {
   programs.claude-code = {
     enable = true;

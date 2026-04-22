@@ -11,7 +11,7 @@
     enableZshIntegration = true;
     settings = {
       aws = {
-        symbol = " ";
+        symbol = " ";
       };
 
       character = {
@@ -20,13 +20,13 @@
       };
 
       battery = {
-        full_symbol = "";
-        charging_symbol = "";
-        discharging_symbol = "";
+        full_symbol = "";
+        charging_symbol = "";
+        discharging_symbol = "";
       };
 
       conda = {
-        symbol = " ";
+        symbol = " ";
       };
 
       directory = {
@@ -35,20 +35,20 @@
       };
 
       # docker = {
-      # symbol =" ";
+      # symbol =" ";
       # };
 
       elixir = {
-        symbol = " ";
+        symbol = " ";
       };
 
       elm = {
-        symbol = " ";
+        symbol = " ";
       };
 
       git_branch = {
         format = "[$symbol$branch]($style) ";
-        symbol = " ";
+        symbol = " ";
         style = "bold dimmed white";
       };
 
@@ -69,63 +69,63 @@
       };
 
       golang = {
-        symbol = " ";
+        symbol = " ";
       };
 
       haskell = {
-        symbol = " ";
+        symbol = " ";
       };
 
       hg_branch = {
-        symbol = " ";
+        symbol = " ";
       };
 
       java = {
-        symbol = " ";
+        symbol = " ";
       };
 
       julia = {
-        symbol = " ";
+        symbol = " ";
       };
 
       memory_usage = {
-        symbol = " ";
+        symbol = " ";
         disabled = false;
       };
 
       nim = {
-        symbol = " ";
+        symbol = " ";
       };
 
       nix_shell = {
         format = "[$symbol$state]($style) ";
-        symbol = " ";
+        symbol = " ";
         pure_msg = "λ";
         impure_msg = "⎔";
       };
 
       nodejs = {
-        symbol = " ";
+        symbol = " ";
       };
 
       package = {
-        symbol = " ";
+        symbol = " ";
       };
 
       php = {
-        symbol = " ";
+        symbol = " ";
       };
 
       python = {
-        symbol = " ";
+        symbol = " ";
       };
 
       ruby = {
-        symbol = " ";
+        symbol = " ";
       };
 
       rust = {
-        symbol = " ";
+        symbol = " ";
       };
 
       status = {

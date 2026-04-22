@@ -11,7 +11,7 @@
     # Audio GUI tools
     pavucontrol # PulseAudio-compatible GTK mixer
     pwvucontrol # PipeWire-native volume control
-    helvum # PipeWire patchbay (visual node graph)
+    crosspipe # PipeWire patchbay (visual node graph)
     qpwgraph # Alternative Qt-based patchbay
 
     # Audio CLI tools
@@ -110,7 +110,14 @@
     "wireplumber/wireplumber.conf.d/50-bluez-config.conf".text = ''
       monitor.bluez.properties = {
           bluez5.enable-sbc-xq    = true
-          bluez5.enable-msbc      = true
+          # mSBC disabled: native HFP backend can't open an mSBC SCO transport
+          # on the Intel Lunar Lake controller ("failed to get HFP codec 2"),
+          # which caused HFP to never register — so Meet/Discord couldn't switch
+          # off A2DP and capture the mic at all. With mSBC off, HFP falls back
+          # to CVSD (8kHz narrowband) and the profile activates cleanly. The
+          # oFono backend isn't an option either — nixpkgs ofono 2.x is built
+          # without the hfp_ag_bluez5 / hfp_hf_bluez5 plugins.
+          bluez5.enable-msbc      = false
           bluez5.enable-hw-volume = true
           bluez5.hfphsp-backend   = "native"
 

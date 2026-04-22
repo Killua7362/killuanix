@@ -4,7 +4,9 @@
   lib,
   inputs,
   ...
-}: {
+}: let
+  p = config.theme.palette;
+in {
   programs.kitty = {
     enable = lib.mkDefault (pkgs.stdenv.isLinux);
     settings = {
@@ -36,29 +38,29 @@
     };
     extraConfig = ''
       shell zsh
-      cursor #e2e2e2
-      cursor_text_color #c6c6c6
-      foreground            #e2e2e2
-      background            #131313
-      selection_foreground  #131313
-      selection_background  #89ceff
-      url_color             #89ceff
-      color8   #262626
-      color0   #4c4c4c
-      color1   #ac8a8c
-      color9   #c49ea0
-      color2   #8aac8b
-      color10  #9ec49f
-      color3   #aca98a
-      color11  #c4c19e
-      color4  #89ceff
-      color12 #a39ec4
-      color5   #ac8aac
-      color13  #c49ec4
-      color6   #8aacab
-      color14  #9ec3c4
-      color15   #e7e7e7
-      color7  #f0f0f0
+      cursor ${p.cursor}
+      cursor_text_color ${p.cursor_text}
+      foreground            ${p.fg}
+      background            ${p.bg}
+      selection_foreground  ${p.selection_fg}
+      selection_background  ${p.selection_bg}
+      url_color             ${p.url}
+      color0  ${p.color0}
+      color1  ${p.color1}
+      color2  ${p.color2}
+      color3  ${p.color3}
+      color4  ${p.color4}
+      color5  ${p.color5}
+      color6  ${p.color6}
+      color7  ${p.color7}
+      color8  ${p.color8}
+      color9  ${p.color9}
+      color10 ${p.color10}
+      color11 ${p.color11}
+      color12 ${p.color12}
+      color13 ${p.color13}
+      color14 ${p.color14}
+      color15 ${p.color15}
     '';
   };
 }

@@ -1,5 +1,6 @@
-# Qdrant Vector DB — NixOS stub, not imported by default.
-# To enable: add `./qdrant.nix` to imports in ./default.nix
+# Qdrant Vector DB — vector store reachable at http://localhost:6333
+# (REST + dashboard) and :6334 (gRPC). Used by code-index MCP as the
+# embeddings backend; dashboard is bookmarked on the Firefox homepage.
 {...}: {
   systemd.tmpfiles.rules = [
     "d /var/lib/qdrant 0755 root root -"

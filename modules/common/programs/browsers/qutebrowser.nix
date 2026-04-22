@@ -4,7 +4,9 @@
   lib,
   inputs,
   ...
-}: {
+}: let
+  p = config.theme.palette;
+in {
   programs.qutebrowser = {
     enable = lib.mkDefault (pkgs.stdenv.isLinux);
     loadAutoconfig = false;
@@ -116,119 +118,119 @@
       # themes (e.g. Google) making text invisible, and hurts performance.
       colors.webpage.preferred_color_scheme = "dark";
 
-      # -- Theme: Firefox Natsumi Dark --
+      # -- Theme: driven by config.theme.palette (theming/palette.nix) --
 
       # Completion
-      colors.completion.fg = "#d4d4d4";
-      colors.completion.odd.bg = "#1e1f2b";
-      colors.completion.even.bg = "#19191b";
-      colors.completion.category.fg = "#d4d4d4";
-      colors.completion.category.bg = "#141416";
-      colors.completion.category.border.top = "#2a2a2e";
-      colors.completion.category.border.bottom = "#2a2a2e";
-      colors.completion.item.selected.fg = "#ffffff";
-      colors.completion.item.selected.bg = "#2f3456";
-      colors.completion.item.selected.border.top = "#2f3456";
-      colors.completion.item.selected.border.bottom = "#2f3456";
-      colors.completion.item.selected.match.fg = "#89ceff";
-      colors.completion.match.fg = "#89ceff";
-      colors.completion.scrollbar.fg = "#3a3a3e";
-      colors.completion.scrollbar.bg = "#19191b";
+      colors.completion.fg = p.fg_bright;
+      colors.completion.odd.bg = p.surface_alt;
+      colors.completion.even.bg = p.surface;
+      colors.completion.category.fg = p.fg_bright;
+      colors.completion.category.bg = p.surface_low;
+      colors.completion.category.border.top = p.surface_high;
+      colors.completion.category.border.bottom = p.surface_high;
+      colors.completion.item.selected.fg = p.selection_strong;
+      colors.completion.item.selected.bg = p.selection;
+      colors.completion.item.selected.border.top = p.selection;
+      colors.completion.item.selected.border.bottom = p.selection;
+      colors.completion.item.selected.match.fg = p.color4;
+      colors.completion.match.fg = p.color4;
+      colors.completion.scrollbar.fg = p.outline;
+      colors.completion.scrollbar.bg = p.surface;
 
       # Downloads
-      colors.downloads.bar.bg = "#19191b";
-      colors.downloads.start.fg = "#19191b";
-      colors.downloads.start.bg = "#89ceff";
-      colors.downloads.stop.fg = "#19191b";
-      colors.downloads.stop.bg = "#8aac8b";
-      colors.downloads.error.fg = "#d4d4d4";
-      colors.downloads.error.bg = "#e2467a";
+      colors.downloads.bar.bg = p.surface;
+      colors.downloads.start.fg = p.surface;
+      colors.downloads.start.bg = p.color4;
+      colors.downloads.stop.fg = p.surface;
+      colors.downloads.stop.bg = p.color2;
+      colors.downloads.error.fg = p.fg_bright;
+      colors.downloads.error.bg = p.error;
 
       # Hints
-      colors.hints.fg = "#19191b";
-      colors.hints.bg = "#89ceff";
-      colors.hints.match.fg = "#e2467a";
-      hints.border = "1px solid #19191b";
+      colors.hints.fg = p.surface;
+      colors.hints.bg = p.color4;
+      colors.hints.match.fg = p.error;
+      hints.border = "1px solid ${p.surface}";
 
       # Key hints
-      colors.keyhint.fg = "#d4d4d4";
-      colors.keyhint.suffix.fg = "#89ceff";
+      colors.keyhint.fg = p.fg_bright;
+      colors.keyhint.suffix.fg = p.color4;
       colors.keyhint.bg = "rgba(25, 25, 27, 0.95)";
 
       # Messages
-      colors.messages.error.fg = "#d4d4d4";
-      colors.messages.error.bg = "#e2467a";
-      colors.messages.error.border = "#e2467a";
-      colors.messages.warning.fg = "#19191b";
-      colors.messages.warning.bg = "#aca98a";
-      colors.messages.warning.border = "#aca98a";
-      colors.messages.info.fg = "#d4d4d4";
-      colors.messages.info.bg = "#2a2a2e";
-      colors.messages.info.border = "#2a2a2e";
+      colors.messages.error.fg = p.fg_bright;
+      colors.messages.error.bg = p.error;
+      colors.messages.error.border = p.error;
+      colors.messages.warning.fg = p.surface;
+      colors.messages.warning.bg = p.color3;
+      colors.messages.warning.border = p.color3;
+      colors.messages.info.fg = p.fg_bright;
+      colors.messages.info.bg = p.surface_high;
+      colors.messages.info.border = p.surface_high;
 
       # Prompts
-      colors.prompts.fg = "#d4d4d4";
-      colors.prompts.border = "1px solid #3a3a3e";
-      colors.prompts.bg = "#1e1f2b";
-      colors.prompts.selected.fg = "#ffffff";
-      colors.prompts.selected.bg = "#2f3456";
+      colors.prompts.fg = p.fg_bright;
+      colors.prompts.border = "1px solid ${p.outline}";
+      colors.prompts.bg = p.surface_alt;
+      colors.prompts.selected.fg = p.selection_strong;
+      colors.prompts.selected.bg = p.selection;
 
       # Statusbar
-      colors.statusbar.normal.fg = "#9a9a9a";
-      colors.statusbar.normal.bg = "#19191b";
-      colors.statusbar.insert.fg = "#19191b";
-      colors.statusbar.insert.bg = "#8aac8b";
-      colors.statusbar.passthrough.fg = "#19191b";
-      colors.statusbar.passthrough.bg = "#89ceff";
-      colors.statusbar.private.fg = "#d4d4d4";
-      colors.statusbar.private.bg = "#ac8aac";
-      colors.statusbar.command.fg = "#d4d4d4";
-      colors.statusbar.command.bg = "#19191b";
-      colors.statusbar.command.private.fg = "#d4d4d4";
-      colors.statusbar.command.private.bg = "#ac8aac";
-      colors.statusbar.caret.fg = "#19191b";
-      colors.statusbar.caret.bg = "#89ceff";
-      colors.statusbar.caret.selection.fg = "#19191b";
-      colors.statusbar.caret.selection.bg = "#89ceff";
-      colors.statusbar.progress.bg = "#89ceff";
-      colors.statusbar.url.fg = "#9a9a9a";
-      colors.statusbar.url.error.fg = "#e2467a";
-      colors.statusbar.url.hover.fg = "#89ceff";
-      colors.statusbar.url.success.http.fg = "#8aacab";
-      colors.statusbar.url.success.https.fg = "#9a9a9a";
-      colors.statusbar.url.warn.fg = "#aca98a";
+      colors.statusbar.normal.fg = p.fg_dim;
+      colors.statusbar.normal.bg = p.surface;
+      colors.statusbar.insert.fg = p.surface;
+      colors.statusbar.insert.bg = p.color2;
+      colors.statusbar.passthrough.fg = p.surface;
+      colors.statusbar.passthrough.bg = p.color4;
+      colors.statusbar.private.fg = p.fg_bright;
+      colors.statusbar.private.bg = p.color5;
+      colors.statusbar.command.fg = p.fg_bright;
+      colors.statusbar.command.bg = p.surface;
+      colors.statusbar.command.private.fg = p.fg_bright;
+      colors.statusbar.command.private.bg = p.color5;
+      colors.statusbar.caret.fg = p.surface;
+      colors.statusbar.caret.bg = p.color4;
+      colors.statusbar.caret.selection.fg = p.surface;
+      colors.statusbar.caret.selection.bg = p.color4;
+      colors.statusbar.progress.bg = p.color4;
+      colors.statusbar.url.fg = p.fg_dim;
+      colors.statusbar.url.error.fg = p.error;
+      colors.statusbar.url.hover.fg = p.color4;
+      colors.statusbar.url.success.http.fg = p.color6;
+      colors.statusbar.url.success.https.fg = p.fg_dim;
+      colors.statusbar.url.warn.fg = p.color3;
 
       # Tabs — clean sidebar like Firefox Natsumi
-      colors.tabs.bar.bg = "#19191b";
-      colors.tabs.indicator.start = "#89ceff";
-      colors.tabs.indicator.stop = "#89ceff";
-      colors.tabs.indicator.error = "#e2467a";
-      colors.tabs.odd.bg = "#19191b";
-      colors.tabs.odd.fg = "#8a8a8e";
-      colors.tabs.even.bg = "#19191b";
-      colors.tabs.even.fg = "#8a8a8e";
-      colors.tabs.selected.odd.bg = "#2a2a2e";
-      colors.tabs.selected.odd.fg = "#d4d4d4";
-      colors.tabs.selected.even.bg = "#2a2a2e";
-      colors.tabs.selected.even.fg = "#d4d4d4";
-      colors.tabs.pinned.odd.bg = "#19191b";
-      colors.tabs.pinned.odd.fg = "#8a8a8e";
-      colors.tabs.pinned.even.bg = "#19191b";
-      colors.tabs.pinned.even.fg = "#8a8a8e";
-      colors.tabs.pinned.selected.odd.bg = "#2a2a2e";
-      colors.tabs.pinned.selected.odd.fg = "#d4d4d4";
-      colors.tabs.pinned.selected.even.bg = "#2a2a2e";
-      colors.tabs.pinned.selected.even.fg = "#d4d4d4";
+      colors.tabs.bar.bg = p.surface;
+      colors.tabs.indicator.start = p.color4;
+      colors.tabs.indicator.stop = p.color4;
+      colors.tabs.indicator.error = p.error;
+      colors.tabs.odd.bg = p.surface;
+      colors.tabs.odd.fg = p.fg_dimmer;
+      colors.tabs.even.bg = p.surface;
+      colors.tabs.even.fg = p.fg_dimmer;
+      colors.tabs.selected.odd.bg = p.surface_high;
+      colors.tabs.selected.odd.fg = p.fg_bright;
+      colors.tabs.selected.even.bg = p.surface_high;
+      colors.tabs.selected.even.fg = p.fg_bright;
+      colors.tabs.pinned.odd.bg = p.surface;
+      colors.tabs.pinned.odd.fg = p.fg_dimmer;
+      colors.tabs.pinned.even.bg = p.surface;
+      colors.tabs.pinned.even.fg = p.fg_dimmer;
+      colors.tabs.pinned.selected.odd.bg = p.surface_high;
+      colors.tabs.pinned.selected.odd.fg = p.fg_bright;
+      colors.tabs.pinned.selected.even.bg = p.surface_high;
+      colors.tabs.pinned.selected.even.fg = p.fg_bright;
       tabs.indicator.width = 3;
       tabs.favicons.scale = 1.0;
 
       # Context menu
-      colors.contextmenu.menu.fg = "#d4d4d4";
-      colors.contextmenu.menu.bg = "#1e1f2b";
-      colors.contextmenu.selected.fg = "#ffffff";
-      colors.contextmenu.selected.bg = "#2f3456";
-      colors.contextmenu.disabled.fg = "#4a4a4e";
-      colors.contextmenu.disabled.bg = "#1e1f2b";
+      colors.contextmenu.menu.fg = p.fg_bright;
+      colors.contextmenu.menu.bg = p.surface_alt;
+      colors.contextmenu.selected.fg = p.selection_strong;
+      colors.contextmenu.selected.bg = p.selection;
+      colors.contextmenu.disabled.fg = p.fg_muted;
+      colors.contextmenu.disabled.bg = p.surface_alt;
 
       # -- Fullscreen (match Firefox: no warning) --
       content.fullscreen.window = true;
@@ -239,7 +241,7 @@
       # -- Misc (match Firefox prefs) --
       auto_save.session = true; # persist tabs across restarts
       confirm_quit = ["downloads"];
-      editor.command = ["kitty" "nvim" "{file}" "-c" "normal {line}G{column0}l"];
+      editor.command = ["ghostty" "-e" "nvim" "{file}" "-c" "normal {line}G{column0}l"];
     };
 
     # keyMappings disabled — qutebrowser chains mappings, so cycles like

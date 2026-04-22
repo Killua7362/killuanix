@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Personal Nix flake configuration managing three target platforms from a single repo:
+Personal Nix flake configuration managing multiple target platforms from a single repo:
 
 - **NixOS** (`nixosConfigurations.killua`) — full NixOS system with Home Manager integrated via the NixOS module
+- **NixOS handheld** (`nixosConfigurations.handheld`) — MSI Claw / handheld NixOS variant using Jovian-NixOS and the CachyOS kernel
 - **Arch Linux** (`homeManagerConfigurations.archnix`) — standalone Home Manager on Arch, uses `nixGL` for GPU wrapping and `aconfmgr` for native package tracking
 - **macOS** (`darwinConfigurations.macnix`) — nix-darwin with Home Manager
 
@@ -35,6 +36,7 @@ nix fmt
 | Output | Entry point | Description |
 |---|---|---|
 | `nixosConfigurations.killua` | `nixos/configuration.nix` | NixOS system config; Home Manager wired in as a NixOS module (`nixos/home-manager/home.nix`) |
+| `nixosConfigurations.handheld` | `handheld/configuration.nix` | Handheld/MSI Claw NixOS variant (Jovian + CachyOS kernel); HM wired in via `handheld/home.nix` |
 | `homeManagerConfigurations.archnix` | `archnix/home.nix` | Standalone HM for Arch Linux |
 | `darwinConfigurations.macnix` | `macnix/default.nix` | nix-darwin system + HM |
 | `systemConfigs.default` | `archnix/system-manager.nix` | `system-manager` config for Arch (container registry, podman, lingering) |
@@ -45,26 +47,32 @@ nix fmt
   - `user.nix` — canonical user config (username, email, SSH keys, session vars) referenced as `inputs.self.commonModules.user.userConfig`
   - `packages.nix` — package sets (`commonPackages`, `terminalPackages`, `desktopPackages`, `devPackages`, `macPackages`) consumed by `cross-platform/default.nix`
   - `programs.nix` — imports all per-program HM modules (kitty, git, hyprland, neovim, firefox, etc.)
-  - `sops.nix` — sops-nix secret declarations
+  - `mcp-servers.nix` — declarative MCP server catalog (shared by Claude / OpenCode configs via `mcp-servers-nix`)
+  - `sops.nix` / `sops-system.nix` — sops-nix secret declarations (HM and NixOS-system scopes)
 - **`modules/cross-platform/default.nix`** — the main Home Manager entrypoint imported by every platform; assembles packages, sops, programs, theming, and platform-conditional logic (`stdenv.isLinux` / `isDarwin`)
 - **`modules/common/programs/`** — individual program configs organized by category, each with its own `CLAUDE.md`:
   - [`audio/CLAUDE.md`](modules/common/programs/audio/CLAUDE.md) — PipeWire/WirePlumber tuning, Bluetooth audio, Spotify (spicetify-nix)
   - [`browsers/CLAUDE.md`](modules/common/programs/browsers/CLAUDE.md) — Firefox (Arkenfox + Natsumi), Qutebrowser → [`firefox/CLAUDE.md`](modules/common/programs/browsers/firefox/CLAUDE.md)
   - [`desktop/CLAUDE.md`](modules/common/programs/desktop/CLAUDE.md) — Hyprland, Satty, desktop entries → [`hyprland/CLAUDE.md`](modules/common/programs/desktop/hyprland/CLAUDE.md)
-  - [`dev/CLAUDE.md`](modules/common/programs/dev/CLAUDE.md) — Git, Lazygit, Claude Code, OpenCode
+  - [`dev/CLAUDE.md`](modules/common/programs/dev/CLAUDE.md) — Git, Lazygit, Claude Code (+ bundled skills), OpenCode, code-index, jupyter-env MCP
   - [`editors/CLAUDE.md`](modules/common/programs/editors/CLAUDE.md) — Neovim (nixCats), Zed → [`neovim/CLAUDE.md`](modules/common/programs/editors/neovim/CLAUDE.md)
   - [`media/kodi/CLAUDE.md`](modules/common/programs/media/kodi/CLAUDE.md) — Kodi media center, Arctic Fuse skin, custom addons, Real-Debrid integration
   - [`openchamber/CLAUDE.md`](modules/common/programs/openchamber/CLAUDE.md) — OpenChamber Web GUI package
   - [`shells/CLAUDE.md`](modules/common/programs/shells/CLAUDE.md) — Zsh, Fish, Starship prompt
   - [`terminal/CLAUDE.md`](modules/common/programs/terminal/CLAUDE.md) — Kitty, Zellij
   - [`utils/CLAUDE.md`](modules/common/programs/utils/CLAUDE.md) — Yazi, Zathura, dotfile symlinks → [`yazi/CLAUDE.md`](modules/common/programs/utils/yazi/CLAUDE.md)
-- **`modules/containers/`** — quadlet / portainer container definitions
+- **`modules/containers/`** — quadlet / portainer container definitions (litellm, mcphub, qdrant, searxng, portainer)
+- **`modules/vms/`** — libvirt/qemu VM definitions and plugins (activity-sim, work-vm, vm-manager)
+- **`modules/nixos/`**, **`modules/home-manager/`** — thin module entry points re-exported via the flake's `nixosModules` / `homeManagerModules`
 
 ### Platform-specific directories
 
 - `nixos/` — NixOS system config + hardware config; `nixos/home-manager/home.nix` adds NixOS-only HM modules and packages
-- `archnix/` — Arch-specific HM config; wraps Hyprland and Zed with `nixGL`; includes `aconfmgr/` submodule for Arch package tracking
+- `handheld/` — MSI Claw / handheld NixOS config (boot, gaming, hhd, intel-gpu, wifi-fix, handheld-tweaks) with its own `home.nix`
+- `archnix/` — Arch-specific HM config; wraps Hyprland and Zed with `nixGL`; includes `aconfmgr/` submodule for Arch package tracking, plus `packages/` and `users/` subdirs
 - `macnix/` — Darwin system settings, Homebrew casks (`brew.nix`), macOS-specific packages
+- `overlays/`, `packages/` — custom nixpkgs overlays and standalone derivations consumed via `self.customOverlays` / direct imports
+- `scripts/`, `sdethings/`, `Notes/` — ad-hoc scripts and notes
 
 ### Secrets
 

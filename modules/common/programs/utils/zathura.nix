@@ -6,7 +6,7 @@
   ...
 }: {
   programs.zathura = {
-    enable = false;
+    enable = lib.mkDefault pkgs.stdenv.isLinux;
     options = {
       selection-clipboard = "clipboard";
       smooth-scroll = true;

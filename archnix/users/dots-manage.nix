@@ -65,10 +65,6 @@
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/DankMaterialShell;
       recursive = true;
     };
-    "/home/killua/.config/matugen" = {
-      source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/matugen;
-      recursive = true;
-    };
     "/home/killua/.config/niri" = {
       source = config.lib.file.mkOutOfStoreSymlink /home/killua/killuanix/DotFiles/archnix/niri;
       recursive = true;

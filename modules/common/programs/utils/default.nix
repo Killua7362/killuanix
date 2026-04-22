@@ -5,5 +5,6 @@
     ./dots.nix
     ./nemo.nix
     ./mimeapps.nix
+    ./clipboard-menu.nix
   ];
 }

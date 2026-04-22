@@ -58,9 +58,9 @@
         active = true;
       };
 
-      # Terminal integration — open terminal here uses kitty
+      # Terminal integration — open terminal here uses ghostty
       "org/cinnamon/desktop/applications/terminal" = {
-        exec = "kitty";
+        exec = "ghostty";
         exec-arg = "";
       };
 
@@ -74,5 +74,19 @@
     xdg.mimeApps.defaultApplications = {
       "application/x-gnome-saved-search" = ["nemo.desktop"];
     };
+
+    # Sidebar bookmarks (GTK3 bookmarks file is what Nemo reads)
+    gtk.gtk3.bookmarks = let
+      home = config.home.homeDirectory;
+    in [
+      "file://${home}/Documents Documents"
+      "file://${home}/Downloads Downloads"
+      "file://${home}/Pictures Pictures"
+      "file://${home}/Videos Videos"
+      "file://${home}/Music Music"
+      "file://${home}/Desktop Desktop"
+      "file://${home}/killuanix killuanix"
+      "file://${home}/iCloud iCloud"
+    ];
   };
 }

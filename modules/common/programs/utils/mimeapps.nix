@@ -56,6 +56,9 @@
         "application/javascript" = ["nvim.desktop"];
         "application/x-shellscript" = ["nvim.desktop"];
 
+        # Diagrams (local containers)
+        "text/vnd.mermaid" = ["mermaid-live.desktop"];
+
         # Documents
         "application/pdf" = ["org.gnome.Papers.desktop"];
 
