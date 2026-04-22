@@ -26,8 +26,9 @@ Both shells define the same core alias set:
 
 Defined in both shells:
 
-- `nix_switch` -- builds and activates the Arch Linux Home Manager configuration.
 - `pacsave` / `pacapply` -- run `aconfmgr` save/apply for Arch native package tracking.
+
+`nix_switch` used to be defined in both shells; it now lives as a standalone script at `~/killuanix/scripts/nix_switch` (on PATH via the scripts dir). Supports `home` / `system` / `both` modes, `--host chrollo|killua|archnix` (autodetected from `/etc/hostname` + `/etc/arch-release` when omitted), and a `--limit` flag that applies `--max-jobs 2 --cores 2` plus a `systemd-run --user --scope` cgroup cap (CPU 200%, memory 4G) for builds that should not starve the interactive session.
 
 Zsh-only:
 

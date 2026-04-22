@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# nix_switch: apply the killuanix flake — system, home, or both — with an
+# optional --limit flag that throttles CPU/RAM/IO so a heavy rebuild doesn't
+# wedge the machine while you use it for other things.
+#
+# Usage:
+#   nix_switch                         home only (host autodetected)
+#   nix_switch home                    home only
+#   nix_switch system                  system only
+#   nix_switch both                    system, then home
+#   nix_switch --host chrollo both     pick the flake host explicitly
+#   nix_switch --limit both            throttle the build (see below)
+#
+# Hosts: chrollo, killua, archnix.
+#   Autodetected when --host is omitted:
+#     * NixOS       -> /etc/hostname (must be chrollo or killua)
+#     * Arch Linux  -> archnix (/etc/arch-release present)
+#
+# --limit applies:
+#   * nix --max-jobs 2 --cores 2   (caps build parallelism)
+#   * nice -n 19 + ionice -c 3     (soft CPU + IO priority)
+#   * systemd-run --user --scope with CPUQuota=200% + MemoryMax=4G
+#     (hard cgroup caps, user-side commands only)
+# Omit --limit for a full-speed build.
+#
+# The flake dir defaults to $HOME/killuanix; override with $KILLUANIX_FLAKE.
+
+set -euo pipefail
+
+readonly FLAKE_DIR="${KILLUANIX_FLAKE:-$HOME/killuanix}"
+
+log()  { printf '\033[1;34m[nix_switch]\033[0m %s\n' "$*" >&2; }
+warn() { printf '\033[1;33m[nix_switch]\033[0m %s\n' "$*" >&2; }
+die()  { printf '\033[1;31m[nix_switch]\033[0m %s\n' "$*" >&2; exit 1; }
+
+usage() {
+  sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
+
+# ── Parse args ────────────────────────────────────────────────
+mode=""
+host=""
+limit=false
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    home|system|both)
+      [ -n "$mode" ] && die "mode already set to '$mode'; extra arg: $1"
+      mode="$1"; shift ;;
+    --host)
+      [ $# -ge 2 ] || die "--host needs a value"
+      host="$2"; shift 2 ;;
+    --host=*)
+      host="${1#--host=}"; shift ;;
+    --limit)
+      limit=true; shift ;;
+    -h|--help)
+      usage 0 ;;
+    *)
+      die "unknown argument: $1 (try --help)" ;;
+  esac
+done
+
+mode="${mode:-home}"
+
+# ── Autodetect host ───────────────────────────────────────────
+if [ -z "$host" ]; then
+  if [ -e /run/current-system ] && [ -r /etc/hostname ]; then
+    host="$(tr -d '[:space:]' < /etc/hostname)"
+    case "$host" in
+      chrollo|killua) ;;
+      *) die "NixOS hostname '$host' doesn't map to a flake output; pass --host explicitly" ;;
+    esac
+  elif [ -e /etc/arch-release ]; then
+    host="archnix"
+  else
+    die "could not autodetect host; pass --host chrollo|killua|archnix"
+  fi
+  log "autodetected host: $host"
+fi
+
+case "$host" in
+  chrollo|killua|archnix) ;;
+  *) die "unsupported host: $host (expected chrollo|killua|archnix)" ;;
+esac
+
+# ── Build command wrappers for --limit ─────────────────────────
+nix_flags=()
+user_wrap=()
+sys_wrap=()
+
+if $limit; then
+  nix_flags=(--max-jobs 2 --cores 2)
+  sys_wrap=(nice -n 19 ionice -c 3)
+  if command -v systemd-run >/dev/null 2>&1; then
+    user_wrap=(
+      systemd-run --user --scope --quiet --collect
+      -p CPUQuota=200%
+      -p MemoryMax=4G
+      -p MemorySwapMax=0
+      -p IOWeight=50
+      -- nice -n 19 ionice -c 3
+    )
+  else
+    warn "systemd-run not available; falling back to nice+ionice only for user commands"
+    user_wrap=(nice -n 19 ionice -c 3)
+  fi
+  log "limits: cpu=200% mem=4G max-jobs=2 cores=2 nice=19 ionice=3"
+fi
+
+# ── Actions ───────────────────────────────────────────────────
+do_home() {
+  # Prefer the installed CLI; fall back to `nix run` so the script still works
+  # before the first standalone Home Manager activation puts `home-manager` on
+  # PATH (relevant right after splitting HM out of the NixOS module).
+  local hm_cmd
+  if command -v home-manager >/dev/null 2>&1; then
+    hm_cmd=(home-manager)
+  else
+    warn "home-manager CLI not on PATH; bootstrapping via 'nix run'"
+    hm_cmd=(nix run --extra-experimental-features 'nix-command flakes'
+            'github:nix-community/home-manager/release-25.11' --)
+  fi
+  log "home: ${hm_cmd[*]} switch --flake .#${host}"
+  ( cd "$FLAKE_DIR" \
+    && "${user_wrap[@]}" "${hm_cmd[@]}" switch \
+       --flake ".#${host}" "${nix_flags[@]}" )
+}
+
+do_system() {
+  case "$host" in
+    chrollo|killua)
+      log "system: nixos-rebuild switch --flake .#${host}"
+      ( cd "$FLAKE_DIR" \
+        && sudo "${sys_wrap[@]}" nixos-rebuild switch \
+           --flake ".#${host}" "${nix_flags[@]}" )
+      ;;
+    archnix)
+      # system-manager isn't typically on PATH; run it out of the flake input.
+      log "system: system-manager switch --flake .#default"
+      ( cd "$FLAKE_DIR" \
+        && sudo "${sys_wrap[@]}" nix run \
+           --extra-experimental-features 'nix-command flakes' \
+           'github:numtide/system-manager' -- \
+           switch --flake '.#default' )
+      ;;
+  esac
+}
+
+case "$mode" in
+  home)   do_home ;;
+  system) do_system ;;
+  both)   do_system; do_home ;;
+esac
+
+log "done (${mode} on ${host})"

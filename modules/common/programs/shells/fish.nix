@@ -43,14 +43,7 @@
       "d" = "nvim -d";
     };
     functions = {
-      nix_switch = ''
-        function nix_switch
-            pushd ~/killuanix/
-            env TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
-            env TERM=xterm-256color ./result/activate
-            popd
-        end
-      '';
+      # nix_switch lives in ~/killuanix/scripts/nix_switch (on PATH)
       pacsave = ''
         function pacsave
             pushd ~/killuanix/archnix/aconfmgr/

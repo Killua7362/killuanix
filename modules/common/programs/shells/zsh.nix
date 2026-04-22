@@ -143,13 +143,7 @@
         zstyle ':fzf-tab:*' switch-group '<' '>'
 
         # Functions (converted from fish)
-        nix_switch() {
-          pushd ~/killuanix/
-          TERM=xterm-256color nix --extra-experimental-features 'flakes nix-command' build '.#homeManagerConfigurations.archnix.activationPackage'
-          TERM=xterm-256color ./result/activate
-          popd
-        }
-
+        # nix_switch lives in ~/killuanix/scripts/nix_switch (on PATH)
         boeingvpn() {
           openconnect \
               --protocol=gp \
