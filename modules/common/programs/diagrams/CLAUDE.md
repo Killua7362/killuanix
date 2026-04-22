@@ -44,4 +44,4 @@ Local skills under `../dev/skills/` (`mermaid-diagrams`, `excalidraw-sketches`) 
 
 ## Integration
 
-`default.nix` is imported by `modules/common/programs.nix`, which is pulled into `modules/cross-platform/default.nix` for all platforms. The `lib.optionals pkgs.stdenv.isLinux` guards on the launcher packages, desktop entries, and MIME drop-in mean macOS gets only `mmdc`, while all Linux platforms (NixOS killua, handheld, archnix) get the full editor wiring.
+`default.nix` is imported by `modules/common/programs.nix`, which is pulled into `modules/cross-platform/default.nix` for all platforms. The `lib.optionals pkgs.stdenv.isLinux` guards on the launcher packages, desktop entries, and MIME drop-in mean macOS gets only `mmdc`, while all Linux platforms (chrollo, killua, archnix) get the full editor wiring.

@@ -11,7 +11,7 @@ Home Manager module for declarative email clients. Currently just Thunderbird.
 
 ## Integration
 
-`default.nix` is a pure import aggregator. It is imported by `modules/common/programs.nix` so Thunderbird lands on every platform (NixOS killua, handheld, archnix, macnix) via the shared `cross-platform` module. Gated by `lib.mkDefault (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin)` so adding non-Unix platforms later is safe.
+`default.nix` is a pure import aggregator. It is imported by `modules/common/programs.nix` so Thunderbird lands on every platform (chrollo, killua, archnix, macnix) via the shared `cross-platform` module. Gated by `lib.mkDefault (pkgs.stdenv.isLinux || pkgs.stdenv.isDarwin)` so adding non-Unix platforms later is safe.
 
 ## Add-on Packaging
 

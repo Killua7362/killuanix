@@ -56,4 +56,4 @@ No templates or config files are written here; DMS owns all of that.
 
 ## Integration
 
-`default.nix` is imported by `modules/common/programs.nix`, which is aggregated into `modules/cross-platform/default.nix` — the main Home Manager entry point every platform (NixOS, handheld, Arch, Darwin) pulls in. Importing this module registers `options.theme.palette`, so any other Home Manager module can read `config.theme.palette.<key>` without extra wiring.
+`default.nix` is imported by `modules/common/programs.nix`, which is aggregated into `modules/cross-platform/default.nix` — the main Home Manager entry point every platform (chrollo, killua, archnix, macnix) pulls in. Importing this module registers `options.theme.palette`, so any other Home Manager module can read `config.theme.palette.<key>` without extra wiring.

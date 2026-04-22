@@ -1,6 +1,6 @@
 # Notes Module
 
-Home Manager module for [Obsidian](https://obsidian.md/), configuring a single vault named `killuanix-notes` at `$HOME/killuanix/Notes`. This module is NixOS-only — it is imported by `nixos/home-manager/home.nix` and `handheld/home.nix`, NOT by `modules/common/programs.nix`. Archnix and macnix do not receive Obsidian via this module.
+Home Manager module for [Obsidian](https://obsidian.md/), configuring a single vault named `killuanix-notes` at `$HOME/killuanix/Notes`. This module is NixOS-only — it is imported by `chrollo/home-manager/home.nix` and `killua/home.nix`, NOT by `modules/common/programs.nix`. Archnix and macnix do not receive Obsidian via this module.
 
 ## Files
 
@@ -129,8 +129,8 @@ Templates are rendered by the `templates` core plugin (simple `{{date}}` / `{{ti
 
 This module is imported **only** by NixOS entry points:
 
-- `nixos/home-manager/home.nix` — imports `../../modules/common/programs/notes`
-- `handheld/home.nix` — imports `../modules/common/programs/notes`
+- `chrollo/home-manager/home.nix` — imports `../../modules/common/programs/notes`
+- `killua/home.nix` — imports `../modules/common/programs/notes`
 
 It is deliberately **not** imported by `modules/common/programs.nix`, so the cross-platform HM aggregator does not pull it into archnix or macnix. Obsidian is declared once per NixOS host rather than as a shared-everywhere program.
 

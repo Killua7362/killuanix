@@ -1,4 +1,4 @@
-# Pipewire pin overlay for the handheld.
+# Pipewire pin overlay for the killua host (MSI Claw).
 #
 # Replaces `pkgs.pipewire` with the version from `inputs.nixpkgs-pipewire`
 # (a pre-1.6 nixpkgs rev) to work around a runtime LDAC init failure in

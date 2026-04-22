@@ -6,15 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal Nix flake configuration managing multiple target platforms from a single repo:
 
-- **NixOS** (`nixosConfigurations.killua`) — full NixOS system with Home Manager integrated via the NixOS module
-- **NixOS handheld** (`nixosConfigurations.handheld`) — MSI Claw / handheld NixOS variant using Jovian-NixOS and the CachyOS kernel
+- **NixOS** (`nixosConfigurations.chrollo`) — full NixOS system with Home Manager integrated via the NixOS module
+- **NixOS handheld** (`nixosConfigurations.killua`) — MSI Claw / handheld NixOS variant using Jovian-NixOS and the CachyOS kernel
 - **Arch Linux** (`homeManagerConfigurations.archnix`) — standalone Home Manager on Arch, uses `nixGL` for GPU wrapping and `aconfmgr` for native package tracking
 - **macOS** (`darwinConfigurations.macnix`) — nix-darwin with Home Manager
 
 ## Build / Apply Commands
 
 ```bash
-# NixOS — rebuild full system
+# NixOS desktop (chrollo) — rebuild full system
+sudo nixos-rebuild switch --flake .#chrollo
+
+# NixOS handheld (killua, MSI Claw)
 sudo nixos-rebuild switch --flake .#killua
 
 # Arch Linux — standalone Home Manager
@@ -35,8 +38,8 @@ nix fmt
 
 | Output | Entry point | Description |
 |---|---|---|
-| `nixosConfigurations.killua` | `nixos/configuration.nix` | NixOS system config; Home Manager wired in as a NixOS module (`nixos/home-manager/home.nix`) |
-| `nixosConfigurations.handheld` | `handheld/configuration.nix` | Handheld/MSI Claw NixOS variant (Jovian + CachyOS kernel); HM wired in via `handheld/home.nix` |
+| `nixosConfigurations.chrollo` | `chrollo/configuration.nix` | Desktop NixOS system config; Home Manager wired in as a NixOS module (`chrollo/home-manager/home.nix`) |
+| `nixosConfigurations.killua` | `killua/configuration.nix` | Handheld/MSI Claw NixOS variant (Jovian + CachyOS kernel); HM wired in via `killua/home.nix` |
 | `homeManagerConfigurations.archnix` | `archnix/home.nix` | Standalone HM for Arch Linux |
 | `darwinConfigurations.macnix` | `macnix/default.nix` | nix-darwin system + HM |
 | `systemConfigs.default` | `archnix/system-manager.nix` | `system-manager` config for Arch (container registry, podman, lingering) |
@@ -59,7 +62,7 @@ nix fmt
   - [`editors/CLAUDE.md`](modules/common/programs/editors/CLAUDE.md) — Neovim (nixCats), Zed → [`neovim/CLAUDE.md`](modules/common/programs/editors/neovim/CLAUDE.md)
   - [`mail/CLAUDE.md`](modules/common/programs/mail/CLAUDE.md) — Thunderbird with a manually-packaged add-on bundle
   - [`media/kodi/CLAUDE.md`](modules/common/programs/media/kodi/CLAUDE.md) — Kodi media center, Arctic Fuse skin, custom addons, Real-Debrid integration
-  - [`notes/CLAUDE.md`](modules/common/programs/notes/CLAUDE.md) — Obsidian vault config (NixOS-only: killua + handheld)
+  - [`notes/CLAUDE.md`](modules/common/programs/notes/CLAUDE.md) — Obsidian vault config (NixOS-only: chrollo + killua)
   - [`openchamber/CLAUDE.md`](modules/common/programs/openchamber/CLAUDE.md) — OpenChamber Web GUI package
   - [`shells/CLAUDE.md`](modules/common/programs/shells/CLAUDE.md) — Zsh, Fish, Starship prompt
   - [`terminal/CLAUDE.md`](modules/common/programs/terminal/CLAUDE.md) — Ghostty (primary under Hyprland), Kitty, Zellij
@@ -71,8 +74,8 @@ nix fmt
 
 ### Platform-specific directories
 
-- `nixos/` — NixOS system config + hardware config; `nixos/home-manager/home.nix` adds NixOS-only HM modules and packages
-- `handheld/` — MSI Claw / handheld NixOS config (boot, gaming, hhd, intel-gpu, wifi-fix, handheld-tweaks) with its own `home.nix`
+- `chrollo/` — desktop NixOS system config + hardware config; `chrollo/home-manager/home.nix` adds NixOS-only HM modules and packages
+- `killua/` — MSI Claw / handheld NixOS config (boot, gaming, hhd, intel-gpu, wifi-fix, handheld-tweaks) with its own `home.nix`
 - `archnix/` — Arch-specific HM config; wraps Hyprland and Zed with `nixGL`; includes `aconfmgr/` submodule for Arch package tracking, plus `packages/` and `users/` subdirs
 - `macnix/` — Darwin system settings, Homebrew casks (`brew.nix`), macOS-specific packages
 - `overlays/`, `packages/` — custom nixpkgs overlays and standalone derivations consumed via `self.customOverlays` / direct imports
@@ -101,7 +104,7 @@ Every documented directory under `modules/common/programs/` (and the repo root) 
 **When editing `.nix` files in this repo, you must:**
 
 1. **Update the nearest `CLAUDE.md`** if the change adds/removes/renames a file, changes a documented option or keybinding, changes platform gating (`isLinux`/`isDarwin`/`mkIf`), changes imports, or alters behavior described in the doc. Don't restate implementation details that are obvious from the code — keep the doc focused on *what the module does*, *why it's wired that way*, and *the non-obvious gotchas*.
-2. **Create a new `CLAUDE.md`** when you add a new subdirectory under `modules/common/programs/` (or any other place where siblings already have one). Match the style of adjacent docs: H1 title, short overview, `## Files` table, detail sections for notable behavior, closing `## Integration` section naming the import path up to `modules/cross-platform/default.nix` (or the NixOS/handheld/archnix/macnix entry point if it's not cross-platform).
+2. **Create a new `CLAUDE.md`** when you add a new subdirectory under `modules/common/programs/` (or any other place where siblings already have one). Match the style of adjacent docs: H1 title, short overview, `## Files` table, detail sections for notable behavior, closing `## Integration` section naming the import path up to `modules/cross-platform/default.nix` (or the chrollo/killua/archnix/macnix entry point if it's not cross-platform).
 3. **Update this root `CLAUDE.md`** — the "individual program configs" list above — whenever you add or remove a module-level `CLAUDE.md`, so the index stays complete.
 4. **Do not create `CLAUDE.md` files for directories that don't warrant them** (single-file modules whose source is self-explanatory, or purely-data directories like `templates/`). Prefer extending a parent `CLAUDE.md` with a short subsection.
 

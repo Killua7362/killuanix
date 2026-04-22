@@ -1,5 +1,5 @@
 # Shared NixOS system-level VM configuration
-# Imported by both nixos/configuration.nix and handheld/configuration.nix
+# Imported by both chrollo/configuration.nix and killua/configuration.nix
 {
   inputs,
   pkgs,

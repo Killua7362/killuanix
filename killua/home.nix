@@ -1,4 +1,4 @@
-# Home Manager configuration for handheld
+# Home Manager configuration for the killua host (MSI Claw handheld).
 # Reuses cross-platform modules (neovim, kitty, git, firefox, audio, shells, etc.)
 {
   inputs,
@@ -20,7 +20,7 @@
     inputs.spicetify-nix.homeManagerModules.default
   ];
 
-  # NixOS-specific overlays (matching killua home.nix)
+  # NixOS-specific overlays (matching chrollo home.nix)
   nixpkgs.overlays = [
     inputs.neovim-nightly-overlay.overlays.default
     inputs.nur.overlays.default

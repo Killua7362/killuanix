@@ -102,7 +102,7 @@ in {
     ];
   };
 
-  networking.hostName = "killua";
+  networking.hostName = "chrollo";
   networking.networkmanager = {
     enable = true;
     dns = "systemd-resolved"; # Use resolved for DNS

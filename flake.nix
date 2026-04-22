@@ -23,12 +23,12 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-    # Pre-1.6 pipewire pin for the handheld. PipeWire 1.6.2 (on current
-    # nixpkgs-unstable) fails LDAC codec init at runtime on the Intel Lunar
-    # Lake BT controller ("LDAC decoder initialization failed:
+    # Pre-1.6 pipewire pin for the killua (MSI Claw) host. PipeWire 1.6.2
+    # (on current nixpkgs-unstable) fails LDAC codec init at runtime on the
+    # Intel Lunar Lake BT controller ("LDAC decoder initialization failed:
     # LDACBT_ERR_FATAL"), collapsing A2DP to SBC. Rev below (2025-08-27)
     # ships pipewire 1.4.x where LDAC negotiates cleanly. See
-    # overlays/pipewire-pin.nix — applied only to nixosConfigurations.handheld.
+    # overlays/pipewire-pin.nix — applied only to nixosConfigurations.killua.
     nixpkgs-pipewire.url = "github:NixOS/nixpkgs/ddd1826f294a0ee5fdc198ab72c8306a0ea73aa9";
 
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
@@ -254,10 +254,10 @@
     crossPlatformModules = import ./modules/cross-platform;
 
     nixosConfigurations = {
-      killua = nixpkgs.lib.nixosSystem {
+      chrollo = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs;};
         modules = [
-          ./nixos/configuration.nix
+          ./chrollo/configuration.nix
           inputs.quadlet-nix.nixosModules.quadlet
           ({
             inputs,
@@ -272,7 +272,7 @@
                 inputs.sops-nix.homeManagerModules.sops
               ];
               users = {
-                killua = import ./nixos/home-manager/home.nix;
+                killua = import ./chrollo/home-manager/home.nix;
               };
             };
           })
@@ -280,10 +280,10 @@
       };
     };
 
-    nixosConfigurations.handheld = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.killua = nixpkgs.lib.nixosSystem {
       specialArgs = {inherit inputs;};
       modules = [
-        ./handheld/configuration.nix
+        ./killua/configuration.nix
         inputs.quadlet-nix.nixosModules.quadlet
         inputs.jovian.nixosModules.jovian
         ({
@@ -305,7 +305,7 @@
               inputs.sops-nix.homeManagerModules.sops
             ];
             users = {
-              killua = import ./handheld/home.nix;
+              killua = import ./killua/home.nix;
             };
           };
         })
