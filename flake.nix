@@ -23,6 +23,14 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
+    # Pre-1.6 pipewire pin for the handheld. PipeWire 1.6.2 (on current
+    # nixpkgs-unstable) fails LDAC codec init at runtime on the Intel Lunar
+    # Lake BT controller ("LDAC decoder initialization failed:
+    # LDACBT_ERR_FATAL"), collapsing A2DP to SBC. Rev below (2025-08-27)
+    # ships pipewire 1.4.x where LDAC negotiates cleanly. See
+    # overlays/pipewire-pin.nix — applied only to nixosConfigurations.handheld.
+    nixpkgs-pipewire.url = "github:NixOS/nixpkgs/ddd1826f294a0ee5fdc198ab72c8306a0ea73aa9";
+
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -284,7 +292,10 @@
           ...
         }: {
           nixpkgs.overlays = [
-            inputs.nix-cachyos-kernel.overlays.default
+            inputs.nix-cachyos-kernel.overlays.pinned
+            # Pin pipewire to pre-1.6 rev — works around LDAC init failure
+            # on the Lunar Lake BT controller. See overlays/pipewire-pin.nix.
+            inputs.self.customOverlays.pipewire-pin
           ];
           home-manager = {
             extraSpecialArgs = {

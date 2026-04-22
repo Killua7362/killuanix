@@ -55,12 +55,16 @@ nix fmt
   - [`browsers/CLAUDE.md`](modules/common/programs/browsers/CLAUDE.md) — Firefox (Arkenfox + Natsumi), Qutebrowser → [`firefox/CLAUDE.md`](modules/common/programs/browsers/firefox/CLAUDE.md)
   - [`desktop/CLAUDE.md`](modules/common/programs/desktop/CLAUDE.md) — Hyprland, Satty, desktop entries → [`hyprland/CLAUDE.md`](modules/common/programs/desktop/hyprland/CLAUDE.md)
   - [`dev/CLAUDE.md`](modules/common/programs/dev/CLAUDE.md) — Git, Lazygit, Claude Code (+ bundled skills), OpenCode, code-index, jupyter-env MCP
+  - [`diagrams/CLAUDE.md`](modules/common/programs/diagrams/CLAUDE.md) — Excalidraw / Mermaid Live launchers, mermaid-cli, `text/vnd.mermaid` MIME wiring
   - [`editors/CLAUDE.md`](modules/common/programs/editors/CLAUDE.md) — Neovim (nixCats), Zed → [`neovim/CLAUDE.md`](modules/common/programs/editors/neovim/CLAUDE.md)
+  - [`mail/CLAUDE.md`](modules/common/programs/mail/CLAUDE.md) — Thunderbird with a manually-packaged add-on bundle
   - [`media/kodi/CLAUDE.md`](modules/common/programs/media/kodi/CLAUDE.md) — Kodi media center, Arctic Fuse skin, custom addons, Real-Debrid integration
+  - [`notes/CLAUDE.md`](modules/common/programs/notes/CLAUDE.md) — Obsidian vault config (NixOS-only: killua + handheld)
   - [`openchamber/CLAUDE.md`](modules/common/programs/openchamber/CLAUDE.md) — OpenChamber Web GUI package
   - [`shells/CLAUDE.md`](modules/common/programs/shells/CLAUDE.md) — Zsh, Fish, Starship prompt
-  - [`terminal/CLAUDE.md`](modules/common/programs/terminal/CLAUDE.md) — Kitty, Zellij
-  - [`utils/CLAUDE.md`](modules/common/programs/utils/CLAUDE.md) — Yazi, Zathura, dotfile symlinks → [`yazi/CLAUDE.md`](modules/common/programs/utils/yazi/CLAUDE.md)
+  - [`terminal/CLAUDE.md`](modules/common/programs/terminal/CLAUDE.md) — Ghostty (primary under Hyprland), Kitty, Zellij
+  - [`theming/CLAUDE.md`](modules/common/programs/theming/CLAUDE.md) — Shared `config.theme.palette`, GTK/libadwaita CSS, Kvantum + qt5ct/qt6ct
+  - [`utils/CLAUDE.md`](modules/common/programs/utils/CLAUDE.md) — Yazi, Zathura, Nemo, mimeapps, clipboard-menu, dotfile symlinks → [`yazi/CLAUDE.md`](modules/common/programs/utils/yazi/CLAUDE.md)
 - **`modules/containers/`** — quadlet / portainer container definitions (litellm, mcphub, qdrant, searxng, portainer)
 - **`modules/vms/`** — libvirt/qemu VM definitions and plugins (activity-sim, work-vm, vm-manager)
 - **`modules/nixos/`**, **`modules/home-manager/`** — thin module entry points re-exported via the flake's `nixosModules` / `homeManagerModules`
@@ -89,3 +93,16 @@ Managed with **sops-nix** + **age** encryption. Keys defined in `.sops.yaml`; en
 - User identity and shared session variables are centralized in `modules/common/user.nix` — do not hardcode username/email elsewhere.
 - Package lists in `modules/common/packages.nix` are split by category and combined in `cross-platform/default.nix` with platform guards.
 - The `DotFiles` submodule is referenced via `${config.home.homeDirectory}/killuanix/DotFiles` for symlinking.
+
+## CLAUDE.md maintenance policy
+
+Every documented directory under `modules/common/programs/` (and the repo root) ships a `CLAUDE.md` that describes its files, notable settings, and integration points. These files must stay in sync with the code — when they drift, future sessions get misled.
+
+**When editing `.nix` files in this repo, you must:**
+
+1. **Update the nearest `CLAUDE.md`** if the change adds/removes/renames a file, changes a documented option or keybinding, changes platform gating (`isLinux`/`isDarwin`/`mkIf`), changes imports, or alters behavior described in the doc. Don't restate implementation details that are obvious from the code — keep the doc focused on *what the module does*, *why it's wired that way*, and *the non-obvious gotchas*.
+2. **Create a new `CLAUDE.md`** when you add a new subdirectory under `modules/common/programs/` (or any other place where siblings already have one). Match the style of adjacent docs: H1 title, short overview, `## Files` table, detail sections for notable behavior, closing `## Integration` section naming the import path up to `modules/cross-platform/default.nix` (or the NixOS/handheld/archnix/macnix entry point if it's not cross-platform).
+3. **Update this root `CLAUDE.md`** — the "individual program configs" list above — whenever you add or remove a module-level `CLAUDE.md`, so the index stays complete.
+4. **Do not create `CLAUDE.md` files for directories that don't warrant them** (single-file modules whose source is self-explanatory, or purely-data directories like `templates/`). Prefer extending a parent `CLAUDE.md` with a short subsection.
+
+The goal is that a future Claude Code session can orient itself from the docs alone without re-reading every `.nix` file. If after a change the `CLAUDE.md` in that directory would still be accurate, no update is needed — but verify, don't assume.

@@ -1,14 +1,28 @@
 # Terminal Module
 
-Home Manager configuration for terminal emulator (kitty) and terminal multiplexer (zellij), shared across all platforms.
+Home Manager configuration for two terminal emulators (ghostty, kitty) and the zellij terminal multiplexer, shared across all platforms. Ghostty is the primary terminal under Hyprland — `Super+Return` launches it (see `../desktop/hyprland/keybinds.nix`) and the Hyprland session sets `TERMINAL=ghostty` (see `../desktop/hyprland/env.nix`). Kitty remains available for ad-hoc use but is no longer the default wrapper.
 
 ## Files
 
 | File | Description |
 |---|---|
-| `default.nix` | Aggregator module; imports `kitty.nix` and `zellij.nix`. |
+| `default.nix` | Aggregator module; imports `ghostty.nix`, `kitty.nix`, and `zellij.nix`. |
+| `ghostty.nix` | Ghostty terminal emulator configuration (primary under Hyprland). |
 | `kitty.nix` | Kitty terminal emulator configuration. |
 | `zellij.nix` | Zellij terminal multiplexer configuration. |
+
+## Ghostty
+
+- **Enabled** on Linux only (`lib.mkDefault pkgs.stdenv.isLinux`).
+- **Font**: JetBrainsMono Nerd Font, size 12.
+- **Window**: No decoration, 12px padding on both axes, full opacity (`background-opacity = 1.0`).
+- **Cursor**: Block style with blink.
+- **Shell**: zsh (via `shell-integration = "zsh"` and `command = "zsh"`).
+- **Clipboard**: `copy-on-select = clipboard`, explicit `ctrl+shift+c`/`ctrl+shift+v` bindings.
+- **Scrollback**: 3000 lines.
+- **Theme**: All colors (`background`, `foreground`, `cursor-color`, `cursor-text`, `selection-background`/`foreground`, and the full ANSI 16 palette `color0`–`color15`) are pulled from `config.theme.palette` — see `../theming/palette.nix` for the shared palette definition.
+- **Keybindings**: Font size controls (`ctrl+plus`/`ctrl+minus`/`ctrl+0`), new window (`ctrl+shift+n`).
+- **Zellij pass-through**: Explicitly unbinds `ctrl+a`, `ctrl+g`, `ctrl+h`, `ctrl+n`, `ctrl+o`, `ctrl+p`, `ctrl+q`, `ctrl+s`, `ctrl+t`, `ctrl+w`, `ctrl+tab`, `ctrl+shift+tab` so Ghostty never swallows them. This is why `Ctrl-a`, `Ctrl-p`, etc. reach zellij cleanly for mode switching.
 
 ## Kitty
 
