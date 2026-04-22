@@ -47,7 +47,7 @@ Home Manager configuration for two terminal emulators (ghostty, kitty) and the z
   - `Ctrl n` enters resize mode.
   - `Ctrl q` quits.
   - `Alt` shortcuts provide quick access without mode switching: `Alt h` new pane, `Alt t` toggle floating panes, `Alt f` fullscreen, `Alt w` close focused pane, `Alt +/-` resize.
-- **Plugins**: Loads built-in zellij plugins plus `zellij-autolock` (auto-locks on nvim, vim, git, fzf, zoxide, atuin, git-forgit).
+- **Plugins**: Loads built-in zellij plugins plus `zellij-autolock` (auto-locks on nvim, vim, git, fzf, zoxide, atuin, git-forgit, lazygit, claude, `.claude-unwrapped`). The autolock plugin does exact-match of the pane executable's basename against the `|`-separated trigger list (not substring regex), so Nix-wrapped binaries must be listed under their unwrapped name — `claude` alone won't match because the Nix wrapper exec's `.claude-unwrapped`.
 - **Environment**: Sets `WAYLAND_DISPLAY=wayland-1`.
 
 ## Integration
