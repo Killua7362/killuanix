@@ -9,6 +9,7 @@
     ../../modules/cross-platform
     ../../modules/common/programs/notes
     ./users/dots-manage.nix
+    inputs.sops-nix.homeManagerModules.sops
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dank-material-shell
     inputs.chaotic.homeManagerModules.default
@@ -18,6 +19,10 @@
     ../../modules/vms
     inputs.spicetify-nix.homeManagerModules.default
   ];
+
+  # Standalone Home Manager needs an explicit nix package (under the NixOS
+  # module it was inherited from the system).
+  nix.package = pkgs.nix;
 
   # NixOS-specific overlays
   nixpkgs.overlays = [

@@ -259,23 +259,6 @@
         modules = [
           ./chrollo/configuration.nix
           inputs.quadlet-nix.nixosModules.quadlet
-          ({
-            inputs,
-            pkgs,
-            ...
-          }: {
-            home-manager = {
-              extraSpecialArgs = {
-                inherit inputs;
-              };
-              sharedModules = [
-                inputs.sops-nix.homeManagerModules.sops
-              ];
-              users = {
-                killua = import ./chrollo/home-manager/home.nix;
-              };
-            };
-          })
         ];
       };
     };
@@ -297,17 +280,6 @@
             # on the Lunar Lake BT controller. See overlays/pipewire-pin.nix.
             inputs.self.customOverlays.pipewire-pin
           ];
-          home-manager = {
-            extraSpecialArgs = {
-              inherit inputs;
-            };
-            sharedModules = [
-              inputs.sops-nix.homeManagerModules.sops
-            ];
-            users = {
-              killua = import ./killua/home.nix;
-            };
-          };
         })
       ];
     };
@@ -347,6 +319,26 @@
           inputs.nix-index-database.homeModules.default
           # inputs.nix-yazi-plugins.legacyPackages.x86_64-linux.homeManagerModules.default # TODO: Revisit in future
           ./archnix/home.nix
+        ];
+      };
+
+      # Standalone Home Manager for the chrollo NixOS host.
+      # Apply with: home-manager switch --flake .#chrollo
+      chrollo = home-manager.lib.homeManagerConfiguration {
+        pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+        extraSpecialArgs = {inherit inputs;};
+        modules = [
+          ./chrollo/home-manager/home.nix
+        ];
+      };
+
+      # Standalone Home Manager for the killua NixOS host (MSI Claw).
+      # Apply with: home-manager switch --flake .#killua
+      killua = home-manager.lib.homeManagerConfiguration {
+        pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+        extraSpecialArgs = {inherit inputs;};
+        modules = [
+          ./killua/home.nix
         ];
       };
     };

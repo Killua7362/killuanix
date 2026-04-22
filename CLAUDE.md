@@ -6,19 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal Nix flake configuration managing multiple target platforms from a single repo:
 
-- **NixOS** (`nixosConfigurations.chrollo`) — full NixOS system with Home Manager integrated via the NixOS module
-- **NixOS handheld** (`nixosConfigurations.killua`) — MSI Claw / handheld NixOS variant using Jovian-NixOS and the CachyOS kernel
+- **NixOS desktop** (`nixosConfigurations.chrollo` + standalone `homeManagerConfigurations.chrollo`) — system and Home Manager are **separate switches** (NixOS module integration was removed; run `nixos-rebuild` and `home-manager` independently)
+- **NixOS handheld** (`nixosConfigurations.killua` + standalone `homeManagerConfigurations.killua`) — MSI Claw / handheld variant on Jovian-NixOS + CachyOS kernel; same split system/HM setup as chrollo
 - **Arch Linux** (`homeManagerConfigurations.archnix`) — standalone Home Manager on Arch, uses `nixGL` for GPU wrapping and `aconfmgr` for native package tracking
-- **macOS** (`darwinConfigurations.macnix`) — nix-darwin with Home Manager
+- **macOS** (`darwinConfigurations.macnix`) — nix-darwin with Home Manager wired in via the Darwin module (unified switch)
 
 ## Build / Apply Commands
 
 ```bash
-# NixOS desktop (chrollo) — rebuild full system
+# NixOS desktop (chrollo) — system and home are separate switches
 sudo nixos-rebuild switch --flake .#chrollo
+home-manager switch --flake .#chrollo
 
 # NixOS handheld (killua, MSI Claw)
 sudo nixos-rebuild switch --flake .#killua
+home-manager switch --flake .#killua
 
 # Arch Linux — standalone Home Manager
 nix build '.#homeManagerConfigurations.archnix.activationPackage' && ./result/activate
@@ -38,8 +40,10 @@ nix fmt
 
 | Output | Entry point | Description |
 |---|---|---|
-| `nixosConfigurations.chrollo` | `chrollo/configuration.nix` | Desktop NixOS system config; Home Manager wired in as a NixOS module (`chrollo/home-manager/home.nix`) |
-| `nixosConfigurations.killua` | `killua/configuration.nix` | Handheld/MSI Claw NixOS variant (Jovian + CachyOS kernel); HM wired in via `killua/home.nix` |
+| `nixosConfigurations.chrollo` | `chrollo/configuration.nix` | Desktop NixOS system config (system-only; HM lives in `homeManagerConfigurations.chrollo`) |
+| `nixosConfigurations.killua` | `killua/configuration.nix` | Handheld/MSI Claw NixOS variant (Jovian + CachyOS kernel); system-only |
+| `homeManagerConfigurations.chrollo` | `chrollo/home-manager/home.nix` | Standalone HM for the chrollo host |
+| `homeManagerConfigurations.killua` | `killua/home.nix` | Standalone HM for the killua host |
 | `homeManagerConfigurations.archnix` | `archnix/home.nix` | Standalone HM for Arch Linux |
 | `darwinConfigurations.macnix` | `macnix/default.nix` | nix-darwin system + HM |
 | `systemConfigs.default` | `archnix/system-manager.nix` | `system-manager` config for Arch (container registry, podman, lingering) |

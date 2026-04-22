@@ -15,7 +15,6 @@
     ./gaming.nix
     ./wifi-fix.nix
     ./boot.nix
-    inputs.home-manager.nixosModules.home-manager
     inputs.sops-nix.nixosModules.sops
     ../modules/common/sops-system.nix
     ../modules/containers

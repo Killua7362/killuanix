@@ -11,6 +11,7 @@
     ../modules/cross-platform
     ../modules/common/programs/notes
     ../modules/vms
+    inputs.sops-nix.homeManagerModules.sops
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dank-material-shell
     inputs.chaotic.homeManagerModules.default
@@ -19,6 +20,10 @@
     inputs.nix-index-database.homeModules.default
     inputs.spicetify-nix.homeManagerModules.default
   ];
+
+  # Standalone Home Manager needs an explicit nix package (under the NixOS
+  # module it was inherited from the system).
+  nix.package = pkgs.nix;
 
   # NixOS-specific overlays (matching chrollo home.nix)
   nixpkgs.overlays = [
