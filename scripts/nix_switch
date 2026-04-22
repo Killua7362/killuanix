@@ -149,9 +149,22 @@ do_system() {
 }
 
 case "$mode" in
-  home)   do_home ;;
-  system) do_system ;;
-  both)   do_system; do_home ;;
+  home)
+    do_home
+    ;;
+  system)
+    do_system
+    ;;
+  both)
+    # Gate home on the system switch: if nixos-rebuild (or system-manager)
+    # fails, do not touch the user profile. `set -e` would already bail, but
+    # the explicit check gives a clearer error and prevents future refactors
+    # from accidentally introducing a code path that runs do_home anyway.
+    if ! do_system; then
+      die "system switch failed — home switch skipped to avoid drift"
+    fi
+    do_home
+    ;;
 esac
 
 log "done (${mode} on ${host})"
