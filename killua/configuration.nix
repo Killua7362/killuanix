@@ -47,7 +47,10 @@
   # ── Networking ──
   networking.hostName = "killua";
   networking.networkmanager.enable = true;
-  networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
+  # Disabled: pulls in webkitgtk (long compile, can't substitute on killua because
+  # the pipewire-pin overlay changes its closure). Re-enable if SSO/SAML VPN auth
+  # is actually needed on the handheld.
+  # networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
 
   # ── Locale / Timezone ──
   time.timeZone = "Asia/Kolkata";

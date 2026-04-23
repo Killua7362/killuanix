@@ -28,6 +28,9 @@ in {
       "http \"https://dev.azure.com\"" = {
         proxy = "socks5h://127.0.0.1:1080";
       };
+      extensions = {
+        worktreeConfig = true;
+      };
     };
 
     includes = [

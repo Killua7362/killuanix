@@ -125,7 +125,9 @@ in {
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_IN";
   #networking.networkmanager.plugins = [ "openconnect" ];
-  networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
+  # Disabled: pulls in webkitgtk (long compile). Re-enable if SSO/SAML VPN auth
+  # is actually needed on the desktop.
+  # networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
 
   networking.resolvconf.dnsExtensionMechanism = false;
   i18n.extraLocaleSettings = {

@@ -143,7 +143,6 @@
         zstyle ':fzf-tab:*' switch-group '<' '>'
 
         # Functions (converted from fish)
-        # nix_switch lives in ~/killuanix/scripts/nix_switch (on PATH)
         boeingvpn() {
           openconnect \
               --protocol=gp \
