@@ -10,3 +10,10 @@ creation_rules:
           - *home-laptop
           - *master
           - *office
+  - path_regex: secrets/linkding-bookmarks\.html$
+    input_type: binary
+    key_groups:
+      - age:
+          - *home-laptop
+          - *master
+          - *office

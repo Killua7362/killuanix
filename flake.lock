@@ -1716,17 +1716,17 @@
     },
     "nixpkgs-pipewire": {
       "locked": {
-        "lastModified": 1756288264,
-        "narHash": "sha256-Om8adB1lfkU7D33VpR+/haZ2gI5r3Q+ZbIPzE5sYnwE=",
+        "lastModified": 1777108340,
+        "narHash": "sha256-o+/ldpuOaR4lW7bOhYyysI6GLGpS+IiPfLab87poMOk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ddd1826f294a0ee5fdc198ab72c8306a0ea73aa9",
+        "rev": "b9ca2db46f043c1dfcac36d8622653a430647f9f",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ddd1826f294a0ee5fdc198ab72c8306a0ea73aa9",
+        "rev": "b9ca2db46f043c1dfcac36d8622653a430647f9f",
         "type": "github"
       }
     },

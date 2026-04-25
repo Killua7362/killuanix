@@ -111,21 +111,21 @@ fi
 
 # ── Actions ───────────────────────────────────────────────────
 do_home() {
-  # Prefer the installed CLI; fall back to `nix run` so the script still works
-  # before the first standalone Home Manager activation puts `home-manager` on
-  # PATH (relevant right after splitting HM out of the NixOS module).
-  local hm_cmd
-  if command -v home-manager >/dev/null 2>&1; then
-    hm_cmd=(home-manager)
-  else
-    warn "home-manager CLI not on PATH; bootstrapping via 'nix run'"
-    hm_cmd=(nix run --extra-experimental-features 'nix-command flakes'
-            'github:nix-community/home-manager/release-25.11' --)
-  fi
-  log "home: ${hm_cmd[*]} switch --flake .#${host}"
+  # Build the activation package directly and run its `activate` script.
+  # We don't use `home-manager switch --flake .#<host>` because the CLI
+  # looks up `homeConfigurations.<host>`, but this flake exposes the
+  # configurations under `homeManagerConfigurations.<host>` (see CLAUDE.md).
+  # Going through `nix build` lets us address the full attribute path.
+  local attr="homeManagerConfigurations.${host}.activationPackage"
+  local link="$FLAKE_DIR/.hm-result"
+  log "home: nix build .#${attr} && ./activate"
   ( cd "$FLAKE_DIR" \
-    && "${user_wrap[@]}" "${hm_cmd[@]}" switch \
-       --flake ".#${host}" "${nix_flags[@]}" )
+    && "${user_wrap[@]}" nix build \
+       --extra-experimental-features 'nix-command flakes' \
+       --out-link "$link" \
+       ".#${attr}" "${nix_flags[@]}" \
+    && "${user_wrap[@]}" "$link/activate" )
+  rm -f "$link"
 }
 
 do_system() {

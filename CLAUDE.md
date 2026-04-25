@@ -34,6 +34,12 @@ darwin-rebuild switch --flake .#macnix
 nix fmt
 ```
 
+## Post-install setup
+
+The flake auto-bootstraps most services, but a few one-shot manual steps remain after a fresh NixOS install:
+
+- **Linkding** (`modules/containers/linkding.nix`) — admin user (`admin`) is auto-created from the sops-encrypted `linkding_admin_password`, and the sops-encrypted `secrets/linkding-bookmarks.html` is imported once per fresh data volume by `linkding-import.service`. Just open http://localhost:9090, log in with the password from `sops decrypt secrets/personal.yaml`, and grab an API token from Settings → Integrations for the browser extension.
+
 ## Architecture
 
 ### Flake outputs
@@ -72,7 +78,7 @@ nix fmt
   - [`terminal/CLAUDE.md`](modules/common/programs/terminal/CLAUDE.md) — Ghostty (primary under Hyprland), Kitty, Zellij
   - [`theming/CLAUDE.md`](modules/common/programs/theming/CLAUDE.md) — Shared `config.theme.palette`, GTK/libadwaita CSS, Kvantum + qt5ct/qt6ct
   - [`utils/CLAUDE.md`](modules/common/programs/utils/CLAUDE.md) — Yazi, Zathura, Nemo, mimeapps, clipboard-menu, dotfile symlinks → [`yazi/CLAUDE.md`](modules/common/programs/utils/yazi/CLAUDE.md)
-- **`modules/containers/`** — quadlet / portainer container definitions (litellm, mcphub, qdrant, searxng, portainer)
+- **`modules/containers/`** — quadlet / portainer container definitions (litellm, mcphub, qdrant, searxng, portainer, homepage, excalidraw, mermaid-live, linkding, icloud-drive)
 - **`modules/vms/`** — libvirt/qemu VM definitions and plugins (activity-sim, work-vm, vm-manager)
 - **`modules/nixos/`**, **`modules/home-manager/`** — thin module entry points re-exported via the flake's `nixosModules` / `homeManagerModules`
 

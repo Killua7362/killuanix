@@ -15,6 +15,7 @@
     ./gaming.nix
     ./wifi-fix.nix
     ./boot.nix
+    ./bluez5-ldac-pin.nix
     inputs.sops-nix.nixosModules.sops
     ../modules/common/sops-system.nix
     ../modules/containers
@@ -153,6 +154,9 @@
     enable = true;
     scheduler = "scx_lavd";
   };
+
+  # ── Flatpak ──
+  services.flatpak.enable = true;
 
   # ── Thermal / Power management ──
   services.thermald.enable = true;

@@ -10,22 +10,30 @@
 #   - the full `~/.config/ccmanager/config.json` (read-only; TUI edits
 #     under "Global Configuration" will not persist — edit this file and
 #     `home-manager switch`)
-#   - the `~/ccmanager-projects/` symlink farm used by `--multi-project`,
-#     driven by the `ccmanagerProjects` attrset below
+#   - the `~/ccmanager-projects/` farm used by `--multi-project`, built
+#     as bindfs user mounts on Linux (ccmanager skips symlinks — its
+#     scanner uses `Dirent.isDirectory()` which returns false for
+#     symbolic links) and as symlinks on macOS where bindfs isn't
+#     wired up. Driven by the `ccmanagerProjects` attrset below.
 {
   config,
   pkgs,
   lib,
   ...
 }: let
-  # Map of ccmanager project name → absolute path. Symlinks are created
-  # blindly (no `.git` probing) so bare-repo worktree layouts work — see
-  # ~/Documents/Boeing/azure/backend. Project names must be identifier-safe
-  # (they become filenames under ~/ccmanager-projects/).
+  # Map of ccmanager project name → absolute path. Each entry is exposed
+  # under ~/ccmanager-projects/<name> as a bindfs FUSE mount (Linux) so
+  # ccmanager's `Dirent.isDirectory()` scan picks it up. Project paths
+  # must point at a real git clone (`.git/` as a directory) — bare-repo
+  # + worktree layouts are excluded by ccmanager's `isMainGitRepository()`
+  # check. Names must be identifier-safe (they become filenames under
+  # the mount root).
   ccmanagerProjects = {
     killuanix = "${config.home.homeDirectory}/killuanix";
     boeing = "${config.home.homeDirectory}/Documents/Boeing/azure/backend";
   };
+
+  mountRoot = "${config.home.homeDirectory}/ccmanager-projects";
 
   ccmanagerVersion = "latest";
 
@@ -41,10 +49,15 @@
   };
 
   # `ccm` already taken by claude-monitor — use `ccmgr`.
+  # Self-sufficient: sets CCMANAGER_MULTI_PROJECT_ROOT if the session-var
+  # wasn't sourced (e.g. shell predates last home-manager switch).
   ccmgr = pkgs.writeShellApplication {
     name = "ccmgr";
     runtimeInputs = [ccmanager];
-    text = ''exec ccmanager --multi-project "$@"'';
+    text = ''
+      export CCMANAGER_MULTI_PROJECT_ROOT="''${CCMANAGER_MULTI_PROJECT_ROOT:-${mountRoot}}"
+      exec ccmanager --multi-project "$@"
+    '';
   };
 
   preCreationDedupe = pkgs.writeShellApplication {
@@ -91,69 +104,96 @@
     '';
   };
 
-  cfg =
-    {
-      autoApproval.enabled = false;
+  cfg = {
+    autoApproval.enabled = false;
 
-      command = {
-        command = "claude";
-        args = [];
-        fallbackArgs = [];
-      };
+    command = {
+      command = "claude";
+      args = [];
+      fallbackArgs = [];
+    };
 
-      worktree = {
-        autoDirectory = true;
-        autoDirectoryPattern = "../{project}-worktrees/{branch}";
-      };
+    worktree = {
+      autoDirectory = true;
+      autoDirectoryPattern = "../{project}-worktrees/{branch}";
+    };
 
-      worktreeHooks = {
-        pre_creation = {
-          enabled = true;
-          command = "ccmanager-pre-creation-dedupe";
-        };
-        post_creation = {
-          enabled = true;
-          command = "ccmanager-post-creation-copy-staged";
-        };
+    worktreeHooks = {
+      pre_creation = {
+        enabled = true;
+        command = "ccmanager-pre-creation-dedupe";
       };
-    }
-    // lib.optionalAttrs pkgs.stdenv.isLinux {
-      statusHooks = {
-        idle = {
-          enabled = true;
-          command = ''notify-send 'ccmanager' "Session idle: $CCMANAGER_WORKTREE_BRANCH"'';
-        };
-        waiting_input = {
-          enabled = true;
-          command = ''notify-send -u critical 'ccmanager' "Waiting for input: $CCMANAGER_WORKTREE_BRANCH"'';
-        };
-        busy = {
-          enabled = false;
-          command = "";
-        };
+      post_creation = {
+        enabled = true;
+        command = "ccmanager-post-creation-copy-staged";
       };
     };
+  };
 in {
-  home.packages = [
-    ccmanager
-    ccmgr
-    preCreationDedupe
-    postCreationCopyStaged
-  ];
+  home.packages =
+    [
+      ccmanager
+      ccmgr
+      preCreationDedupe
+      postCreationCopyStaged
+    ]
+    ++ lib.optional pkgs.stdenv.isLinux pkgs.bindfs;
 
-  home.sessionVariables.CCMANAGER_MULTI_PROJECT_ROOT = "${config.home.homeDirectory}/ccmanager-projects";
+  home.sessionVariables.CCMANAGER_MULTI_PROJECT_ROOT = mountRoot;
 
   xdg.configFile."ccmanager/config.json".text = builtins.toJSON cfg;
 
+  # Prepare the mount root and per-project mountpoints. Legacy symlinks
+  # from the previous layout are cleaned up; real directories (bindfs
+  # mountpoints or anything the user has dropped in) are preserved.
   home.activation.ccmanagerProjects = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    root="$HOME/ccmanager-projects"
+    root=${lib.escapeShellArg mountRoot}
     mkdir -p "$root"
-    # Only delete symlinks — leave any real files/dirs the user dropped in.
     find "$root" -mindepth 1 -maxdepth 1 -type l -delete
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (
-        name: path: ''
-          ln -sfn ${lib.escapeShellArg path} "$root/${name}"''
+        name: _: ''
+          mkdir -p "$root/${name}"''
       )
       ccmanagerProjects)}
+    ${lib.optionalString (!pkgs.stdenv.isLinux) (
+      # On non-Linux (macOS) fall back to symlinks — bindfs services
+      # aren't wired there. Kept so ccmanagerProjects still resolves.
+      lib.concatStringsSep "\n" (lib.mapAttrsToList (
+          name: path: ''
+            ln -sfn ${lib.escapeShellArg path} "$root/${name}"''
+        )
+        ccmanagerProjects)
+    )}
   '';
+
+  # One bindfs user service per project. Each performs a FUSE bind of
+  # the real repo onto ~/ccmanager-projects/<name>. `Type=simple` with
+  # `bindfs -f` means SIGTERM triggers a clean unmount on stop, and
+  # the stale-mount ExecStartPre (prefixed `-`) covers the case where a
+  # previous run exited without unmounting.
+  systemd.user.services = lib.optionalAttrs pkgs.stdenv.isLinux (
+    lib.mapAttrs' (
+      name: path:
+        lib.nameValuePair "ccmanager-bindfs-${name}" {
+          Unit = {
+            Description = "bindfs mount for ccmanager project '${name}' (${path})";
+            After = ["default.target"];
+          };
+          Service = {
+            Type = "simple";
+            ExecStartPre = [
+              "${pkgs.coreutils}/bin/mkdir -p ${mountRoot}/${name}"
+              "-${pkgs.fuse3}/bin/fusermount3 -u ${mountRoot}/${name}"
+            ];
+            # --no-allow-other: single-user mount; avoids the
+            # `/etc/fuse.conf` + `user_allow_other` requirement.
+            ExecStart = "${pkgs.bindfs}/bin/bindfs -f --no-allow-other ${path} ${mountRoot}/${name}";
+            Restart = "on-failure";
+            RestartSec = "5s";
+          };
+          Install.WantedBy = ["default.target"];
+        }
+    )
+    ccmanagerProjects
+  );
 }

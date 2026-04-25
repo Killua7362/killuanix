@@ -39,7 +39,7 @@ When the user says "index this project" or "add this codebase":
 1. Ask which directory to index (or use the current working directory)
 2. Suggest a meaningful collection name based on the project
 3. Call `mcp__code-index__index_codebase` with the path and collection name
-4. Currently supports **Java** files only (tree-sitter AST parsing)
+4. Supported file types: **`.java`** (tree-sitter AST chunks), **`.properties`** (one chunk per key, ATG `$class`/`$scope` included), **`.xml`** (one whole-file chunk). Other types are silently skipped
 
 ## Updating after code changes
 

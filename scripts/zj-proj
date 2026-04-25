@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# zj-proj — fuzzy-pick a project dir and open it in a new zellij tab.
+# Triggered from zellij (Alt+p) as a floating pane with close_on_exit=true:
+#   - cancel (Esc / empty selection) → exit 0 → floating pane closes
+#   - select → open new zellij tab cwd'd to the picked dir, script exits → floating pane closes
+
+set -euo pipefail
+
+projects=(
+    "$HOME/killuanix"
+    "$HOME/Documents/Boeing/azure/backend"
+    # "$HOME/repo/example"
+)
+
+sel=$(printf '%s\n' "${projects[@]}" \
+    | fzf --prompt='project> ' \
+          --height=100% \
+          --preview 'eza --tree --color=always --level=2 {} 2>/dev/null || ls {}')
+
+[ -z "${sel:-}" ] && exit 0
+
+zellij action new-tab --cwd "$sel" --name "$(basename "$sel")"

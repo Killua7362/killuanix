@@ -87,9 +87,10 @@ return {
 			-- Adapters are passed via extra arguments from Nix
 			-- ═══════════════════════════════════════════════════════════════════
 			if isNixCats then
-				-- Get adapter paths from nixCats extra arguments
-				-- These should be defined in your Nix configuration
-				local debugAdapters = nixCats("debugAdapters") or {}
+				-- Adapter paths are defined in packageDefinition.extra on the Nix side.
+				-- nixCats("path") resolves the `cats` (category) table, NOT `extra`,
+				-- so we read `require("nixCats").extra` directly.
+				local debugAdapters = require("nixCats").extra or {}
 
 				-- ─────────────────────────────────────────────────────────────────
 				-- Python (debugpy)

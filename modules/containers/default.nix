@@ -8,6 +8,7 @@
     ./mermaid-live.nix
     ./homepage.nix
     ./qdrant.nix
+    ./linkding.nix
   ];
 
   # ── quadlet-nix: Rootful container orchestration ──
@@ -17,6 +18,7 @@
     # ── Shared volumes ──
     volumes = {
       portainer_data.volumeConfig = {};
+      linkding_data.volumeConfig = {};
     };
 
     # ── Shared networks ──

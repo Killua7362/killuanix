@@ -10,10 +10,10 @@ if ok then
 	if is_nixcats then
 		local nixCats = require("nixCats")
 		nixcats_paths = {
-			jdtls = nixCats("extra.jdtls") or "",
-			lombok = nixCats("extra.lombok") or "",
-			java_debug_adapter = nixCats("extra.java_debug_adapter") or "",
-			java_test = nixCats("extra.java_test") or "",
+			jdtls = nixCats.extra.jdtls or "",
+			lombok = nixCats.extra.lombok or "",
+			java_debug_adapter = nixCats.extra.java_debug_adapter or "",
+			java_test = nixCats.extra.java_test or "",
 		}
 	end
 end

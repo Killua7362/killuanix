@@ -104,6 +104,102 @@ in {
         };
       };
       Preferences = {};
+      # Read-only "Managed Bookmarks" toolbar folder. This is a Firefox
+      # enterprise policy that lives in a separate store from places.sqlite
+      # and does NOT touch user-managed bookmarks.
+      ManagedBookmarks = [
+        {toplevel_name = "Managed";}
+        {
+          name = "Self-hosted";
+          children = [
+            {
+              name = "Dashboard";
+              url = "http://localhost:8880";
+            }
+            {
+              name = "Excalidraw";
+              url = "http://localhost:8899";
+            }
+            {
+              name = "Mermaid Live";
+              url = "http://localhost:8898";
+            }
+            {
+              name = "Portainer";
+              url = "https://localhost:9443";
+            }
+            {
+              name = "SearXNG";
+              url = "http://localhost:8888";
+            }
+            {
+              name = "LiteLLM";
+              url = "http://localhost:4000";
+            }
+            {
+              name = "Qdrant";
+              url = "http://localhost:6333/dashboard";
+            }
+            {
+              name = "MCP Hub";
+              url = "http://localhost:31415";
+            }
+            {
+              name = "Linkding";
+              url = "http://localhost:9090";
+            }
+          ];
+        }
+        {
+          name = "Userscripts";
+          children = [
+            {
+              name = "Bypass Paywalls Clean";
+              url = "https://greasyfork.org/scripts/438684/code/Bypass%20Paywalls%20Clean.user.js";
+            }
+            {
+              name = "AdsBypasser";
+              url = "https://greasyfork.org/scripts/9254/code/AdsBypasser.user.js";
+            }
+            {
+              name = "Old Reddit Always";
+              url = "https://greasyfork.org/scripts/407165/code/Old%20Reddit%20Always.user.js";
+            }
+            {
+              name = "Reddit Expando";
+              url = "https://greasyfork.org/scripts/19849/code/Reddit%20Expando.user.js";
+            }
+            {
+              name = "GitHub Code Folding";
+              url = "https://greasyfork.org/scripts/389615/code/Github%20Code%20Folding.user.js";
+            }
+            {
+              name = "Hide Google AI Overviews";
+              url = "https://greasyfork.org/scripts/494261/code/Hide%20Google%20AI%20Overviews.user.js";
+            }
+            {
+              name = "DuckDuckGo No AI";
+              url = "https://greasyfork.org/scripts/486324/code/DuckDuckGo%20No%20AI.user.js";
+            }
+            {
+              name = "Control Panel for Twitter";
+              url = "https://greasyfork.org/scripts/450093/code/Control%20Panel%20for%20Twitter.user.js";
+            }
+            {
+              name = "Twitter Media Downloader";
+              url = "https://greasyfork.org/scripts/36434/code/Twitter%20Media%20Downloader.user.js";
+            }
+            {
+              name = "Direct Download from Google Images";
+              url = "https://greasyfork.org/scripts/14108/code/Direct%20Download%20from%20Google%20Image%20Search.user.js";
+            }
+            {
+              name = "Anti-Adblock Killer";
+              url = "https://greasyfork.org/scripts/735/code/Anti-Adblock%20Killer.user.js";
+            }
+          ];
+        }
+      ];
       ExtensionSettings = with builtins; let
         extension = shortId: uuid: {
           name = uuid;
@@ -162,100 +258,8 @@ in {
           single-file
           stylus
           dearrow
+          linkding-extension
         ];
-
-        bookmarks = {
-          force = true;
-          settings = [
-            {
-              name = "Self-hosted";
-              toolbar = true;
-              bookmarks = [
-                {
-                  name = "Dashboard";
-                  url = "http://localhost:8880";
-                }
-                {
-                  name = "Excalidraw";
-                  url = "http://localhost:8899";
-                }
-                {
-                  name = "Mermaid Live";
-                  url = "http://localhost:8898";
-                }
-                {
-                  name = "Portainer";
-                  url = "https://localhost:9443";
-                }
-                {
-                  name = "SearXNG";
-                  url = "http://localhost:8888";
-                }
-                {
-                  name = "LiteLLM";
-                  url = "http://localhost:4000";
-                }
-                {
-                  name = "Qdrant";
-                  url = "http://localhost:6333/dashboard";
-                }
-                {
-                  name = "MCP Hub";
-                  url = "http://localhost:31415";
-                }
-              ];
-            }
-            {
-              name = "Userscripts";
-              bookmarks = [
-                {
-                  name = "Bypass Paywalls Clean";
-                  url = "https://greasyfork.org/scripts/438684/code/Bypass%20Paywalls%20Clean.user.js";
-                }
-                {
-                  name = "AdsBypasser";
-                  url = "https://greasyfork.org/scripts/9254/code/AdsBypasser.user.js";
-                }
-                {
-                  name = "Old Reddit Always";
-                  url = "https://greasyfork.org/scripts/407165/code/Old%20Reddit%20Always.user.js";
-                }
-                {
-                  name = "Reddit Expando";
-                  url = "https://greasyfork.org/scripts/19849/code/Reddit%20Expando.user.js";
-                }
-                {
-                  name = "GitHub Code Folding";
-                  url = "https://greasyfork.org/scripts/389615/code/Github%20Code%20Folding.user.js";
-                }
-                {
-                  name = "Hide Google AI Overviews";
-                  url = "https://greasyfork.org/scripts/494261/code/Hide%20Google%20AI%20Overviews.user.js";
-                }
-                {
-                  name = "DuckDuckGo No AI";
-                  url = "https://greasyfork.org/scripts/486324/code/DuckDuckGo%20No%20AI.user.js";
-                }
-                {
-                  name = "Control Panel for Twitter";
-                  url = "https://greasyfork.org/scripts/450093/code/Control%20Panel%20for%20Twitter.user.js";
-                }
-                {
-                  name = "Twitter Media Downloader";
-                  url = "https://greasyfork.org/scripts/36434/code/Twitter%20Media%20Downloader.user.js";
-                }
-                {
-                  name = "Direct Download from Google Images";
-                  url = "https://greasyfork.org/scripts/14108/code/Direct%20Download%20from%20Google%20Image%20Search.user.js";
-                }
-                {
-                  name = "Anti-Adblock Killer";
-                  url = "https://greasyfork.org/scripts/735/code/Anti-Adblock%20Killer.user.js";
-                }
-              ];
-            }
-          ];
-        };
 
         search = {
           force = true;

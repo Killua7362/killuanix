@@ -15,6 +15,15 @@
       mistral_api_key = {};
       mistral_codestral_api_key = {};
       icloud_email = {};
+      # Linkding admin user password — consumed by linkding-init.service
+      # via DJANGO_SUPERUSER_PASSWORD on first boot.
+      linkding_admin_password = {};
+      # Encrypted Netscape-format bookmark export, imported once into
+      # Linkding by linkding-init.service. Binary-mode sops file.
+      linkding_bookmarks_html = {
+        sopsFile = ../../secrets/linkding-bookmarks.html;
+        format = "binary";
+      };
     };
   };
 }

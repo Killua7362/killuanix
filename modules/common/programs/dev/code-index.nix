@@ -17,8 +17,9 @@ in {
   programs.claude-code.mcpServers.code-index = {
     command = "${code-index-mcp}/bin/code-index-mcp";
     env = {
-      QDRANT_URL_FILE = config.sops.secrets."qdrant_cluster_endpoint".path;
-      QDRANT_API_KEY_FILE = config.sops.secrets."qdrant_api_key".path;
+      # Point at the local Qdrant quadlet container from modules/containers/qdrant.nix.
+      # No api-key needed — the local instance runs without auth.
+      QDRANT_URL = "http://127.0.0.1:6333";
       NVIDIA_API_KEY_FILE = config.sops.secrets."nvidia_api_key".path;
     };
   };

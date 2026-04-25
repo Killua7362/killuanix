@@ -23,13 +23,22 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-    # Pre-1.6 pipewire pin for the killua (MSI Claw) host. PipeWire 1.6.2
-    # (on current nixpkgs-unstable) fails LDAC codec init at runtime on the
-    # Intel Lunar Lake BT controller ("LDAC decoder initialization failed:
-    # LDACBT_ERR_FATAL"), collapsing A2DP to SBC. Rev below (2025-08-27)
-    # ships pipewire 1.4.x where LDAC negotiates cleanly. See
-    # overlays/pipewire-pin.nix — applied only to nixosConfigurations.killua.
-    nixpkgs-pipewire.url = "github:NixOS/nixpkgs/ddd1826f294a0ee5fdc198ab72c8306a0ea73aa9";
+    # Pipewire 1.6.3 source for the killua (MSI Claw) host. The 1.6.2 build
+    # in current nixpkgs has two unrelated bluez5 bugs that hit on Intel
+    # Lunar Lake / CMF Buds Pro 2:
+    #   - libldac-dec init bug → "LDAC decoder initialization failed:
+    #     LDACBT_ERR_FATAL (268981248)"
+    #   - SIGSEGV in libspa-bluez5.so spa_bt_device_supports_media_codec()
+    #     when switching codecs (regcomp via do_match → get_features).
+    # Both are fixed in 1.6.3. Specifically, upstream commit 99f901d
+    # ("bluez5: fix spa_bt_device_supports_media_codec() for HFP codecs")
+    # addresses the SEGV, and 1.6.3's LDAC codec dropped the libldac-dec
+    # decoder dependency entirely so the libldac-dec bug no longer reaches
+    # us. Used by killua/bluez5-ldac-pin.nix to swap only the bluez5/
+    # subdir of pipewire's SPA plugin tree at runtime via SPA_PLUGIN_DIR;
+    # pkgs.pipewire stays vanilla so downstream consumers (ffmpeg, gtk4,
+    # electron, …) keep substituting from cache.
+    nixpkgs-pipewire.url = "github:NixOS/nixpkgs/b9ca2db46f043c1dfcac36d8622653a430647f9f";
 
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
@@ -276,9 +285,6 @@
         }: {
           nixpkgs.overlays = [
             inputs.nix-cachyos-kernel.overlays.pinned
-            # Pin pipewire to pre-1.6 rev — works around LDAC init failure
-            # on the Lunar Lake BT controller. See overlays/pipewire-pin.nix.
-            inputs.self.customOverlays.pipewire-pin
           ];
         })
       ];

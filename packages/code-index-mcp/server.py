@@ -64,6 +64,8 @@ JAVA_CHUNK_TYPES = frozenset(
 # File extensions per language (extensible for future grammars)
 LANGUAGE_EXTENSIONS = {
     "java": {".java"},
+    "properties": {".properties"},
+    "xml": {".xml"},
 }
 
 
@@ -141,6 +143,84 @@ def parse_java_file(file_path: Path) -> list[CodeChunk]:
 
     visit(tree.root_node)
     return chunks
+
+
+def _extract_properties_key(line: str) -> str:
+    """Extract the key from a .properties line, handling backslash escapes."""
+    buf: list[str] = []
+    i = 0
+    while i < len(line):
+        ch = line[i]
+        if ch == "\\" and i + 1 < len(line):
+            buf.append(line[i + 1])
+            i += 2
+            continue
+        if ch in ("=", ":") or ch.isspace():
+            break
+        buf.append(ch)
+        i += 1
+    return "".join(buf) or "<anonymous>"
+
+
+def parse_properties_file(file_path: Path) -> list[CodeChunk]:
+    """Parse a .properties file into one chunk per key. Handles comments (# / !)
+    and backslash line continuations."""
+    source_bytes = file_path.read_bytes()
+    file_hash = hashlib.sha256(source_bytes).hexdigest()
+    text = source_bytes.decode("utf-8", errors="replace")
+    lines = text.splitlines()
+
+    chunks: list[CodeChunk] = []
+    i = 0
+    while i < len(lines):
+        raw = lines[i]
+        stripped = raw.lstrip()
+        if not stripped or stripped.startswith("#") or stripped.startswith("!"):
+            i += 1
+            continue
+
+        start_line = i + 1
+        buf = raw
+        while buf.rstrip().endswith("\\") and i + 1 < len(lines):
+            i += 1
+            buf = buf.rstrip()[:-1] + "\n" + lines[i]
+        end_line = i + 1
+
+        key = _extract_properties_key(stripped)
+        chunks.append(
+            CodeChunk(
+                file_path=str(file_path),
+                language="properties",
+                node_type="property",
+                name=key,
+                start_line=start_line,
+                end_line=end_line,
+                text=buf,
+                file_hash=file_hash,
+            )
+        )
+        i += 1
+    return chunks
+
+
+def parse_xml_file(file_path: Path) -> list[CodeChunk]:
+    """Parse an XML file as a single whole-file chunk."""
+    source_bytes = file_path.read_bytes()
+    file_hash = hashlib.sha256(source_bytes).hexdigest()
+    text = source_bytes.decode("utf-8", errors="replace")
+    line_count = text.count("\n") + 1
+    return [
+        CodeChunk(
+            file_path=str(file_path),
+            language="xml",
+            node_type="file",
+            name=file_path.stem,
+            start_line=1,
+            end_line=line_count,
+            text=text,
+            file_hash=file_hash,
+        )
+    ]
 
 
 def collect_files(directory: Path, extensions: set[str]) -> list[Path]:
@@ -322,7 +402,14 @@ def _do_index(
             break
 
         try:
-            if file_path.suffix not in LANGUAGE_EXTENSIONS["java"]:
+            suffix = file_path.suffix
+            if suffix in LANGUAGE_EXTENSIONS["java"]:
+                parser_fn = parse_java_file
+            elif suffix in LANGUAGE_EXTENSIONS["properties"]:
+                parser_fn = parse_properties_file
+            elif suffix in LANGUAGE_EXTENSIONS["xml"]:
+                parser_fn = parse_xml_file
+            else:
                 continue
 
             # Skip unchanged files if we have existing hashes
@@ -333,7 +420,7 @@ def _do_index(
                     skipped += 1
                     continue
 
-            chunks = parse_java_file(file_path)
+            chunks = parser_fn(file_path)
             pending_chunks.extend(chunks)
             total_files += 1
 
@@ -530,7 +617,7 @@ def search_code(query: str, collection: str = "default", limit: int = 10) -> str
             + (f" (in {p['parent_name']})" if p.get("parent_name") else "")
             + f"\n**File:** {p['file_path']}:{p['start_line']}-{p['end_line']}"
             + f" | **Score:** {point.score:.4f}"
-            + f"\n```java\n{p['text']}\n```\n"
+            + f"\n```{p.get('language', '')}\n{p['text']}\n```\n"
         )
 
     return "\n".join(output_parts)
@@ -575,7 +662,7 @@ def search_by_symbol(
             f"## {p['node_type']}: {p['name']}"
             + (f" (in {p['parent_name']})" if p.get("parent_name") else "")
             + f"\n**File:** {p['file_path']}:{p['start_line']}-{p['end_line']}"
-            + f"\n```java\n{p['text']}\n```\n"
+            + f"\n```{p.get('language', '')}\n{p['text']}\n```\n"
         )
 
     return "\n".join(output_parts)

@@ -16,13 +16,16 @@ A custom `chrome.manifest` wires natsumi's scripts, CSS, and icons into the fx-a
 Extensions are installed through two mechanisms:
 
 - **`policies.ExtensionSettings`** -- force-installed via Mozilla enterprise policy: Tree Style Tab, uBlock Origin, Bitwarden, Tabliss, uMatrix, LibreRedirect, ClearURLs
-- **`extensions.packages`** (NUR) -- installed into the default profile. Privacy/QoL: uBlock Origin, SponsorBlock, ClearURLs, Old Reddit Redirect, YouTube Redux, Return YouTube Dislikes, Reddit Enhancement Suite, Dark Reader, FastForward, Violentmonkey, Web Clipper Obsidian. Power-user additions: Multi-Account Containers, Temporary Containers, CanvasBlocker, Consent-O-Matic, LibRedirect, Header Editor, User-Agent String Switcher, Hoppscotch, Refined GitHub, SingleFile, Stylus, DeArrow
+- **`extensions.packages`** (NUR) -- installed into the default profile. Privacy/QoL: uBlock Origin, SponsorBlock, ClearURLs, Old Reddit Redirect, YouTube Redux, Return YouTube Dislikes, Reddit Enhancement Suite, Dark Reader, FastForward, Violentmonkey, Web Clipper Obsidian. Power-user additions: Multi-Account Containers, Temporary Containers, CanvasBlocker, Consent-O-Matic, LibRedirect, Header Editor, User-Agent String Switcher, Hoppscotch, Refined GitHub, SingleFile, Stylus, DeArrow, Linkding Extension (paired with the linkding container at http://localhost:9090 -- needs an API token from Settings → Integrations on first run)
 
-## Userscript Bookmark Folder
+## Bookmarks
 
-A "Userscripts" folder is seeded into the bookmarks via `profiles.default.bookmarks` (declarative, `force = true`). Each entry links directly to a `*.user.js` URL on greasyfork.org -- Violentmonkey auto-prompts to install on click. This is the realistic declarative path because Violentmonkey stores installed scripts in browser IndexedDB, which cannot be materialized from the Nix store.
+**User bookmarks are NOT managed declaratively.** The HM `profiles.<name>.bookmarks` option with `force = true` overwrites `places.sqlite` on every switch and wipes user-added bookmarks -- never use it.
 
-Curated set covers: paywall bypass, link-shortener bypass, Reddit tweaks, GitHub UX, Google/DDG AI-answer removal, Twitter/X cleanup, image-search direct download, anti-adblock-killer. If any URL 404s after a Greasyfork slug update, strip to `/scripts/<id>` and Greasyfork will redirect; update the pin afterwards.
+Shared/declarative entries go through `policies.ManagedBookmarks` instead. This is a Firefox enterprise policy that produces a read-only **Managed Bookmarks** toolbar folder backed by a separate store from `places.sqlite`, so it does not touch user-managed bookmarks. Currently seeded with two subfolders:
+
+- **Self-hosted** -- toolbar shortcuts to local container UIs (Dashboard, Portainer, SearXNG, LiteLLM, Qdrant, MCP Hub, Excalidraw, Mermaid Live)
+- **Userscripts** -- direct links to `*.user.js` URLs on greasyfork.org; Violentmonkey auto-prompts to install on click. Violentmonkey stores installed scripts in IndexedDB which cannot be materialized from the Nix store, so this curated link list is the realistic declarative path. If a URL 404s after a Greasyfork slug update, strip to `/scripts/<id>` and Greasyfork will redirect; update the pin afterwards.
 
 ## uBlock Origin Policy
 

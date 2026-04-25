@@ -168,5 +168,18 @@ in {
     skills = allSkills;
 
     mcpServers = lib.mapAttrs mkClaudeServer registry;
+
+    # ~/.claude/settings.json contents. `bypassPermissions` is the default
+    # mode so new project folders (including ccmanager bindfs mounts) are
+    # trusted without a prompt — flip via `/permissions` per-session when
+    # you want stricter behavior. `skip*PermissionPrompt` suppress the
+    # first-run opt-in dialogs for auto and bypass modes.
+    settings = {
+      effortLevel = "high";
+      skipAutoPermissionPrompt = true;
+      skipDangerousModePermissionPrompt = true;
+      permissions.defaultMode = "bypassPermissions";
+      enabledPlugins."frontend-design@claude-plugins-official" = true;
+    };
   };
 }
