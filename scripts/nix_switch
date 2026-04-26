@@ -11,9 +11,10 @@
 #   nix_switch --host chrollo both     pick the flake host explicitly
 #   nix_switch --limit both            throttle the build (see below)
 #
-# Hosts: chrollo, killua, archnix.
+# Hosts: chrollo, killua, archnix, macnix.
 #   Autodetected when --host is omitted:
 #     * NixOS       -> /etc/hostname (must be chrollo or killua)
+#     * macOS       -> macnix (uname -s = Darwin)
 #     * Arch Linux  -> archnix (/etc/arch-release present)
 #
 # --limit applies:
@@ -72,17 +73,19 @@ if [ -z "$host" ]; then
       chrollo|killua) ;;
       *) die "NixOS hostname '$host' doesn't map to a flake output; pass --host explicitly" ;;
     esac
+  elif [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+    host="macnix"
   elif [ -e /etc/arch-release ]; then
     host="archnix"
   else
-    die "could not autodetect host; pass --host chrollo|killua|archnix"
+    die "could not autodetect host; pass --host chrollo|killua|archnix|macnix"
   fi
   log "autodetected host: $host"
 fi
 
 case "$host" in
-  chrollo|killua|archnix) ;;
-  *) die "unsupported host: $host (expected chrollo|killua|archnix)" ;;
+  chrollo|killua|archnix|macnix) ;;
+  *) die "unsupported host: $host (expected chrollo|killua|archnix|macnix)" ;;
 esac
 
 # ── Build command wrappers for --limit ─────────────────────────
@@ -92,7 +95,12 @@ sys_wrap=()
 
 if $limit; then
   nix_flags=(--max-jobs 2 --cores 2)
-  sys_wrap=(nice -n 19 ionice -c 3)
+  # ionice doesn't exist on macOS — fall back to nice-only there.
+  if command -v ionice >/dev/null 2>&1; then
+    sys_wrap=(nice -n 19 ionice -c 3)
+  else
+    sys_wrap=(nice -n 19)
+  fi
   if command -v systemd-run >/dev/null 2>&1; then
     user_wrap=(
       systemd-run --user --scope --quiet --collect
@@ -104,9 +112,9 @@ if $limit; then
     )
   else
     warn "systemd-run not available; falling back to nice+ionice only for user commands"
-    user_wrap=(nice -n 19 ionice -c 3)
+    user_wrap=("${sys_wrap[@]}")
   fi
-  log "limits: cpu=200% mem=4G max-jobs=2 cores=2 nice=19 ionice=3"
+  log "limits: cpu=200% mem=4G max-jobs=2 cores=2 nice=19 ionice=$(command -v ionice >/dev/null 2>&1 && echo 3 || echo n/a)"
 fi
 
 # ── Actions ───────────────────────────────────────────────────
@@ -144,6 +152,14 @@ do_system() {
            --extra-experimental-features 'nix-command flakes' \
            'github:numtide/system-manager' -- \
            switch --flake '.#default' )
+      ;;
+    macnix)
+      # darwin-rebuild handles its own privilege escalation (sudo for
+      # /etc/synthetic.conf etc.) — don't wrap with sudo here.
+      log "system: darwin-rebuild switch --flake .#${host}"
+      ( cd "$FLAKE_DIR" \
+        && "${sys_wrap[@]}" darwin-rebuild switch \
+           --flake ".#${host}" "${nix_flags[@]}" )
       ;;
   esac
 }

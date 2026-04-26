@@ -291,15 +291,15 @@
     };
 
     darwinConfigurations = rec {
+      # System-only darwin module. Home Manager is no longer wired in here
+      # — see homeManagerConfigurations.macnix below for the user-side
+      # config (apply with `home-manager switch --flake .#macnix` or via
+      # scripts/nix_switch).
       macnix = darwinSystem {
         system = "aarch64-darwin";
+        specialArgs = {inherit inputs;};
         modules = [
-          homemanager.darwinModules.home-manager
-          ./macnix/packages/nix-index.nix
-          ./macnix/settings.nix
-          ./macnix/brew.nix
-          ./macnix/packages
-          ./macnix
+          ./macnix/configuration.nix
         ];
       };
     };
@@ -345,6 +345,18 @@
         extraSpecialArgs = {inherit inputs;};
         modules = [
           ./killua/home.nix
+        ];
+      };
+
+      # Standalone Home Manager for the macnix darwin host.
+      # Apply with: home-manager switch --flake .#macnix
+      # (or `nix build .#homeManagerConfigurations.macnix.activationPackage`
+      # then `./result/activate`, which is what scripts/nix_switch does.)
+      macnix = home-manager.lib.homeManagerConfiguration {
+        pkgs = inputs.nixpkgs.legacyPackages.aarch64-darwin;
+        extraSpecialArgs = {inherit inputs;};
+        modules = [
+          ./macnix/home-manager/home.nix
         ];
       };
     };

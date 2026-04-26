@@ -56,33 +56,84 @@
 
   system.keyboard = {
     enableKeyMapping = true;
+    # Swap physical left-Cmd and left-Alt at the OS level. This is what
+    # makes the AeroSpace `alt-…` bindings (services.nix) trigger from the
+    # physical left-Cmd key — i.e. the Linux-style "Super on the left of
+    # space" hand position. If you flip this off, also rewrite AeroSpace
+    # bindings to `cmd-…`.
     swapLeftCommandAndLeftAlt = true;
   };
+
   system.defaults = {
-    NSGlobalDomain.NSAutomaticWindowAnimationsEnabled = true;
-    dock = {
-      expose-animation-duration = 0.0;
-    };
+    # Application Layer Firewall — block incoming, allow signed apps.
     alf = {
       globalstate = 1;
       allowsignedenabled = 1;
       allowdownloadsignedenabled = 1;
       stealthenabled = 1;
     };
-    NSGlobalDomain = {
-      /*
-       NSWindowResizeTime = "0.001";
-      NSScrollAnimationEnabled = false;
-      */
-      AppleKeyboardUIMode = 3;
-      /*
-      _HIHideMenuBar = false;
-      */
-      /*
-       InitialKeyRepeat = 15;
-      KeyRepeat = 2;
-      */
+
+    dock = {
+      autohide = true;
+      autohide-delay = 0.0;
+      autohide-time-modifier = 0.4;
+      expose-animation-duration = 0.0;
+      show-recents = false;
+      mineffect = "scale";
+      minimize-to-application = true;
+      magnification = false;
+      tilesize = 48;
+      persistent-apps = []; # populate later
+      persistent-others = [];
+      # Hot corners: 1 = no-op (disabled).
+      wvous-tl-corner = 1;
+      wvous-tr-corner = 1;
+      wvous-bl-corner = 1;
+      wvous-br-corner = 1;
     };
+
+    finder = {
+      AppleShowAllExtensions = true;
+      AppleShowAllFiles = false;
+      ShowPathbar = true;
+      ShowStatusBar = true;
+      FXDefaultSearchScope = "SCcf"; # search current folder
+      FXEnableExtensionChangeWarning = false;
+      _FXShowPosixPathInTitle = true;
+      QuitMenuItem = true;
+    };
+
+    trackpad = {
+      Clicking = true;
+      TrackpadThreeFingerDrag = true;
+      TrackpadRightClick = true;
+    };
+
+    screencapture = {
+      location = "~/Desktop/Screenshots";
+      type = "png";
+      disable-shadow = true;
+    };
+
+    NSGlobalDomain = {
+      AppleKeyboardUIMode = 3;
+      AppleInterfaceStyle = "Dark";
+      AppleShowScrollBars = "Always";
+      NSAutomaticWindowAnimationsEnabled = true;
+      NSAutomaticSpellingCorrectionEnabled = false;
+      NSAutomaticCapitalizationEnabled = false;
+      NSAutomaticDashSubstitutionEnabled = false;
+      NSAutomaticQuoteSubstitutionEnabled = false;
+      NSAutomaticPeriodSubstitutionEnabled = false;
+      KeyRepeat = 2;
+      InitialKeyRepeat = 15;
+      ApplePressAndHoldEnabled = false;
+      "com.apple.keyboard.fnState" = false;
+      "com.apple.swipescrolldirection" = true;
+      "com.apple.trackpad.scaling" = 1.5;
+    };
+
+    hitoolbox.AppleFnUsageType = "Do Nothing";
   };
 
   # Used for backwards compatibility, please read the changelog before changing.

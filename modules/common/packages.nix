@@ -110,11 +110,57 @@
       trackma
     ];
 
-  # Mac-specific packages
+  # Mac-specific packages.
+  #
+  # These are the darwin counterparts to desktopPackages/devPackages — every
+  # entry here is something that builds for aarch64-darwin via nixpkgs.
+  # Anything strictly Linux-only (Wayland tools, GTK theming, NetworkManager,
+  # gnome-keyring, X11 utilities, etc.) is dropped because macOS ships
+  # native equivalents (Keychain, Preview, System Settings, AppleScript).
+  # Anything that's only available as a GUI cask on Mac (postman,
+  # qbittorrent, vscodium, google-chrome, IINA, …) is in
+  # macnix/brew.nix → homebrew.casks instead.
   macPackages = pkgs:
     with pkgs; [
+      # already-mac-specific
       skim
       antigen
       cht-sh
+
+      # CLI media / image / format tools (used to be brew-only)
+      mpv
+      ffmpeg
+      imagemagick
+      yt-dlp # replaces brew "youtube-dl"
+
+      # Shell / terminal niceties
+      gnused # GNU sed alongside macOS BSD sed
+      thefuck
+      ranger
+      noti
+      trash-cli # replaces brew "trash"
+      uutils-coreutils
+
+      # Languages / package managers that build cleanly on darwin
+      bun
+      pnpm
+      maven
+      php
+
+      # Dev tooling
+      tree-sitter
+      prettier
+      pyright
+      jupyter
+
+      # Misc
+      mas # Mac App Store CLI (also kept via brew for redundancy)
+      scrcpy
+      geckodriver
+
+      # Fonts (NixOS uses fonts.packages on the system; on darwin Home Manager
+      # writes them under ~/Library/Fonts via fonts.fontconfig)
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.fira-code
     ];
 }

@@ -9,7 +9,7 @@ Personal Nix flake configuration managing multiple target platforms from a singl
 - **NixOS desktop** (`nixosConfigurations.chrollo` + standalone `homeManagerConfigurations.chrollo`) — system and Home Manager are **separate switches** (NixOS module integration was removed; run `nixos-rebuild` and `home-manager` independently)
 - **NixOS handheld** (`nixosConfigurations.killua` + standalone `homeManagerConfigurations.killua`) — MSI Claw / handheld variant on Jovian-NixOS + CachyOS kernel; same split system/HM setup as chrollo
 - **Arch Linux** (`homeManagerConfigurations.archnix`) — standalone Home Manager on Arch, uses `nixGL` for GPU wrapping and `aconfmgr` for native package tracking
-- **macOS** (`darwinConfigurations.macnix`) — nix-darwin with Home Manager wired in via the Darwin module (unified switch)
+- **macOS** (`darwinConfigurations.macnix` + standalone `homeManagerConfigurations.macnix`) — nix-darwin for the system layer (AeroSpace + Karabiner-Elements as declarative services, Homebrew via `nix-darwin.homebrew`); same split system/HM setup as the NixOS hosts
 
 ## Build / Apply Commands
 
@@ -27,8 +27,14 @@ nix build '.#homeManagerConfigurations.archnix.activationPackage' && ./result/ac
 # or, if home-manager CLI is available:
 home-manager switch --flake '.#archnix'
 
-# macOS
+# macOS — system and home are separate switches
 darwin-rebuild switch --flake .#macnix
+home-manager switch --flake .#macnix
+
+# Or, on any host, use the helper script (autodetects host):
+scripts/nix_switch home              # home only (default)
+scripts/nix_switch system            # system only
+scripts/nix_switch both              # system, then home
 
 # Format all nix files (alejandra)
 nix fmt
@@ -36,9 +42,17 @@ nix fmt
 
 ## Post-install setup
 
-The flake auto-bootstraps most services, but a few one-shot manual steps remain after a fresh NixOS install:
+The flake auto-bootstraps most services, but a few one-shot manual steps remain after a fresh install:
 
-- **Linkding** (`modules/containers/linkding.nix`) — admin user (`admin`) is auto-created from the sops-encrypted `linkding_admin_password`, and the sops-encrypted `secrets/linkding-bookmarks.html` is imported once per fresh data volume by `linkding-import.service`. Just open http://localhost:9090, log in with the password from `sops decrypt secrets/personal.yaml`, and grab an API token from Settings → Integrations for the browser extension.
+- **Linkding** (`modules/containers/linkding.nix`, NixOS only) — admin user (`admin`) is auto-created from the sops-encrypted `linkding_admin_password`, and the sops-encrypted `secrets/linkding-bookmarks.html` is imported once per fresh data volume by `linkding-import.service`. Just open http://localhost:9090, log in with the password from `sops decrypt secrets/personal.yaml`, and grab an API token from Settings → Integrations for the browser extension.
+- **Homebrew on macnix** — `brew.nix` no longer auto-fetches the Homebrew installer. On a fresh mac, install Homebrew once manually:
+  ```sh
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ```
+  After that the `homebrew = { … };` block in `macnix/brew.nix` keeps the Brewfile in sync on every `darwin-rebuild`.
+- **Karabiner-Elements on macnix** — `~/.config/karabiner/karabiner.json` is owned by Home Manager (built from a Nix attrset in `macnix/home-manager/karabiner.nix`). If Karabiner-Elements has already created its own config, move it aside before the first `home-manager switch` so Home Manager can write the symlink: `mv ~/.config/karabiner ~/.config/karabiner.bak`. Then grant Karabiner-Elements **Input Monitoring** + **Accessibility** in System Settings → Privacy & Security on first launch (these can't be granted declaratively).
+- **AeroSpace on macnix** — first launch will prompt for an Accessibility grant in System Settings → Privacy & Security; AeroSpace can't tile windows without it.
+- **Mac App Store apps** — `homebrew.masApps` in `macnix/brew.nix` is a stub. Populate from existing installs by running `mas list` and copying the `<id> <name>` pairs into the attrset (key = name, value = id).
 
 ## Architecture
 
@@ -51,14 +65,15 @@ The flake auto-bootstraps most services, but a few one-shot manual steps remain 
 | `homeManagerConfigurations.chrollo` | `chrollo/home-manager/home.nix` | Standalone HM for the chrollo host |
 | `homeManagerConfigurations.killua` | `killua/home.nix` | Standalone HM for the killua host |
 | `homeManagerConfigurations.archnix` | `archnix/home.nix` | Standalone HM for Arch Linux |
-| `darwinConfigurations.macnix` | `macnix/default.nix` | nix-darwin system + HM |
+| `darwinConfigurations.macnix` | `macnix/configuration.nix` | nix-darwin system config (system-only; HM lives in `homeManagerConfigurations.macnix`) |
+| `homeManagerConfigurations.macnix` | `macnix/home-manager/home.nix` | Standalone HM for the macnix host |
 | `systemConfigs.default` | `archnix/system-manager.nix` | `system-manager` config for Arch (container registry, podman, lingering) |
 
 ### Module layers
 
 - **`modules/common/`** — pure data and Home Manager modules shared by all platforms
   - `user.nix` — canonical user config (username, email, SSH keys, session vars) referenced as `inputs.self.commonModules.user.userConfig`
-  - `packages.nix` — package sets (`commonPackages`, `terminalPackages`, `desktopPackages`, `devPackages`, `macPackages`) consumed by `cross-platform/default.nix`
+  - `packages.nix` — package sets (`commonPackages`, `terminalPackages`, `desktopPackages`, `devPackages`, `macPackages`) consumed by `cross-platform/default.nix`. `desktopPackages` is Linux-only (Wayland tools, GTK theming, NetworkManager); the macOS counterpart is `macPackages` (CLI/headless equivalents that build for aarch64-darwin) plus `homebrew.casks` in `macnix/brew.nix` (GUI apps).
   - `programs.nix` — imports all per-program HM modules (kitty, git, hyprland, neovim, firefox, etc.)
   - `mcp-servers.nix` — declarative MCP server catalog (shared by Claude / OpenCode configs via `mcp-servers-nix`)
   - `sops.nix` / `sops-system.nix` — sops-nix secret declarations (HM and NixOS-system scopes)
@@ -87,7 +102,7 @@ The flake auto-bootstraps most services, but a few one-shot manual steps remain 
 - `chrollo/` — desktop NixOS system config + hardware config; `chrollo/home-manager/home.nix` adds NixOS-only HM modules and packages
 - `killua/` — MSI Claw / handheld NixOS config (boot, gaming, hhd, intel-gpu, wifi-fix, handheld-tweaks) with its own `home.nix`
 - `archnix/` — Arch-specific HM config; wraps Hyprland and Zed with `nixGL`; includes `aconfmgr/` submodule for Arch package tracking, plus `packages/` and `users/` subdirs
-- `macnix/` — Darwin system settings, Homebrew casks (`brew.nix`), macOS-specific packages
+- `macnix/` — Darwin system entry (`configuration.nix`); split into `settings.nix` (system.defaults, keyboard, nix), `brew.nix` (Homebrew taps/casks/extraConfig + masApps stub), `services.nix` (services.aerospace + services.karabiner-elements), `packages/`, and standalone `home-manager/` (HM root + Karabiner JSON declared from a Nix attrset)
 - `overlays/`, `packages/` — custom nixpkgs overlays and standalone derivations consumed via `self.customOverlays` / direct imports
 - `scripts/`, `sdethings/`, `Notes/` — ad-hoc scripts and notes
 
