@@ -124,10 +124,9 @@ in {
   };
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_IN";
-  #networking.networkmanager.plugins = [ "openconnect" ];
-  # Disabled: pulls in webkitgtk (long compile). Re-enable if SSO/SAML VPN auth
-  # is actually needed on the desktop.
-  # networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
+  # Re-enabled for boeingvpn (zsh function uses openconnect --protocol=gp).
+  # Pulls in webkitgtk (long compile).
+  networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
 
   networking.resolvconf.dnsExtensionMechanism = false;
   i18n.extraLocaleSettings = {

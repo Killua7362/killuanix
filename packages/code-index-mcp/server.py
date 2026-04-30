@@ -17,9 +17,15 @@ from qdrant_client.models import (
     Distance,
     FieldCondition,
     Filter,
+    HnswConfigDiff,
     MatchValue,
+    OptimizersConfigDiff,
     PointStruct,
+    ScalarQuantization,
+    ScalarQuantizationConfig,
+    ScalarType,
     VectorParams,
+    VectorParamsDiff,
 )
 from mcp.server.fastmcp import FastMCP
 
@@ -278,12 +284,33 @@ def get_qdrant() -> QdrantClient:
     return QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY or None)
 
 
+# Memory-efficient defaults for collections created by this indexer:
+#   - vectors.on_disk=True       → raw vectors are mmap'd, kernel manages cache
+#   - hnsw_config.on_disk=True   → HNSW graph spilled to disk
+#   - int8 scalar quantization   → ~4x smaller hot working set;
+#                                  always_ram=True keeps the quantized copy
+#                                  resident so search stays fast
+#   - memmap_threshold=20000     → segments above this point count are mmap'd
+_MEMMAP_THRESHOLD = 20000
+
+_QUANTIZATION_CONFIG = ScalarQuantization(
+    scalar=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=True),
+)
+
+
 def ensure_collection(client: QdrantClient, name: str) -> None:
     collections = [c.name for c in client.get_collections().collections]
     if name not in collections:
         client.create_collection(
             collection_name=name,
-            vectors_config=VectorParams(size=EMBEDDING_DIM, distance=Distance.COSINE),
+            vectors_config=VectorParams(
+                size=EMBEDDING_DIM,
+                distance=Distance.COSINE,
+                on_disk=True,
+            ),
+            hnsw_config=HnswConfigDiff(on_disk=True),
+            quantization_config=_QUANTIZATION_CONFIG,
+            optimizers_config=OptimizersConfigDiff(memmap_threshold=_MEMMAP_THRESHOLD),
         )
         logger.info(f"Created collection: {name}")
 
@@ -722,6 +749,35 @@ def list_collections() -> str:
         parts.append(f"- **{c.name}**")
 
     return "## Collections\n" + "\n".join(parts)
+
+
+@mcp.tool()
+def optimize_collection(collection: str = "default") -> str:
+    """Apply memory-efficient settings to an existing Qdrant collection without
+    re-indexing: move vectors and the HNSW graph to disk (kernel-managed mmap),
+    enable int8 scalar quantization with the quantized copy pinned in RAM, and
+    lower memmap_threshold so segments are spilled to disk on the next merge.
+
+    Args:
+        collection: Collection name to optimize (default: "default").
+    """
+    client = get_qdrant()
+    try:
+        client.update_collection(
+            collection_name=collection,
+            vectors_config={"": VectorParamsDiff(on_disk=True)},
+            hnsw_config=HnswConfigDiff(on_disk=True),
+            quantization_config=_QUANTIZATION_CONFIG,
+            optimizers_config=OptimizersConfigDiff(memmap_threshold=_MEMMAP_THRESHOLD),
+        )
+    except Exception as e:
+        return f"Error updating collection '{collection}': {e}"
+
+    return (
+        f"Applied memory-efficient settings to '{collection}'. "
+        "Existing in-RAM segments will be rewritten on the next optimizer "
+        "merge — RSS will drop gradually, not instantly."
+    )
 
 
 @mcp.tool()

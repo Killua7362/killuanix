@@ -40,6 +40,7 @@
         inherit (pkgs) lib;
         inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;
       })
+      inputs.ghgrab.packages.${pkgs.stdenv.hostPlatform.system}.default
     ];
 
   # Terminal and shell packages

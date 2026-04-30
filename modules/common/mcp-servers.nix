@@ -33,11 +33,27 @@
 #                        Nix-level version pin — npm caches under $XDG_CACHE_HOME.
 #    runtime           - "npx-direct" (informational; also excludes these from
 #                        the LiteLLM pre-warm list).
+#    args              - default CLI args (optional). Forwarded by Claude Code
+#                        to the wrapper script, which passes them through "$@"
+#                        to `npx --yes <package>`. Use this when the npm binary
+#                        needs a subcommand (e.g. `ruflo mcp start`) rather
+#                        than starting an MCP server on bare invocation.
 #    env               - environment variables (optional). Nix-path-dependent
 #                        values (e.g. chromium path for puppeteer) must be
 #                        declared in the `mcpEnvOverrides` attrset in
 #                        modules/common/programs/dev/claude.nix, not here, since
 #                        this file has no `pkgs` in scope.
+#
+# 4) uvx-direct entry (for Python/PyPI servers not yet in the natsukium catalog):
+#    uvxDirect.package - PyPI package name, resolved lazily on first call via
+#                        `uvx <package>`. uv caches resolved envs under
+#                        $UV_CACHE_DIR. Mirrors npx-direct but for Python.
+#    runtime           - "uvx-direct" (informational; excluded from LiteLLM
+#                        pre-warm list).
+#    args              - default CLI args (optional). Forwarded as "$@" to
+#                        `uvx <package>`. Use when the package's MCP entrypoint
+#                        needs a subcommand (e.g. `basic-memory mcp`).
+#    env               - environment variables (optional).
 {
   filesystem = {
     mcpServerNix = "mcp-server-filesystem";
@@ -103,5 +119,48 @@
   mermaid = {
     npxDirect.package = "@peng-shawn/mermaid-mcp-server";
     runtime = "npx-direct";
+  };
+
+  # basicmachines-co/basic-memory — markdown-backed knowledge graph MCP.
+  # Pointed at the `Notes/claude/memory/` subtree so memory writes go directly
+  # into the user's Obsidian vault (committed via `Obsidian Git: Create backup`).
+  # Tools: write_note, read_note, edit_note (find_replace / append /
+  # replace_section), search_notes, build_context, list_directory.
+  #
+  # IMPORTANT: prefer `append` / `replace_section` over `find_replace` against
+  # the YAML frontmatter block — find_replace can mangle frontmatter on
+  # surgical edits. The author guide at Notes/claude/memory/README.md codifies
+  # this rule.
+  #
+  # Env vars: BASIC_MEMORY_HOME points at the live vault subdir. The
+  # `--project` flag plus `mcp` subcommand starts the MCP server scoped to
+  # that project. If basic-memory's CLI surface drifts, adjust args here.
+  basic-memory = {
+    uvxDirect.package = "basic-memory";
+    runtime = "uvx-direct";
+    args = ["mcp"];
+    env = {
+      BASIC_MEMORY_HOME = "/home/killua/killuanix/Notes/claude/memory";
+      BASIC_MEMORY_PROJECT = "killuanix";
+    };
+  };
+
+  # ruvnet/ruflo (a.k.a. "claude-flow") — multi-agent orchestration platform.
+  # The npm `ruflo` binary doesn't start an MCP server on bare invocation; it
+  # needs the `mcp start` subcommand. The MCP server name MUST be `claude-flow`
+  # because the bundled `ruflo--*` skills (installed by claude-resources.nix)
+  # call `mcp__claude-flow__*` tools — that prefix is hardcoded upstream.
+  #
+  # `cacheNamespace = "ruflo"` and `package = "ruflo@latest"` match
+  # ruflo-cli.nix exactly, so the npx install populated by the standalone CLI
+  # is reused here. Without this, Claude Code's MCP connect probe times out
+  # on cold start while a separate cache resolves the entire ruflo dep tree.
+  claude-flow = {
+    npxDirect = {
+      package = "ruflo@latest";
+      cacheNamespace = "ruflo";
+    };
+    runtime = "npx-direct";
+    args = ["mcp" "start"];
   };
 }

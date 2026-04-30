@@ -23,23 +23,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-    # Pipewire 1.6.3 source for the killua (MSI Claw) host. The 1.6.2 build
-    # in current nixpkgs has two unrelated bluez5 bugs that hit on Intel
-    # Lunar Lake / CMF Buds Pro 2:
-    #   - libldac-dec init bug → "LDAC decoder initialization failed:
-    #     LDACBT_ERR_FATAL (268981248)"
-    #   - SIGSEGV in libspa-bluez5.so spa_bt_device_supports_media_codec()
-    #     when switching codecs (regcomp via do_match → get_features).
-    # Both are fixed in 1.6.3. Specifically, upstream commit 99f901d
-    # ("bluez5: fix spa_bt_device_supports_media_codec() for HFP codecs")
-    # addresses the SEGV, and 1.6.3's LDAC codec dropped the libldac-dec
-    # decoder dependency entirely so the libldac-dec bug no longer reaches
-    # us. Used by killua/bluez5-ldac-pin.nix to swap only the bluez5/
-    # subdir of pipewire's SPA plugin tree at runtime via SPA_PLUGIN_DIR;
-    # pkgs.pipewire stays vanilla so downstream consumers (ffmpeg, gtk4,
-    # electron, …) keep substituting from cache.
-    nixpkgs-pipewire.url = "github:NixOS/nixpkgs/b9ca2db46f043c1dfcac36d8622653a430647f9f";
-
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -153,6 +136,11 @@
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
     claude-code.url = "github:sadjow/claude-code-nix";
+
+    ghgrab = {
+      url = "github:abhixdd/ghgrab";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Declarative MCP server catalog (Home Manager integration)
     mcp-servers-nix = {

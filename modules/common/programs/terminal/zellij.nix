@@ -329,7 +329,7 @@ in {
           }
           autolock location="https://github.com/fresh2dev/zellij-autolock/releases/latest/download/zellij-autolock.wasm" {
               is_enabled true
-              triggers "nvim|vim|git|fzf|zoxide|atuin|git-forgit|lazygit|zj-proj"
+              triggers "nvim|vim|git|fzf|zoxide|atuin|git-forgit|lazygit|zj-proj|ghgrab"
               reaction_seconds "0.3"
               print_to_log true
           }

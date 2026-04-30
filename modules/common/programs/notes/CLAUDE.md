@@ -112,6 +112,15 @@ The `;;` binding defines a custom `exmap cmdPalette obcommand command-palette:op
 | `_claude/docs/hyprland-CLAUDE.md` | `~/killuanix/modules/common/programs/desktop/hyprland/CLAUDE.md` | Live symlink |
 | `_claude/docs/utils-CLAUDE.md` | `~/killuanix/modules/common/programs/utils/CLAUDE.md` | Live symlink |
 
+`_claude/` is gitignored — it's a transient view. The committed canonical Claude state lives at `<vault>/claude/` (no underscore), wired in the **opposite direction** by `modules/common/programs/dev/claude.nix`:
+
+| Live `~/.claude/` path | Symlinks to vault file | Owner |
+|---|---|---|
+| `~/.claude/CLAUDE.md` | `<vault>/claude/global.md` | Notes submodule (committed) |
+| `~/.claude/projects/-home-killua-killuanix/memory/` | `<vault>/claude/memory/` | Notes submodule (committed); auto-memory writes land here |
+
+Don't conflate the two: `_claude/` is a viewing aggregator (what Claude Code state looks like), `claude/` is the canonical store (what the user pushes to git).
+
 ## Templates
 
 Markdown templates in `./templates/` are copied into `<vault>/templates/` via `home.file.<vaultRel>/templates/<name>.md.source = ./templates/<name>.md`:
