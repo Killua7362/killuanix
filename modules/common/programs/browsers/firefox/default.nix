@@ -52,6 +52,7 @@ in {
 
   programs.firefox = {
     enable = true;
+    configPath = ".mozilla/firefox";
     arkenfox = {
       enable = true;
     };
@@ -291,8 +292,7 @@ in {
                   template = "https://nixos.wiki/index.php?search={searchTerms}";
                 }
               ];
-              iconUpdateURL = "https://nixos.wiki/favicon.png";
-              updateInterval = 24 * 60 * 60 * 1000; # every day
+              icon = "https://nixos.wiki/favicon.png";
               definedAliases = ["@nw"];
             };
             "Searx" = {
@@ -301,8 +301,7 @@ in {
                   template = "https://searx.aicampground.com/?q={searchTerms}";
                 }
               ];
-              iconUpdateURL = "https://nixos.wiki/favicon.png";
-              updateInterval = 24 * 60 * 60 * 1000; # every day
+              icon = "https://nixos.wiki/favicon.png";
               definedAliases = ["@searx"];
             };
             "bing".metaData.hidden = true;
@@ -552,7 +551,7 @@ in {
           user_pref("media.videocontrols.picture-in-picture.video-toggle.always-show", true);
           user_pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
           user_pref("media.videocontrols.picture-in-picture.video-toggle.has-used", true);
-          user_pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled", true);
+          user_pref("media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled", false);
         '';
       };
     };

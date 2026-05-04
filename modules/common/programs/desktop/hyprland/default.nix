@@ -18,6 +18,7 @@
     ./hyprlock.nix
     ./hypridle.nix
     ./dms.nix
+    ./clipboard.nix
   ];
 
   wayland.windowManager.hyprland = {
@@ -26,7 +27,6 @@
     systemd.enable = false; # for uwsm
     xwayland.enable = true;
     extraConfig = ''
-      source = ~/.config/hypr/monitors.conf
       source = ~/.config/hypr/workspaces.conf
 
       plugin {

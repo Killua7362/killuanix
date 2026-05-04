@@ -7,8 +7,6 @@
     "dms run"
     # fcitx5
     "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent"
-    "wl-paste --type text --watch bash -c 'cliphist store && qs -c $qsConfig ipc call cliphistService update'"
-    "wl-paste --type image --watch bash -c 'cliphist store && qs -c $qsConfig ipc call cliphistService update'"
     "nm-applet --indicator"
     "blueman-applet"
     #"kdeconnect-indicator"

@@ -34,10 +34,15 @@
   mcp = inputs.mcp-servers-nix.packages.${pkgs.stdenv.hostPlatform.system};
 
   # List each root directory that contains skill subdirectories.
-  # Every subdir of every root gets auto-imported — good for skill-only repos
-  # like anthropics/skills. Add more flake-input repos or local paths here.
+  # Every subdir of every root gets auto-imported into ~/.claude/skills/ —
+  # i.e. always-on, billed in every session's startup blob.
+  #
+  # Upstream bundles (anthropics/skills, ruflo, wshobson) used to live here
+  # but are now in the lazy catalog (Notes/claude/lazy/upstream/) — opt in
+  # per-project via `claude-kit lazy add skill <name>`.
+  #
+  # Keep this list to local skills you genuinely want loaded everywhere.
   skillRoots = [
-    "${inputs.anthropics-skills}/skills"
     ./skills
   ];
 
@@ -234,22 +239,22 @@ in {
         repo = "ruvnet/ruflo";
       };
 
-      # Note: ruflo's agents/commands/skills are *also* flattened into
-      # ~/.claude/ via claude-resources.nix (with `ruflo--*` prefixes).
-      # Enabling the plugins here additionally materializes the upstream
-      # `plugin.json` + hooks under ~/.claude/plugins/cache/ruflo/<plugin>/,
-      # which the flat copy doesn't include — needed for autopilot/loop
-      # hooks and the MCP server bundled in ruflo-core.
+      # Plugins are disabled by default — every enabled entry adds its
+      # skills/agents/commands to the always-on startup blob. Flip a single
+      # plugin to `true` only when you actively need it; re-run
+      # `scripts/nix_switch` afterwards. The flat ruflo/wshobson bundles
+      # under ~/.claude/{agents,commands,skills}/ are governed separately
+      # by `claude-resources.nix` — see the cleanup notes there.
       enabledPlugins = {
-        "frontend-design@claude-plugins-official" = true;
-        "ruflo-core@ruflo" = true; # MCP server + base agents
-        "ruflo-swarm@ruflo" = true; # Swarm coordination + Monitor
-        "ruflo-autopilot@ruflo" = true; # Autonomous /loop completion
-        "ruflo-loop-workers@ruflo" = true; # Background workers + CronCreate
-        "ruflo-security-audit@ruflo" = true; # Security scanning
-        "ruflo-rag-memory@ruflo" = true; # HNSW memory + AgentDB
-        "ruflo-testgen@ruflo" = true; # Test gap detection + TDD
-        "ruflo-docs@ruflo" = true; # Doc generation + drift detection
+        "frontend-design@claude-plugins-official" = false;
+        "ruflo-core@ruflo" = false; # MCP server + base agents
+        "ruflo-swarm@ruflo" = false; # Swarm coordination + Monitor
+        "ruflo-autopilot@ruflo" = false; # Autonomous /loop completion
+        "ruflo-loop-workers@ruflo" = false; # Background workers + CronCreate
+        "ruflo-security-audit@ruflo" = false; # Security scanning
+        "ruflo-rag-memory@ruflo" = false; # HNSW memory + AgentDB
+        "ruflo-testgen@ruflo" = false; # Test gap detection + TDD
+        "ruflo-docs@ruflo" = false; # Doc generation + drift detection
       };
     };
   };

@@ -7,19 +7,37 @@ Home Manager module for [Obsidian](https://obsidian.md/), configuring a single v
 | File | Description |
 |---|---|
 | `default.nix` | Pure import aggregator; imports `./obsidian.nix`. |
-| `obsidian.nix` | Full `programs.obsidian` config — vault, Minimal theme, palette CSS snippet, core and community plugins, hotkeys, Colemak vim keymap, and `home.file` entries for templates and `_claude/` symlinks. |
+| `obsidian.nix` | Full `programs.obsidian` config — vault, AnuPpuccin theme (Atom Dark via the extended-colorschemes snippet + Style Settings), palette CSS snippet, core and community plugins, hotkeys, Colemak vim keymap, and `home.file` entries for templates and `_claude/` symlinks. |
 | `templates/` | Markdown scaffolds copied into `<vault>/templates/` by `home.file`: `daily.md`, `meeting.md`, `project.md`, `clipper.md`. |
 
 ## Theme & Palette CSS
 
-The [Minimal](https://github.com/kepano/obsidian-minimal) theme by @kepano is pinned via `builtins.fetchGit` at a specific rev and wrapped as a derivation (`pkgs.runCommand "obsidian-theme-minimal"`) that copies `manifest.json` and `theme.css` (falling back to the legacy `obsidian.css`) into the layout Obsidian's HM module installs under `.obsidian/themes/Minimal/`.
+The [AnuPpuccin](https://github.com/AnubisNekhet/AnuPpuccin) theme by @AnubisNekhet is pinned via `builtins.fetchGit` at a specific rev and wrapped as a derivation (`pkgs.runCommand "obsidian-theme-anuppuccin"`) that copies `manifest.json` and `theme.css` (falling back to `obsidian.css`) into the layout Obsidian's HM module installs under `.obsidian/themes/AnuPpuccin/`.
 
-On top of Minimal, a single CSS snippet named `palette` (registered via `cssSnippets`) is driven by `config.theme.palette` and does four things:
+AnuPpuccin's base theme only ships the Catppuccin flavors (Frappe / Macchiato / Mocha / Mocha-Old). The **Atom Dark** palette lives in the optional `snippets/extended-colorschemes.css` from the same repo — that file is read out of the fetched source and registered as the `anuppuccin-extended-colorschemes` snippet. The selection itself is driven by the **Style Settings** plugin (`op.obsidian-style-settings`), whose `data.json` is seeded with these keys:
+
+| Key | Value | Effect |
+|---|---|---|
+| `anuppuccin-theme-settings-extended@@anp-theme-ext-dark` | `true` | Toggles the `anp-theme-ext-dark` class on body so the extended dark scheme actually engages |
+| `anuppuccin-theme-settings-extended@@catppuccin-theme-dark-extended` | `"ctp-atom-dark"` | Picks Atom Dark from the extended dropdown |
+| `anuppuccin-theme-settings@@anp-alt-rainbow-style` | `"anp-simple-rainbow-color-toggle"` | Enables simple rainbow folders |
+| `anuppuccin-theme-settings@@anp-simple-rainbow-title-toggle` | `true` | Colors folder title text |
+| `anuppuccin-theme-settings@@anp-simple-rainbow-collapse-icon-toggle` | `true` | Colors folder collapse icons |
+| `anuppuccin-theme-settings@@anp-simple-rainbow-indentation-toggle` | `true` | Colors indent guides |
+| `anuppuccin-theme-settings@@anp-simple-rainbow-icon-toggle` | `true` | Appends a colored ⬤ dot after each folder name |
+| `anuppuccin-theme-settings@@anp-rainbow-subfolder-color-toggle` | `true` | Subfolders inherit parent's color |
+| `anp-custom-rainbow-colors@@rainbow-color-repeat` | `"rainbow-repeat-11"` | Cycles all 11 Catppuccin accent colors |
+| `anuppuccin-theme-settings@@anp-alt-tab-style` | `"anp-mini-tab-toggle"` | Minimalistic tabs: flat with a bottom underline on the active tab |
+
+The `<@settings.id>@@<item.id>` format is the Style Settings plugin's data-file convention. The rainbow folder styles are provided by the `anuppuccin-custom-rainbow-colors` snippet (from `snippets/custom-rainbow-colors.css` in the same source), enabled alongside the extended colorschemes snippet.
+
+On top of the theme, a single CSS snippet named `palette` (registered via `cssSnippets`) does three things:
 
 - Forces the editor monospace font to `JetBrainsMono Nerd Font` (falls back to `JetBrains Mono`, `ui-monospace`, `monospace`) with `font-feature-settings: "liga", "calt"` so kitty-style ligatures render in source view, preview, and inline code.
-- Overrides `--background-primary` / `--background-secondary` on `.theme-dark` to match kitty's exact background (`p.bg` / `p.color8`) so transitioning between terminal and notes is seamless.
-- Zeros `--file-margins` / `--file-folding-offset` and sets `padding-left/right: 0` + `max-width: 100%` on source, preview, and reading containers so notes fill the entire pane. `readableLineLength = false` in `app.json` takes care of the narrow-column setting; this snippet removes the residual frame padding Minimal adds.
+- Zeros `--file-margins` / `--file-folding-offset` and sets `padding-left/right: 0` + `max-width: 100%` on source, preview, and reading containers so notes fill the entire pane. `readableLineLength = false` in `app.json` takes care of the narrow-column setting; this snippet removes the residual frame padding the theme adds.
 - Zeros `.cm-scroller` top padding so the first heading sits flush with the pane top.
+
+The previous Minimal-era kitty-bg override (`--background-primary` / `--background-secondary` driven by `config.theme.palette`) is intentionally gone — Atom Dark has its own palette and overriding it would defeat the point of the theme switch.
 
 ## Core Plugins
 
@@ -31,6 +49,7 @@ All community plugins come from `pkgs.obsidianPlugins` (aliased as `op` in the m
 
 | Plugin | Purpose |
 |---|---|
+| `obsidian-style-settings` | Drives AnuPpuccin's palette selection. Seeded with `anp-theme-ext-dark = true` and `catppuccin-theme-dark-extended = "ctp-atom-dark"` (Style Settings keys use `<@settings.id>@@<item.id>` form, see the theme section). Open *Settings → Style Settings → AnuPpuccin Themes Extended* to tweak further palettes. |
 | `obsidian-git` | Git backup. **All automatic behaviors off** — `autoSaveInterval`, `autoPushInterval`, `autoPullInterval` are `0` and `autoPullOnBoot = false`. Commits/pushes/pulls happen only via the command palette (Obsidian Git: Create backup / Push / Pull). Commit message is `vault: {{date}}` with format `YYYY-MM-DD HH:mm:ss`. |
 | `dataview` | Query-based views over note frontmatter. |
 | `obsidian-excalidraw-plugin` | Excalidraw drawings as `.excalidraw.md` files. |
@@ -43,19 +62,8 @@ All community plugins come from `pkgs.obsidianPlugins` (aliased as `op` in the m
 | `templater-obsidian` | Templater (advanced `<% … %>` templates). |
 | `nldates-obsidian` | Natural-language date parsing. |
 | `obsidian-vimrc-support` | Reads `<vault>/.obsidian.vimrc` at startup so Obsidian's vim mode can be customized like `.vimrc` / `init.vim`. |
-| `obsidian-icon-folder` | Per-file/folder icons in the file explorer (Iconize). Configured with `iconPacksPath = ".obsidian/icons"`, icons enabled in tabs/frontmatter/titles, and a seeded rules list (see below). |
-
-Icon Folder rule seeds:
-
-| Rule | Icon | Scope |
-|---|---|---|
-| `^dailies$` | `LuCalendar` (blue) | folders |
-| `^templates$` | `LuFileCode` (khaki) | folders |
-| `^_inbox$` | `LuInbox` (mauve) | folders |
-| `^_claude$` | `LuBot` (teal) | folders |
-| `\.canvas$` | `LuLayoutDashboard` (blue) | everything |
-| `\.excalidraw\.md$` | `LuPencilRuler` (green) | everything |
-| `\.md$` | `LuFileText` (off-white) | everything (fallback, order 99) |
+| `obsidian-image-toolkit` | Zoom with Ctrl+scroll and drag-to-pan (left-click) for images. |
+| `obsidian-icon-folder` | Per-file/folder icons in the explorer (Iconize). **Settings are NOT in `communityPlugins`** — they're written via `home.file` directly as `data.json` because the HM obsidian module puts plugin settings at the top level of data.json while Iconize reads from `data.settings` (nested key). Top-level settings cause `TypeError: Cannot read properties of undefined` and crash the plugin. `migrated: 6` is seeded to skip all five migration steps (each calls saveData through the read-only Nix-store symlink). Icon rules: `^dailies$`→LiCalendarDays, `^templates$`→LiLayoutTemplate, `^_inbox$`→LiInbox, `^_claude$`→LiBot, `^skills$`→LiBrainCircuit, specific template files (clipper/daily/meeting/project), canvas/excalidraw, `*.md` fallback. Icons use `Li` prefix (Iconize's native Lucide pack prefix), not `Lu` (which is the Lucide React convention). |
 
 ## Obsidian Settings
 

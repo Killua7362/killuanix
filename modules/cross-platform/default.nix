@@ -141,51 +141,6 @@ in {
 
     # services.kdeconnect.enable = true;
 
-    services.kanshi = {
-      enable = false;
-      systemdTarget = "";
-
-      settings = [
-        {
-          profile.name = "undocked";
-          profile.outputs = [
-            {
-              criteria = "eDP-1";
-              scale = 1.1;
-              status = "enable";
-            }
-          ];
-        }
-        {
-          profile.name = "docked";
-          profile.outputs = [
-            {
-              criteria = "DP-1";
-              position = "0,0";
-              status = "enable";
-            }
-            {
-              criteria = "eDP-1";
-              status = "disable";
-            }
-          ];
-        }
-        {
-          profile.name = "office";
-          profile.outputs = [
-            {
-              criteria = "HDMI-A-1";
-              status = "enable";
-            }
-            {
-              criteria = "eDP-1";
-              status = "enable";
-            }
-          ];
-        }
-      ];
-    };
-
     fonts.fontconfig.enable = true;
     home.pointerCursor = {
       gtk.enable = true;
@@ -224,8 +179,11 @@ in {
         gtk-theme-name = "adw-gtk3-dark";
       };
 
-      gtk4.extraConfig = {
-        gtk-application-prefer-dark-theme = true;
+      gtk4 = {
+        theme = config.gtk.theme;
+        extraConfig = {
+          gtk-application-prefer-dark-theme = true;
+        };
       };
     };
 

@@ -94,7 +94,7 @@
     #   - create_document(doc_type="calc") now produces a real empty file
     #     (previously wrote 0-byte via touch()).
     #   - New write_spreadsheet_data tool for populating .xlsx / .ods cells.
-    patches = [./programs/dev/patches/mcp-libre-calc-and-write.patch];
+    patches = [./programs/dev/ai/patches/mcp-libre-calc-and-write.patch];
   };
 
   # yctimlin/mcp_excalidraw — MCP tools for creating and editing .excalidraw

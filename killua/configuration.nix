@@ -39,8 +39,6 @@
     defaultNetwork.settings.dns_enabled = true;
   };
 
-  boot.blacklistedKernelModules = ["kvm_intel" "kvm"];
-
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = 1;
   };
@@ -222,11 +220,11 @@
     systemd
     glib
     libGL
-    xorg.libX11
-    xorg.libXext
-    xorg.libXi
-    xorg.libXrender
-    xorg.libXtst
+    libx11
+    libxext
+    libxi
+    libxrender
+    libxtst
     freetype
     fontconfig
     alsa-lib
@@ -242,6 +240,7 @@
       experimental-features = "nix-command flakes";
       flake-registry = "";
       nix-path = config.nix.nixPath;
+      trusted-users = ["root" "@wheel"];
     };
     channel.enable = false;
     registry = lib.mapAttrs (_: flake: {inherit flake;}) flakeInputs;

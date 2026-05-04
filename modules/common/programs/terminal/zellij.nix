@@ -476,6 +476,7 @@ in {
 
       default_shell "zsh"
       default_layout "default"
+      scroll_buffer_size 100000
 
       pane_frames true
       ui {

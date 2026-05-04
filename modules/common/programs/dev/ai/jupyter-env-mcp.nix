@@ -23,7 +23,7 @@
   inputs,
   ...
 }: let
-  jupyter-env-mcp = import ../../../../packages/jupyter-env-mcp/package.nix {
+  jupyter-env-mcp = import ../../../../../packages/jupyter-env-mcp/package.nix {
     inherit pkgs;
     inherit (pkgs) lib;
     inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;

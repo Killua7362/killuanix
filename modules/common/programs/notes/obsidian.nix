@@ -4,36 +4,46 @@
   lib,
   ...
 }: let
-  p = config.theme.palette;
   op = pkgs.obsidianPlugins;
 
-  # Minimal theme by @kepano — popular dark Obsidian theme that pairs well
-  # with the kitty terminal aesthetic. We fetch the repo and wrap it as a
-  # theme package the HM module can install into .obsidian/themes/Minimal/.
-  minimalSrc = builtins.fetchGit {
-    url = "https://github.com/kepano/obsidian-minimal";
-    rev = "b0b08ab466d53ea8c7a1d93e79555df084ea89ac";
+  # AnuPpuccin theme by @AnubisNekhet — Catppuccin-flavored Obsidian theme
+  # with an "extended colorschemes" snippet that adds palettes outside the
+  # Catppuccin family (Atom, Nord, Gruvbox, Dracula, etc). We pick Atom Dark
+  # via Style Settings — see the obsidian-style-settings entry below.
+  anuppuccinSrc = builtins.fetchGit {
+    url = "https://github.com/AnubisNekhet/AnuPpuccin";
+    rev = "82d207c646904e7af371ced499f682fbdfad1012";
     shallow = true;
   };
-  minimalTheme = pkgs.runCommand "obsidian-theme-minimal" {} ''
+  anuppuccinTheme = pkgs.runCommand "obsidian-theme-anuppuccin" {} ''
     mkdir -p $out
-    cp ${minimalSrc}/manifest.json $out/
-    # Obsidian loads themes/<name>/theme.css; Minimal ships both theme.css
-    # and a legacy obsidian.css — prefer theme.css.
-    if [ -f ${minimalSrc}/theme.css ]; then
-      cp ${minimalSrc}/theme.css $out/
+    cp ${anuppuccinSrc}/manifest.json $out/
+    # Obsidian loads themes/<name>/theme.css; AnuPpuccin ships both theme.css
+    # (compiled) and obsidian.css (legacy companion) — prefer theme.css.
+    if [ -f ${anuppuccinSrc}/theme.css ]; then
+      cp ${anuppuccinSrc}/theme.css $out/
     else
-      cp ${minimalSrc}/obsidian.css $out/theme.css
+      cp ${anuppuccinSrc}/obsidian.css $out/theme.css
     fi
   '';
 
+  # Extended colorschemes snippet from AnuPpuccin's repo — adds Atom, Nord,
+  # Gruvbox, Dracula, etc. on top of the base Catppuccin flavors. Required
+  # for Atom Dark; Style Settings reads this snippet's @settings block to
+  # populate the extended dark/light dropdowns.
+  extendedColorschemesCss = builtins.readFile "${anuppuccinSrc}/snippets/extended-colorschemes.css";
+
+  # Custom rainbow folder colors snippet — lets Style Settings choose which
+  # Catppuccin palette colors appear per folder depth and how many cycle.
+  customRainbowColorsCss = builtins.readFile "${anuppuccinSrc}/snippets/custom-rainbow-colors.css";
+
   # Small polish snippet that keeps the editor monospace in sync with kitty
-  # (JetBrainsMono Nerd Font) and nudges the chrome toward the terminal's
-  # flat look without overriding Minimal's colors.
+  # (JetBrainsMono Nerd Font) and forces full-width notes. Background
+  # colors come from AnuPpuccin's Atom Dark palette — don't override them.
   paletteCss = ''
     /* Sync editor monospace with kitty's JetBrainsMono Nerd Font; keep
-       ligatures on since kitty renders them. Other colors/layout come
-       from the Minimal theme. */
+       ligatures on since kitty renders them. Colors/layout come from
+       AnuPpuccin + the extended Atom Dark scheme. */
     body {
       --font-monospace-theme: "JetBrainsMono Nerd Font", "JetBrains Mono", ui-monospace, monospace;
     }
@@ -45,16 +55,9 @@
       font-feature-settings: "liga", "calt";
     }
 
-    /* Match kitty's exact bg so transitioning between terminal and notes
-       is seamless. Minimal's default dark bg is close but not identical. */
-    .theme-dark {
-      --background-primary:   ${p.bg};
-      --background-secondary: ${p.color8};
-    }
-
     /* Full-width notes: strip side padding from editor and preview so
        content fills the whole pane. `readableLineLength` is already off
-       in app.json; this removes the residual frame padding Minimal adds. */
+       in app.json; this removes the residual frame padding the theme adds. */
     body {
       --file-margins: 0 !important;
       --file-folding-offset: 0 !important;
@@ -69,17 +72,22 @@
       max-width: 100% !important;
     }
 
+    /* Indent the gutter+content block away from the pane edge so it
+       doesn't sit flush against the file-explorer divider. */
+    .markdown-source-view.mod-cm6 .cm-editor {
+      padding-left: 24px !important;
+    }
+
     .markdown-source-view.mod-cm6 .cm-content,
     .markdown-source-view.mod-cm6 .cm-line,
     .markdown-preview-view > div {
       max-width: 100% !important;
-      padding-left: 8px !important;
-      padding-right: 8px !important;
+      padding-left: 16px !important;
+      padding-right: 24px !important;
     }
 
-    /* Remove the vertical gap above the first heading / line */
     .markdown-source-view.mod-cm6 .cm-scroller {
-      padding-top: 0 !important;
+      padding-top: 12px !important;
     }
   '';
 
@@ -129,6 +137,21 @@
     nnoremap k u
   '';
 
+  # The nixpille overlay only has 0.2.0 which has known issues; pin to latest
+  # from the obsidian-community fork (the canonical source per community-plugins.json).
+  imageToolkit = pkgs.stdenv.mkDerivation {
+    pname = "obsidian-image-toolkit";
+    version = "1.4.3";
+    src = pkgs.fetchzip {
+      url = "https://github.com/obsidian-community/obsidian-image-toolkit/releases/download/1.4.3/obsidian-image-toolkit-1.4.3.zip";
+      hash = "sha256-j5uTxEgAedx9uqduYdM4gkfqs6/sxDG5nP9IRt3xBks=";
+    };
+    installPhase = ''
+      mkdir -p $out
+      cp -r * $out/
+    '';
+  };
+
   vaultRel = "killuanix/Notes";
 in {
   programs.obsidian = {
@@ -161,7 +184,7 @@ in {
 
         themes = [
           {
-            pkg = minimalTheme;
+            pkg = anuppuccinTheme;
             enable = true;
           }
         ];
@@ -202,6 +225,30 @@ in {
         ];
 
         communityPlugins = [
+          # Style Settings — required by AnuPpuccin to pick a palette. Keys
+          # in `settings` follow the plugin's `<@settings.id>@@<item.id>`
+          # convention and become entries in the plugin's data.json.
+          # Wired here to enable the extended dark scheme and pin Atom Dark.
+          {
+            pkg = op.obsidian-style-settings;
+            settings = {
+              # Atom Dark palette (requires extended-colorschemes snippet)
+              "anuppuccin-theme-settings-extended@@anp-theme-ext-dark" = true;
+              "anuppuccin-theme-settings-extended@@catppuccin-theme-dark-extended" = "ctp-atom-dark";
+              # Rainbow folders — simple style: colored title text, collapse icon,
+              # indentation guide, and a colored ⬤ dot appended after the name.
+              "anuppuccin-theme-settings@@anp-alt-rainbow-style" = "anp-simple-rainbow-color-toggle";
+              "anuppuccin-theme-settings@@anp-simple-rainbow-title-toggle" = true;
+              "anuppuccin-theme-settings@@anp-simple-rainbow-collapse-icon-toggle" = true;
+              "anuppuccin-theme-settings@@anp-simple-rainbow-indentation-toggle" = true;
+              "anuppuccin-theme-settings@@anp-simple-rainbow-icon-toggle" = true;
+              "anuppuccin-theme-settings@@anp-rainbow-subfolder-color-toggle" = true;
+              # Custom rainbow colors snippet: cycle all 11 Catppuccin accent colors
+              "anp-custom-rainbow-colors@@rainbow-color-repeat" = "rainbow-repeat-11";
+              # Minimalistic tab style — flat tabs with a bottom underline on the active tab
+              "anuppuccin-theme-settings@@anp-alt-tab-style" = "anp-mini-tab-toggle";
+            };
+          }
           {
             pkg = op.obsidian-git;
             settings = {
@@ -235,83 +282,36 @@ in {
           # Vimrc Support: reads <vault>/.obsidian.vimrc at startup so
           # Obsidian's vim mode can be customized like .vimrc / init.vim.
           op.obsidian-vimrc-support
-          # Icon Folder (Iconize): per-file/folder icons in the file explorer.
-          # Seeded with regex rules so common file types render automatically;
-          # right-click → "Change icon" to override per-file.
-          {
-            pkg = op.obsidian-icon-folder;
-            settings = {
-              iconPacksPath = ".obsidian/icons";
-              iconsBackgroundCheckEnabled = true;
-              iconInTabsEnabled = true;
-              iconInFrontmatterEnabled = true;
-              iconInTitleEnabled = "above";
-              rules = [
-                {
-                  rule = "^dailies$";
-                  icon = "LuCalendar";
-                  color = "#89ceff";
-                  order = 0;
-                  for = "folders";
-                  useFilePath = false;
-                }
-                {
-                  rule = "^templates$";
-                  icon = "LuFileCode";
-                  color = "#aca98a";
-                  order = 1;
-                  for = "folders";
-                  useFilePath = false;
-                }
-                {
-                  rule = "^_inbox$";
-                  icon = "LuInbox";
-                  color = "#ac8aac";
-                  order = 2;
-                  for = "folders";
-                  useFilePath = false;
-                }
-                {
-                  rule = "^_claude$";
-                  icon = "LuBot";
-                  color = "#8aacab";
-                  order = 3;
-                  for = "folders";
-                  useFilePath = false;
-                }
-                {
-                  rule = "\\.canvas$";
-                  icon = "LuLayoutDashboard";
-                  color = "#89ceff";
-                  order = 10;
-                  for = "everything";
-                  useFilePath = false;
-                }
-                {
-                  rule = "\\.excalidraw\\.md$";
-                  icon = "LuPencilRuler";
-                  color = "#8aac8b";
-                  order = 11;
-                  for = "everything";
-                  useFilePath = false;
-                }
-                {
-                  rule = "\\.md$";
-                  icon = "LuFileText";
-                  color = "#e2e2e2";
-                  order = 99;
-                  for = "everything";
-                  useFilePath = false;
-                }
-              ];
-            };
-          }
+          # Icon Folder (Iconize): custom icons per folder/file in the explorer.
+          # Settings are written via home.file below (not here) because the HM
+          # obsidian module serialises plugin.settings to the TOP LEVEL of
+          # data.json, but Iconize reads settings from data.settings (nested).
+          # Writing at the top level causes `data.settings[k]` to throw
+          # TypeError on load, crashing the plugin.
+          op.obsidian-icon-folder
+          op.notebook-navigator
+          # Image Toolkit: zoom with Ctrl+scroll and drag-to-pan with left click.
+          # Pinned to 1.4.2 — nixpille overlay only has 0.2.0 (known issues).
+          imageToolkit
         ];
 
         cssSnippets = [
           {
             name = "palette";
             text = paletteCss;
+          }
+          # AnuPpuccin's extended palettes (Atom, Nord, Gruvbox, Dracula, …).
+          # Style Settings picks Atom Dark via the keys above; without this
+          # snippet enabled, those classes have no styles attached.
+          {
+            name = "anuppuccin-extended-colorschemes";
+            text = extendedColorschemesCss;
+          }
+          # Rainbow folder color definitions — required for the custom color
+          # cycling set by `anp-custom-rainbow-colors@@rainbow-color-repeat`.
+          {
+            name = "anuppuccin-custom-rainbow-colors";
+            text = customRainbowColorsCss;
           }
         ];
 
@@ -377,6 +377,125 @@ in {
     "${vaultRel}/templates/project.md".source = ./templates/project.md;
     "${vaultRel}/templates/clipper.md".source = ./templates/clipper.md;
 
+    # Iconize data.json — written directly because the HM obsidian module puts
+    # plugin.settings at the top level of data.json, but Iconize reads from
+    # data.settings (nested). The mismatch causes a TypeError crash on load.
+    # We bypass the plugin settings mechanism entirely and write the file here
+    # with the correct structure. `migrated: 6` skips all five migration steps
+    # (each of which calls saveData, which would fail writing through the
+    # read-only Nix-store symlink). recentlyUsedIcons/Size defaults prevent the
+    # checkRecentlyUsedIcons saveData path from triggering.
+    "${vaultRel}/.obsidian/plugins/obsidian-icon-folder/data.json".text = builtins.toJSON {
+      settings = {
+        lucideIconPackType = "native";
+        iconInTabsEnabled = true;
+        iconInFrontmatterEnabled = true;
+        iconInFrontmatterFieldName = "icon";
+        iconColorInFrontmatterFieldName = "iconColor";
+        iconInTitleEnabled = "above";
+        iconInTitlePosition = "above";
+        iconPacksPath = ".obsidian/icons";
+        iconsBackgroundCheckEnabled = false;
+        iconsInNotesEnabled = true;
+        iconsInLinksEnabled = true;
+        iconIdentifier = ":";
+        debugMode = false;
+        useInternalPlugins = false;
+        recentlyUsedIcons = [];
+        recentlyUsedIconsSize = 5;
+        migrated = 6;
+        rules = [
+          # --- Folders ---
+          {
+            rule = "^dailies$";
+            icon = "LiCalendarDays";
+            order = 0;
+            for = "folders";
+            useFilePath = false;
+          }
+          {
+            rule = "^templates$";
+            icon = "LiLayoutTemplate";
+            order = 1;
+            for = "folders";
+            useFilePath = false;
+          }
+          {
+            rule = "^_inbox$";
+            icon = "LiInbox";
+            order = 2;
+            for = "folders";
+            useFilePath = false;
+          }
+          {
+            rule = "^_claude$";
+            icon = "LiBot";
+            order = 3;
+            for = "folders";
+            useFilePath = false;
+          }
+          {
+            rule = "^skills$";
+            icon = "LiBrainCircuit";
+            order = 4;
+            for = "folders";
+            useFilePath = false;
+          }
+          # --- Specific template files ---
+          {
+            rule = "^clipper\\.md$";
+            icon = "LiClipboard";
+            order = 20;
+            for = "files";
+            useFilePath = false;
+          }
+          {
+            rule = "^daily\\.md$";
+            icon = "LiSunMedium";
+            order = 21;
+            for = "files";
+            useFilePath = false;
+          }
+          {
+            rule = "^meeting\\.md$";
+            icon = "LiUsers";
+            order = 22;
+            for = "files";
+            useFilePath = false;
+          }
+          {
+            rule = "^project\\.md$";
+            icon = "LiKanbanSquare";
+            order = 23;
+            for = "files";
+            useFilePath = false;
+          }
+          # --- File-type rules ---
+          {
+            rule = "\\.canvas$";
+            icon = "LiLayoutDashboard";
+            order = 30;
+            for = "everything";
+            useFilePath = false;
+          }
+          {
+            rule = "\\.excalidraw\\.md$";
+            icon = "LiPencilRuler";
+            order = 31;
+            for = "everything";
+            useFilePath = false;
+          }
+          {
+            rule = "\\.md$";
+            icon = "LiFileText";
+            order = 99;
+            for = "everything";
+            useFilePath = false;
+          }
+        ];
+      };
+    };
+
     # Vim keybindings — read by obsidian-vimrc-support from <vault>/.obsidian.vimrc.
     "${vaultRel}/.obsidian.vimrc".text = obsidianVimrc;
 
@@ -387,7 +506,7 @@ in {
 
     "${vaultRel}/_claude/skills".source =
       config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/killuanix/modules/common/programs/dev/skills";
+      "${config.home.homeDirectory}/killuanix/modules/common/programs/dev/ai/skills";
 
     "${vaultRel}/_claude/docs/root-CLAUDE.md".source =
       config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/killuanix/CLAUDE.md";
@@ -395,6 +514,10 @@ in {
     "${vaultRel}/_claude/docs/dev-CLAUDE.md".source =
       config.lib.file.mkOutOfStoreSymlink
       "${config.home.homeDirectory}/killuanix/modules/common/programs/dev/CLAUDE.md";
+
+    "${vaultRel}/_claude/docs/ai-CLAUDE.md".source =
+      config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/killuanix/modules/common/programs/dev/ai/CLAUDE.md";
 
     "${vaultRel}/_claude/docs/browsers-CLAUDE.md".source =
       config.lib.file.mkOutOfStoreSymlink

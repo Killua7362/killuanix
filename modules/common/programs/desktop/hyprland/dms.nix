@@ -7,7 +7,7 @@
     enable = true;
   };
 
-  programs.dankMaterialShell.plugins.vmManager = {
+  programs.dank-material-shell.plugins.vmManager = {
     enable = true;
     src = ../../../../vms/vm-manager-plugin;
   };

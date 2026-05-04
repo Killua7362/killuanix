@@ -97,7 +97,6 @@
       wl-clipboard
       cliphist
       libreoffice-qt6-fresh
-      nwg-displays
       sublime4
       loupe
       mpv

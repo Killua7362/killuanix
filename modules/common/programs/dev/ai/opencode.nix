@@ -6,7 +6,7 @@
 }: {
   programs.opencode = {
     enable = true;
-    package = inputs.opencode-flake.packages.${pkgs.system}.default;
+    package = inputs.opencode-flake.packages.${pkgs.stdenv.hostPlatform.system}.default;
     settings = {
       autoupdate = true;
       provider = {

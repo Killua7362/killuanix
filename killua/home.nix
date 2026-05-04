@@ -11,6 +11,7 @@
     ../modules/cross-platform
     ../modules/common/programs/notes
     ../modules/vms
+    ./kanshi.nix
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dank-material-shell

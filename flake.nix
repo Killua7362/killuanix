@@ -59,7 +59,7 @@
     # nixos specific packages
     nixospkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     nixospkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    home-manager.url = "github:nix-community/home-manager/release-25.11";
+    home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     quickshell = {
@@ -97,9 +97,7 @@
 
     arkenfox = {
       url = "github:dwarfmaster/arkenfox-nixos";
-      inputs.flake-parts.follows = "flake-parts";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.systems.follows = "systems";
     };
 
     nix-index-database.url = "github:nix-community/nix-index-database";

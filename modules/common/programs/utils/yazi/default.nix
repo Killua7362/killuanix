@@ -7,12 +7,13 @@
 }: {
   programs.yazi = {
     enable = true;
+    shellWrapperName = "yy";
     enableZshIntegration = true;
     settings = lib.importTOML ./yazi.toml;
     keymap = lib.importTOML ./keymap.toml;
     theme = lib.importTOML ./theme.toml;
-    package = inputs.yazi.packages.${pkgs.system}.default.override {
-      _7zz = pkgs._7zz-rar;  # Support for RAR extraction
+    package = inputs.yazi.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
+      _7zz = pkgs._7zz-rar; # Support for RAR extraction
     };
     flavors = {
       inherit
@@ -24,7 +25,6 @@
       inherit (pkgs.yaziPlugins) mount;
     };
   };
-
 
   # programs.yazi.yaziPlugins = {
   #   enable = true;

@@ -6,13 +6,14 @@ Hyprland window manager configuration, split into focused submodules. The primar
 
 | File | Purpose |
 |---|---|
-| `default.nix` | Entry point. Enables Hyprland, sources external `monitors.conf` and `workspaces.conf`, and imports all submodules. |
+| `default.nix` | Entry point. Enables Hyprland, sources external `workspaces.conf`, and imports all submodules. |
 | `env.nix` | Environment variables: fcitx input method, Wayland/XDG session identifiers, Qt theming (gtk3), accessibility flags, terminal (`ghostty`). |
 | `general.nix` | General settings: scrolling layout, border colors, gaps (5 in / 10 out), tearing allowed, snap enabled. |
 | `layout.nix` | Layout engines: dwindle (preserve split, pseudotile), scrolling (column widths `1.0, 0.5`), master, decoration (rounding 8, blur, shadows), cursor, and bind scroll settings. |
 | `keybinds.nix` | All keybindings across `bind`, `bindd`, `bindle`, `bindel`, `bindl`, `bindld`, `bindm`, and `binde` categories. Covers window management, workspace switching (Super+1-0), focus/move, media keys, volume, brightness, screenshots (Print -> slurp + grim + satty), terminal launch (Super+Return -> ghostty), and quickshell integration. |
 | `windowrules.nix` | Window rules (float/pin/size for blueman, PiP, file dialogs, pavucontrol, etc.), workspace rules, and extensive layer rules for quickshell namespaces, vicinae, and notification blur. |
-| `execs.nix` | `exec-once` programs launched via UWSM: dms, hyprpolkitagent, wl-paste + cliphist, nm-applet, blueman-applet, sunshine. Also sets dbus activation environment. |
+| `execs.nix` | `exec-once` programs launched via UWSM: dms, hyprpolkitagent, nm-applet, blueman-applet, sunshine. Also sets dbus activation environment. |
+| `clipboard.nix` | Systemd user services `cliphist-text` and `cliphist-image` that run `wl-paste --watch` piped through cliphist. Uses `Restart=always` + `KillMode=mixed` so children are reaped on restart; avoids the child pile-up that occurs with long-lived `exec-once` watchers. |
 | `input.nix` | Currently empty (placeholder). |
 | `gestures.nix` | Touchpad gestures: workspace swipe config and multi-finger gestures (3-finger swipe move, 4-finger horizontal workspace switch, 4-finger pinch float, 4-finger up/down for quickshell overview). |
 | `misc.nix` | Miscellaneous: animations enabled but all durations set to 0, VFR/VRR enabled, DPMS on mouse/key, swallow regex (disabled via `enable_swallow = false`), session lock restore + xray, background color, Hyprland logo/splash disabled, `force_default_wallpaper = -1`, `focus_on_activate`, scroller plugin `column_widths = "onehalf one"`, xwayland forced zero scaling. |
@@ -29,4 +30,5 @@ Hyprland window manager configuration, split into focused submodules. The primar
 - **Screenshots**: `Print` key launches slurp region select piped through grim into satty.
 - **Media controls**: hardware keys and `Super+Shift` combos for playerctl play/pause/next/prev.
 - **Quickshell integration**: multiple `global` dispatches for sidebar, overview, emoji picker, cheatsheet, media controls, session menu, bar, and wallpaper selector.
-- **Monitor/workspace config**: sourced from external `~/.config/hypr/monitors.conf` and `workspaces.conf` (not managed here).
+- **Monitor config**: managed declaratively per host via `services.kanshi` (see `killua/kanshi.nix`, `chrollo/home-manager/kanshi.nix`). Kanshi watches hot-plug events and switches output profiles (docked / undocked) via `wlr-output-management`. Hyprland no longer sources `monitors.conf`.
+- **Workspace config**: sourced from external `~/.config/hypr/workspaces.conf` (not managed here).

@@ -5,7 +5,7 @@
   inputs,
   ...
 }: let
-  code-index-mcp = import ../../../../packages/code-index-mcp/package.nix {
+  code-index-mcp = import ../../../../../packages/code-index-mcp/package.nix {
     inherit pkgs;
     inherit (pkgs) lib;
     inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;

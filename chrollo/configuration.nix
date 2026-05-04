@@ -240,6 +240,7 @@ in {
       experimental-features = "nix-command flakes";
       flake-registry = "";
       nix-path = config.nix.nixPath;
+      trusted-users = ["root" "@wheel"];
     };
     channel.enable = false;
     registry = lib.mapAttrs (_: flake: {inherit flake;}) flakeInputs;
@@ -277,11 +278,11 @@ in {
     systemd
     glib
     libGL
-    xorg.libX11
-    xorg.libXext
-    xorg.libXi
-    xorg.libXrender
-    xorg.libXtst
+    libx11
+    libxext
+    libxi
+    libxrender
+    libxtst
     freetype
     fontconfig
     alsa-lib

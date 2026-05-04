@@ -1,13 +1,14 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config
+, pkgs
+, lib
+, inputs
+, ...
+}:
+let
   userConfig = inputs.self.commonModules.user.userConfig;
   azureGitConfigPath = "${config.home.homeDirectory}/.config/git/config-azure";
-in {
+in
+{
   sops.templates."config-azure" = {
     content = ''
       [user]
@@ -38,10 +39,21 @@ in {
         condition = "hasconfig:remote.*.url:https://*@dev.azure.com/**";
         path = azureGitConfigPath;
       }
-      {
-        condition = "hasconfig:remote.*.url:https://*@dev.azure.com/**";
-        path = azureGitConfigPath;
-      }
     ];
+  };
+
+  programs.gh = {
+    enable = true;
+
+    settings = {
+      git_protocol = "ssh";
+      editor = "nvim";
+      prompt = "enabled";
+      aliases = {
+        co = "pr checkout";
+        pv = "pr view";
+        rv = "repo view --web";
+      };
+    };
   };
 }

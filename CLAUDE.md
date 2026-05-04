@@ -67,7 +67,7 @@ The flake auto-bootstraps most services, but a few one-shot manual steps remain 
   - [`audio/CLAUDE.md`](modules/common/programs/audio/CLAUDE.md) — PipeWire/WirePlumber tuning, Bluetooth audio, Spotify (spicetify-nix)
   - [`browsers/CLAUDE.md`](modules/common/programs/browsers/CLAUDE.md) — Firefox (Arkenfox + Natsumi), Qutebrowser → [`firefox/CLAUDE.md`](modules/common/programs/browsers/firefox/CLAUDE.md)
   - [`desktop/CLAUDE.md`](modules/common/programs/desktop/CLAUDE.md) — Hyprland, Satty, desktop entries → [`hyprland/CLAUDE.md`](modules/common/programs/desktop/hyprland/CLAUDE.md)
-  - [`dev/CLAUDE.md`](modules/common/programs/dev/CLAUDE.md) — Git, Lazygit, Claude Code (+ bundled skills), OpenCode, code-index, jupyter-env MCP
+  - [`dev/CLAUDE.md`](modules/common/programs/dev/CLAUDE.md) — Git, Lazygit → [`ai/CLAUDE.md`](modules/common/programs/dev/ai/CLAUDE.md) (Claude Code + bundled skills, OpenCode, ccmanager, ccr, ruflo, claude-flow, claude-kit, code-index, jupyter-env MCP)
   - [`diagrams/CLAUDE.md`](modules/common/programs/diagrams/CLAUDE.md) — Excalidraw / Mermaid Live launchers, mermaid-cli, `text/vnd.mermaid` MIME wiring
   - [`editors/CLAUDE.md`](modules/common/programs/editors/CLAUDE.md) — Neovim (nixCats), Zed → [`neovim/CLAUDE.md`](modules/common/programs/editors/neovim/CLAUDE.md)
   - [`mail/CLAUDE.md`](modules/common/programs/mail/CLAUDE.md) — Thunderbird with a manually-packaged add-on bundle

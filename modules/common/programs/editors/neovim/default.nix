@@ -149,7 +149,7 @@ in {
           suffix-LD = true;
           wrapRc = true;
           # aliases = [ "nvim" ];
-          neovim-unwrapped = inputs.neovim-nightly-overlay.packages.${pkgs.system}.default;
+          neovim-unwrapped = inputs.neovim-nightly-overlay.packages.${pkgs.stdenv.hostPlatform.system}.default;
           hosts.python3.enable = true;
           hosts.node.enable = true;
         };
