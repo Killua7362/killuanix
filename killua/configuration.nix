@@ -12,7 +12,7 @@
     ./intel-gpu.nix
     ./handheld-tweaks.nix
     ./hhd.nix
-    ./gaming.nix
+    ./gaming
     ./wifi-fix.nix
     ./boot.nix
     ./bluez5-ldac-pin.nix

@@ -207,16 +207,18 @@ in {
               bind "Alt e" { MoveFocusOrTab "down"; }
               bind "Alt o" { MoveFocusOrTab "right"; }
               bind "Alt i" { MoveFocusOrTab "up"; }
+              bind "Alt s" {
+                  LaunchOrFocusPlugin "session-manager" {
+                      floating true
+                      move_to_focused_tab true
+                  }
+              }
               bind "Alt w" { CloseFocus; }
           }
       //"locked"
           shared_except "move" {
               bind "Ctrl h" { SwitchToMode "move"; }
               bind "Ctrl m" { SwitchToMode "move"; }
-          }
-          // "locked"
-          shared_except  "session" {
-              bind "Ctrl o" { SwitchToMode "session"; }
           }
           //"locked"
           shared_except  "scroll" "search" "tmux" {
@@ -287,6 +289,7 @@ in {
               bind "d" { Detach; }
           }
           tmux {
+              bind "v" { EditScrollback; SwitchToMode "normal"; }
               bind "left" { MoveFocus "left"; SwitchToMode "normal"; }
               bind "down" { MoveFocus "down"; SwitchToMode "normal"; }
               bind "up" { MoveFocus "up"; SwitchToMode "normal"; }
@@ -476,7 +479,7 @@ in {
 
       default_shell "zsh"
       default_layout "default"
-      scroll_buffer_size 100000
+      scroll_buffer_size 1000000
 
       pane_frames true
       ui {

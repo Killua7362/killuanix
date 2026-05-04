@@ -13,7 +13,7 @@ Home Manager configuration for the [Yazi](https://yazi-rs.github.io/) terminal f
 
 ## Plugins and Flavors
 
-- **Flavor:** `vscode-dark-plus` (from `pkgs.yaziFlavors`), set as the dark theme in `theme.toml`.
+- **Flavor:** `vscode-dark-plus` (from `pkgs.yaziFlavors`, patched on the fly), set as the dark theme in `theme.toml`. The pinned `jun-11` revision predates yazi's filetype/icon schema change (`name =` → `url =`), so `default.nix` wraps it in a `runCommand` that `sed`-rewrites `flavor.toml` before installation. Drop the wrapper once nixpkgs ships a newer flavor pin.
 - **Plugin:** `mount` (from `pkgs.yaziPlugins`).
 - Several additional plugins (`starship`, `jump-to-char`, `relative-motions`) are commented out in `default.nix`.
 

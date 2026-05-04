@@ -39,6 +39,7 @@ nix fmt
 The flake auto-bootstraps most services, but a few one-shot manual steps remain after a fresh NixOS install:
 
 - **Linkding** (`modules/containers/linkding.nix`) — admin user (`admin`) is auto-created from the sops-encrypted `linkding_admin_password`, and the sops-encrypted `secrets/linkding-bookmarks.html` is imported once per fresh data volume by `linkding-import.service`. Just open http://localhost:9090, log in with the password from `sops decrypt secrets/personal.yaml`, and grab an API token from Settings → Integrations for the browser extension.
+- **Cronicle** (`modules/containers/cronicle/`) — declarative cron with web UI on http://localhost:3012. Events are individual `.nix` files under `cronicle/events/`, each with an `enabled` flag. `cronicle-bootstrap.service` syncs them on every activation: `enabled = true` seeds with Cronicle's `enabled: 1` (Active checkbox on), `enabled = false` seeds with `enabled: 0` so the event stays visible but greyed out / not firing. Per-event state at `/opt/cronicle/data/.bootstrap/<id>.state` makes the sync idempotent — UI pauses on active-in-nix events survive rebuilds because the sentinel matches and we don't re-touch. Flipping `enabled` in nix re-seeds via `delete_event` + `add_event`, which intentionally clobbers any UI edits to that event's params (the toggle is the source of truth on rebuild). Default login `admin`/`admin` — change via UI on first visit. Live + completed logs in Job Details / Completed Jobs tabs.
 
 ## Architecture
 
@@ -78,7 +79,7 @@ The flake auto-bootstraps most services, but a few one-shot manual steps remain 
   - [`terminal/CLAUDE.md`](modules/common/programs/terminal/CLAUDE.md) — Ghostty (primary under Hyprland), Kitty, Zellij
   - [`theming/CLAUDE.md`](modules/common/programs/theming/CLAUDE.md) — Shared `config.theme.palette`, GTK/libadwaita CSS, Kvantum + qt5ct/qt6ct
   - [`utils/CLAUDE.md`](modules/common/programs/utils/CLAUDE.md) — Yazi, Zathura, Nemo, mimeapps, clipboard-menu, dotfile symlinks → [`yazi/CLAUDE.md`](modules/common/programs/utils/yazi/CLAUDE.md)
-- **`modules/containers/`** — quadlet / portainer container definitions (litellm, mcphub, qdrant, searxng, portainer, homepage, excalidraw, mermaid-live, linkding, icloud-drive)
+- **`modules/containers/`** — quadlet / portainer container definitions (litellm, mcphub, qdrant, searxng, portainer, homepage, excalidraw, mermaid-live, linkding, icloud-drive, cronicle)
 - **`modules/vms/`** — libvirt/qemu VM definitions and plugins (activity-sim, work-vm, vm-manager)
 - **`modules/nixos/`**, **`modules/home-manager/`** — thin module entry points re-exported via the flake's `nixosModules` / `homeManagerModules`
 

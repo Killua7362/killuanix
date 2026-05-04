@@ -3,12 +3,13 @@
     ./portainer.nix
     ./searxng.nix
     ./litellm.nix
-    ./icloud-drive.nix
+    ./icloud-drive
     ./excalidraw.nix
     ./mermaid-live.nix
     ./homepage.nix
     ./qdrant.nix
     ./linkding.nix
+    ./cronicle
   ];
 
   # ── quadlet-nix: Rootful container orchestration ──
@@ -19,6 +20,9 @@
     volumes = {
       portainer_data.volumeConfig = {};
       linkding_data.volumeConfig = {};
+      cronicle_data.volumeConfig = {};
+      cronicle_logs.volumeConfig = {};
+      cronicle_plugins.volumeConfig = {};
     };
 
     # ── Shared networks ──

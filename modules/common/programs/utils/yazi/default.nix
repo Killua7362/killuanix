@@ -4,7 +4,16 @@
   lib,
   inputs,
   ...
-}: {
+}: let
+  # The pinned `pkgs.yaziFlavors.vscode-dark-plus` (jun-11) predates yazi's
+  # schema change that renamed `name = …` to `url = …` in filetype/icon
+  # rules. Patch the flavor.toml at build time so the current yazi accepts it.
+  vscode-dark-plus-fixed = pkgs.runCommand "yazi-flavor-vscode-dark-plus-patched" {} ''
+    cp -r ${pkgs.yaziFlavors.vscode-dark-plus} $out
+    chmod -R u+w $out
+    ${pkgs.gnused}/bin/sed -i 's/\bname = /url = /g' $out/flavor.toml
+  '';
+in {
   programs.yazi = {
     enable = true;
     shellWrapperName = "yy";
@@ -16,10 +25,7 @@
       _7zz = pkgs._7zz-rar; # Support for RAR extraction
     };
     flavors = {
-      inherit
-        (pkgs.yaziFlavors)
-        vscode-dark-plus
-        ;
+      vscode-dark-plus = vscode-dark-plus-fixed;
     };
     plugins = {
       inherit (pkgs.yaziPlugins) mount;

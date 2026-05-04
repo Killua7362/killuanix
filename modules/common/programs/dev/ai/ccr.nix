@@ -3,10 +3,11 @@
 # CCR (https://github.com/musistudio/claude-code-router) is a small Node
 # daemon that listens on 127.0.0.1:3456, accepts inbound requests in the
 # Anthropic API wire format, and re-translates them to any number of
-# OpenAI-compatible providers. Pointing `ANTHROPIC_BASE_URL` at it makes
-# `claude`, `ruflo`, `claude-flow`, and any ccmanager-spawned session
-# transparently route through whichever model is configured here — no
-# per-tool wrapping needed.
+# OpenAI-compatible providers. Routing is opt-in per invocation: launch
+# Claude Code via `ccr code` (which sets its own ANTHROPIC_BASE_URL /
+# ANTHROPIC_API_KEY for the spawned process). Plain `claude`, `ruflo`,
+# `claude-flow`, and ccmanager-spawned sessions hit the real Anthropic
+# API.
 #
 # ── Pieces ───────────────────────────────────────────────────────────────
 # 1. Lazy `npx` shim for `ccr` (same shape as ruflo-cli.nix / claude-flow-cli.nix).
@@ -15,8 +16,6 @@
 #    a path, only inline JSON).
 # 3. `systemd.user.services.ccr` — always-on daemon (Linux only). On macOS
 #    run `ccr start` manually.
-# 4. `home.sessionVariables` setting `ANTHROPIC_BASE_URL` + a dummy
-#    `ANTHROPIC_API_KEY` so every shell-spawned tool routes via CCR.
 {
   pkgs,
   lib,
@@ -104,14 +103,5 @@ in {
       RestartSec = 5;
     };
     Install.WantedBy = ["default.target"];
-  };
-
-  # Single switch that makes claude / ruflo / claude-flow / claude-kit /
-  # ccmanager-spawned sessions all auto-route through CCR. CCR ignores the
-  # token, but the Anthropic SDK requires *something* non-empty.
-  # To bypass for one shell: `unset ANTHROPIC_BASE_URL ANTHROPIC_API_KEY`.
-  home.sessionVariables = {
-    ANTHROPIC_BASE_URL = "http://127.0.0.1:${toString ccrPort}";
-    ANTHROPIC_API_KEY = "ccr-local";
   };
 }

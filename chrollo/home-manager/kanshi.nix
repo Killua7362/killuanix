@@ -14,7 +14,7 @@
           {
             criteria = "eDP-1";
             status = "enable";
-            position = "1920,1080";
+            position = "1920,0";
           }
         ];
       }
@@ -29,7 +29,7 @@
           {
             criteria = "eDP-1";
             status = "enable";
-            position = "1920,1080";
+            position = "1920,0";
           }
         ];
       }

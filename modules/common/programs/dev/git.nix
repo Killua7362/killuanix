@@ -1,10 +1,10 @@
-{ config
-, pkgs
-, lib
-, inputs
-, ...
-}:
-let
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}: let
   userConfig = inputs.self.commonModules.user.userConfig;
   azureGitConfigPath = "${config.home.homeDirectory}/.config/git/config-azure";
   dasGitConfigPath = "${config.home.homeDirectory}/.config/git/config-das";
@@ -29,6 +29,18 @@ in {
 
   programs.git = {
     enable = true;
+
+    # Global gitignore — written by HM to ~/.config/git/ignore and pointed to
+    # by core.excludesFile. Single source of truth across every host/repo.
+    ignores = [
+      ".gitnexus/" # GitNexus per-repo knowledge graph (rebuildable, never commit)
+      # `den` host-side state. Lives next to bound working dirs; per-host only.
+      ".den-meta.json"
+      ".den-meta.json.lock"
+      ".den-meta.json.reflog"
+      ".den-staging/"
+      ".den-generations/"
+    ];
 
     settings = {
       user = {

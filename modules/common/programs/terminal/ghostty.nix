@@ -21,7 +21,7 @@ in {
       cursor-style-blink = true;
       shell-integration = "zsh";
       copy-on-select = "clipboard";
-      scrollback-limit = 100000;
+      scrollback-limit = 1000000;
 
       command = "zsh";
 

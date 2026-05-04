@@ -163,4 +163,32 @@
     runtime = "npx-direct";
     args = ["mcp" "start"];
   };
+
+  # abhigyanpatwari/GitNexus — Tree-sitter-backed code knowledge graph.
+  # Complements `code-index` (registered separately in
+  # programs/dev/ai/code-index.nix): code-index does semantic vector search
+  # over Qdrant, GitNexus does relational queries (impact analysis, call
+  # graphs, process tracing) over an embedded LadybugDB graph.
+  #
+  # MCP server runs over stdio with `gitnexus mcp`. The graph itself must be
+  # built first per-repo with `gitnexus analyze` from the repo root; the
+  # global registry of indexed repos lives at `~/.gitnexus/` and per-project
+  # data at `<repo>/.gitnexus/` (gitignored via the global ignore file in
+  # programs/dev/git.nix). No API key required for the core 16 MCP tools —
+  # the optional `wiki` subcommand wants OpenAI/Anthropic creds but that's
+  # not what we expose here.
+  #
+  # `cacheNamespace = "gitnexus"` matches the standalone CLI shim in
+  # programs/dev/ai/gitnexus-cli.nix (same `~/.cache/gitnexus/` root) so the
+  # MCP probe reuses the install populated by `gitnexus analyze` instead of
+  # re-resolving the dep tree on Claude Code's cold start. Same pattern as
+  # claude-flow ↔ ruflo above.
+  gitnexus = {
+    npxDirect = {
+      package = "gitnexus@latest";
+      cacheNamespace = "gitnexus";
+    };
+    runtime = "npx-direct";
+    args = ["mcp"];
+  };
 }

@@ -19,7 +19,7 @@ Home Manager configuration for two terminal emulators (ghostty, kitty) and the z
 - **Cursor**: Block style with blink.
 - **Shell**: zsh (via `shell-integration = "zsh"` and `command = "zsh"`).
 - **Clipboard**: `copy-on-select = clipboard`, explicit `ctrl+shift+c`/`ctrl+shift+v` bindings.
-- **Scrollback**: 100000 lines (raised from 3000 — long claude-code conversations were rolling out of the buffer mid-scroll).
+- **Scrollback**: 1000000 lines (raised from 3000 — long claude-code conversations were rolling out of the buffer mid-scroll).
 - **Theme**: All colors (`background`, `foreground`, `cursor-color`, `cursor-text`, `selection-background`/`foreground`, and the full ANSI 16 palette `color0`–`color15`) are pulled from `config.theme.palette` — see `../theming/palette.nix` for the shared palette definition.
 - **Keybindings**: Font size controls (`ctrl+plus`/`ctrl+minus`/`ctrl+0`), new window (`ctrl+shift+n`).
 - **Zellij pass-through**: Explicitly unbinds `ctrl+a`, `ctrl+g`, `ctrl+h`, `ctrl+n`, `ctrl+o`, `ctrl+p`, `ctrl+q`, `ctrl+s`, `ctrl+t`, `ctrl+w`, `ctrl+tab`, `ctrl+shift+tab` so Ghostty never swallows them. This is why `Ctrl-a`, `Ctrl-p`, etc. reach zellij cleanly for mode switching.
@@ -43,13 +43,14 @@ Home Manager configuration for two terminal emulators (ghostty, kitty) and the z
 - **Keybinds**: Uses `clear-defaults=true` with a fully custom keybind set. Navigation uses both arrow keys and Colemak-style (`n`/`e`/`i`/`o`) plus Vim-style (`h`/`j`/`k`/`l`) bindings.
   - `Ctrl a` enters tmux-compatibility mode.
   - `Ctrl g` toggles locked mode.
-  - `Ctrl p` / `Ctrl t` / `Ctrl s` / `Ctrl o` / `Ctrl h` switch to pane, tab, scroll, session, and move modes respectively.
+  - `Ctrl p` / `Ctrl t` / `Ctrl s` / `Ctrl h` switch to pane, tab, scroll, and move modes respectively. (No global `Ctrl o` binding — it conflicted with claude code's "expand tool output" shortcut. Session mode is intentionally unreachable via key; session-manager is launched directly via `Alt s`. The `session` mode block is left in the keybinds for completeness but has no entry point.)
   - `Ctrl n` enters resize mode.
   - `Ctrl q` quits.
-  - `Alt` shortcuts provide quick access without mode switching: `Alt h` new pane, `Alt t` toggle floating panes, `Alt f` fullscreen, `Alt w` close focused pane, `Alt +/-` resize.
+  - `Alt` shortcuts provide quick access without mode switching: `Alt h` new pane, `Alt t` toggle floating panes, `Alt f` fullscreen, `Alt w` close focused pane, `Alt s` launches the session-manager floating plugin, `Alt +/-` resize.
   - `Alt p` runs the `zj-proj` project picker (repo `scripts/zj-proj`) in a floating pane (80%×80%, centered) via `Run { close_on_exit true; floating true; x/y/width/height ... }` and pairs it with an explicit `SwitchToMode "locked"` so the session is locked while fzf is up. Lives in the `shared` block so it works from any mode. The script runs `fzf` over a hardcoded project list: cancel → script `exit 0` → pane closes via `close_on_exit`; select → `zellij action new-tab --cwd <picked>` opens a new tab and the script exits → the floating fzf pane closes. **Autolock caveat:** autolock matches `running_command`/`running_command_exe` from `ListClients`, which for a `Run`-spawned bash script can resolve to the interpreter (`bash`) rather than `zj-proj` or `fzf`. Neither is a trigger, so autolock would *unlock* the session on focus — the `SwitchToMode "locked"` in the keybind is what guarantees the initial locked state; `zj-proj` + `fzf` in the triggers list are there as secondary matches in case zellij reports a matching basename.
 - **Plugins**: Loads built-in zellij plugins plus `zellij-autolock` (auto-locks on nvim, vim, git, fzf, zoxide, atuin, git-forgit, lazygit). The autolock plugin does exact-match of the pane executable's basename against the `|`-separated trigger list (not substring regex), so Nix-wrapped binaries must be listed under their unwrapped name — a bare `claude` trigger wouldn't work because the Nix wrapper exec's `.claude-unwrapped`; claude was intentionally dropped from the trigger list.
-- **Scroll buffer**: `scroll_buffer_size 100000` (raised from the zellij default of 10000) — matches the ghostty bump so per-pane history survives long claude-code sessions when scroll is captured by zellij.
+- **Scroll buffer**: `scroll_buffer_size 1000000` (raised from the zellij default of 10000) — matches the ghostty bump so per-pane history survives long claude-code sessions when scroll is captured by zellij.
+- **Edit scrollback**: `Ctrl-a v` (tmux-mode) and `Ctrl-s u` (scroll-mode) both invoke `EditScrollback`, dumping the pane's scrollback into `$EDITOR` (nvim).
 - **Environment**: Sets `WAYLAND_DISPLAY=wayland-1`.
 
 ## Integration

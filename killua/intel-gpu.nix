@@ -8,14 +8,9 @@
 }: {
   # ── Xe driver (native for Lunar Lake, device ID 64a0) ──
   boot.initrd.kernelModules = ["xe"];
-  boot.kernelParams = [
-    # Recover from GPU hangs instead of hard-locking the system
-    # wedged_mode: 1 = log + reset GPU, 2 = try to keep running
-    "xe.wedged_mode=2"
-    # No fbcon=rotate — gamescope handles rotation in DRM mode,
-    # Plasma/Hyprland handle it via their own display config.
-    # This keeps TTY unrotated (native portrait).
-  ];
+  # No fbcon=rotate — gamescope handles rotation in DRM mode,
+  # Plasma/Hyprland handle it via their own display config.
+  # This keeps TTY unrotated (native portrait).
 
   # ── Intel firmware (GuC, HuC, DMC) ──
   hardware.enableRedistributableFirmware = true;

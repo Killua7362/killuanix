@@ -70,6 +70,7 @@
       hakuneko
       fontpreview
       arandr
+      nwg-displays
       nitrogen
       vscodium
       dmenu

@@ -11,8 +11,8 @@
 
     # History settings
     history = {
-      size = 10000;
-      save = 10000;
+      size = 100000;
+      save = 100000;
       ignoreDups = true;
       ignoreAllDups = true;
       share = true;
@@ -178,6 +178,10 @@
         # Tmux functions (need arguments, so functions instead of aliases)
         ta() { tmux a -t "$1"; }
         td() { tmux kill-session -t "$1"; }
+
+        # Preserve scrollback when clearing under zellij/tmux: skip the E3
+        # (clear-scrollback) sequence that ncurses' `clear` emits.
+        clear() { printf '\e[H\e[2J'; }
 
         # Disable greeting (zsh doesn't have this by default anyway)
         # Key bindings

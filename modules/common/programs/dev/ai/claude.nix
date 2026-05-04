@@ -88,27 +88,21 @@
     # Key the writable workdir on the store-path hash of `src`, so patch
     # edits (not just rev bumps) invalidate stale copies.
     srcKey = builtins.substring 0 12 (baseNameOf "${src}");
-    launcher =
-      if runtime == "uv-run"
-      then ''exec ${lib.getExe pkgs.uv} run python ${lib.escapeShellArg entrypoint} "$@"''
-      else throw "claude.nix: unsupported git-source runtime '${runtime}' for MCP server '${name}'";
     runtimeInputs =
       if runtime == "uv-run"
       then [pkgs.uv]
-      else [];
+      else throw "claude.nix: unsupported git-source runtime '${runtime}' for MCP server '${name}'";
   in
     pkgs.writeShellApplication {
       name = "mcp-${name}";
       inherit runtimeInputs;
       text = ''
-        workdir="''${XDG_CACHE_HOME:-$HOME/.cache}/mcp-servers/${name}-${srcKey}"
-        if [ ! -e "$workdir/.ready" ]; then
-          mkdir -p "$workdir"
-          cp -rL --no-preserve=mode,ownership "${src}/." "$workdir/"
-          touch "$workdir/.ready"
-        fi
-        cd "$workdir"
-        ${launcher}
+        export MCP_NAME=${lib.escapeShellArg name}
+        export MCP_SRCKEY=${lib.escapeShellArg srcKey}
+        export MCP_SRC=${src}
+        export MCP_RUNTIME=${lib.escapeShellArg runtime}
+        export MCP_ENTRYPOINT=${lib.escapeShellArg entrypoint}
+        exec bash ${./claude/scripts/mcp-git-server.sh} "$@"
       '';
     };
 
@@ -229,6 +223,12 @@ in {
       skipAutoPermissionPrompt = true;
       skipDangerousModePermissionPrompt = true;
       permissions.defaultMode = "bypassPermissions";
+
+      # Use the flicker-free alt-screen renderer so the live conversation
+      # doesn't get mirrored into the terminal's normal scrollback. Use
+      # `Ctrl+O` then `[` inside Claude Code to dump the transcript into
+      # scrollback on demand.
+      tui = "fullscreen";
 
       # Declaratively register the ruflo marketplace. Equivalent to running
       # `/plugin marketplace add ruvnet/ruflo` once, but reproducible across

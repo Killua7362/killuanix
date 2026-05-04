@@ -41,6 +41,15 @@
           }
         ];
       }
+      {
+        profile.name = "fallback";
+        profile.outputs = [
+          {
+            criteria = "*";
+            status = "enable";
+          }
+        ];
+      }
     ];
   };
 }
