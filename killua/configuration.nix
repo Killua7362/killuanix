@@ -240,7 +240,32 @@
       experimental-features = "nix-command flakes";
       flake-registry = "";
       nix-path = config.nix.nixPath;
+      # Allow non-root users to use the substituters declared in flake.nix's
+      # nixConfig (otherwise the daemon silently drops them and rebuilds from
+      # source — e.g. yt-dlp pulling in deno from chaotic-nyx).
       trusted-users = ["root" "@wheel"];
+      # Mirror flake.nix nixConfig at the daemon level so every user gets the
+      # caches without --accept-flake-config and without trusted-user gating.
+      substituters = [
+        "https://cache.nixos.org/"
+        "https://hyprland.cachix.org"
+        "https://vicinae.cachix.org"
+        "https://nix-community.cachix.org"
+        "https://chaotic-nyx.cachix.org"
+        "https://yazi.cachix.org"
+        "https://attic.xuyh0120.win/lantian"
+        "https://cache.garnix.io"
+      ];
+      trusted-public-keys = [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+        "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
+        "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
+        "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
+        "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+      ];
     };
     channel.enable = false;
     registry = lib.mapAttrs (_: flake: {inherit flake;}) flakeInputs;

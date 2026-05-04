@@ -79,11 +79,11 @@ in {
   umbrella = kodiPkgs.buildKodiAddon {
     pname = "umbrella";
     namespace = "plugin.video.umbrella";
-    version = "6.7.65";
+    version = "6.7.66";
 
     src = pkgs.fetchzip {
-      url = "https://raw.githubusercontent.com/umbrellaplug/umbrellaplug.github.io/master/omega/zips/plugin.video.umbrella/plugin.video.umbrella-6.7.65.zip";
-      hash = "sha256-SO8QSAWa1zxN/4OTupnF3jS8OkudWoicW1rIrKerN0I=";
+      url = "https://raw.githubusercontent.com/umbrellaplug/umbrellaplug.github.io/master/omega/zips/plugin.video.umbrella/plugin.video.umbrella-6.7.66.zip";
+      hash = "sha256-55mm4zj+GZ51FtjHoVPwWOA7WS7A1QqR2hxuN2Wg5LY=";
       extension = "zip";
     };
 

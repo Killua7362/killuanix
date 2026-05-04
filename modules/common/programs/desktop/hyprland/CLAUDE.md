@@ -6,7 +6,7 @@ Hyprland window manager configuration, split into focused submodules. The primar
 
 | File | Purpose |
 |---|---|
-| `default.nix` | Entry point. Enables Hyprland, sources external `workspaces.conf`, and imports all submodules. |
+| `default.nix` | Entry point. Enables Hyprland, sources external `workspaces.conf`, and imports all submodules. Monitor config is delegated to per-host `services.kanshi` (see `killua/kanshi.nix`, `chrollo/home-manager/kanshi.nix`). |
 | `env.nix` | Environment variables: fcitx input method, Wayland/XDG session identifiers, Qt theming (gtk3), accessibility flags, terminal (`ghostty`). |
 | `general.nix` | General settings: scrolling layout, border colors, gaps (5 in / 10 out), tearing allowed, snap enabled. |
 | `layout.nix` | Layout engines: dwindle (preserve split, pseudotile), scrolling (column widths `1.0, 0.5`), master, decoration (rounding 8, blur, shadows), cursor, and bind scroll settings. |
@@ -16,7 +16,7 @@ Hyprland window manager configuration, split into focused submodules. The primar
 | `clipboard.nix` | Systemd user services `cliphist-text` and `cliphist-image` that run `wl-paste --watch` piped through cliphist. Uses `Restart=always` + `KillMode=mixed` so children are reaped on restart; avoids the child pile-up that occurs with long-lived `exec-once` watchers. |
 | `input.nix` | Currently empty (placeholder). |
 | `gestures.nix` | Touchpad gestures: workspace swipe config and multi-finger gestures (3-finger swipe move, 4-finger horizontal workspace switch, 4-finger pinch float, 4-finger up/down for quickshell overview). |
-| `misc.nix` | Miscellaneous: animations enabled but all durations set to 0, VFR/VRR enabled, DPMS on mouse/key, swallow regex (disabled via `enable_swallow = false`), session lock restore + xray, background color, Hyprland logo/splash disabled, `force_default_wallpaper = -1`, `focus_on_activate`, scroller plugin `column_widths = "onehalf one"`, xwayland forced zero scaling. |
+| `misc.nix` | Miscellaneous: animations enabled but all durations set to 0, `misc.vfr`/`misc.vrr` enabled, DPMS on mouse/key, swallow regex (disabled via `enable_swallow = false`), session lock restore + xray, background color, Hyprland logo/splash disabled, `force_default_wallpaper = -1`, `focus_on_activate`, scroller plugin `column_widths = "onehalf one"`, xwayland forced zero scaling. |
 | `hypridle.nix` | Idle daemon: screen off after 5400s (90 min), DPMS restore on resume. Lock command uses `hyprlock` with duplicate prevention. |
 | `hyprlock.nix` | Lock screen: blurred background image, centered clock and date labels, input field at bottom. Font: Rubik / Rubik Extrabold. |
 | `dms.nix` | Enables dank-material-shell and its `vmManager` plugin (sourced from `vms/vm-manager-plugin`). |
@@ -30,5 +30,5 @@ Hyprland window manager configuration, split into focused submodules. The primar
 - **Screenshots**: `Print` key launches slurp region select piped through grim into satty.
 - **Media controls**: hardware keys and `Super+Shift` combos for playerctl play/pause/next/prev.
 - **Quickshell integration**: multiple `global` dispatches for sidebar, overview, emoji picker, cheatsheet, media controls, session menu, bar, and wallpaper selector.
-- **Monitor config**: managed declaratively per host via `services.kanshi` (see `killua/kanshi.nix`, `chrollo/home-manager/kanshi.nix`). Kanshi watches hot-plug events and switches output profiles (docked / undocked) via `wlr-output-management`. Hyprland no longer sources `monitors.conf`.
+- **Monitor config**: managed declaratively per host via `services.kanshi` (see `killua/kanshi.nix`, `chrollo/home-manager/kanshi.nix`). Kanshi watches hot-plug events and switches output profiles (docked / undocked) via `wlr-output-management`. Hyprland no longer declares monitors itself, and `monitors.conf` is no longer sourced.
 - **Workspace config**: sourced from external `~/.config/hypr/workspaces.conf` (not managed here).

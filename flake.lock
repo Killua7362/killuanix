@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "algo-sensei": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1761134513,
+        "narHash": "sha256-yoE/bww7ODHSS7B4XCbZEFuBagtXW28VDb9NLQTUPU4=",
+        "owner": "karanb192",
+        "repo": "algo-sensei",
+        "rev": "5d4421396994494e74ea2e6cc9cde785be742c5b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "karanb192",
+        "repo": "algo-sensei",
+        "type": "github"
+      }
+    },
     "anthropics-skills": {
       "flake": false,
       "locked": {
@@ -1692,6 +1708,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-kernel": {
+      "locked": {
+        "lastModified": 1769385311,
+        "narHash": "sha256-5PpFDCZZD/KU1nlpoO+mayUEvUqDD/XWdb3dQhDPY8o=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b92182d173b65ba3055156c5366a0344c802360c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b92182d173b65ba3055156c5366a0344c802360c",
+        "type": "github"
+      }
+    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1776564050,
@@ -2380,6 +2412,7 @@
     },
     "root": {
       "inputs": {
+        "algo-sensei": "algo-sensei",
         "anthropics-skills": "anthropics-skills",
         "antigravity-nix": "antigravity-nix",
         "arkenfox": "arkenfox",
@@ -2412,6 +2445,7 @@
         "nixospkgs-unstable": "nixospkgs-unstable",
         "nixpille-obsidian-community-plugins": "nixpille-obsidian-community-plugins",
         "nixpkgs": "nixpkgs_13",
+        "nixpkgs-kernel": "nixpkgs-kernel",
         "nixpkgs-master": "nixpkgs-master",
         "nixpkgs-stable": "nixpkgs-stable_2",
         "nixpkgs-unstable": "nixpkgs-unstable",

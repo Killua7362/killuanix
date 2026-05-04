@@ -11,6 +11,8 @@
     secrets = {
       "boeing/git_name" = {};
       "boeing/git_email" = {};
+      "das/git_name" = {};
+      "das/git_email" = {};
       "realdebrid_token" = {};
       "nvidia_api_key" = {};
       "google_studio_key" = {};

@@ -26,6 +26,12 @@
   # module it was inherited from the system).
   nix.package = pkgs.nix;
 
+  # Lunar Lake BT controller can't open an mSBC SCO transport ("failed to
+  # get HFP codec 2"), which leaves HFP unregistered and breaks the BT mic
+  # in Meet/Discord. With mSBC off, HFP falls back to CVSD (8 kHz) and the
+  # profile activates cleanly. Other hosts keep the default (true).
+  audio.bluetooth.enableMsbc = false;
+
   # NixOS-specific overlays (matching chrollo home.nix)
   nixpkgs.overlays = [
     inputs.neovim-nightly-overlay.overlays.default

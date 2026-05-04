@@ -7,8 +7,8 @@
 let
   userConfig = inputs.self.commonModules.user.userConfig;
   azureGitConfigPath = "${config.home.homeDirectory}/.config/git/config-azure";
-in
-{
+  dasGitConfigPath = "${config.home.homeDirectory}/.config/git/config-das";
+in {
   sops.templates."config-azure" = {
     content = ''
       [user]
@@ -16,6 +16,15 @@ in
           email = ${config.sops.placeholder."boeing/git_email"}
     '';
     path = azureGitConfigPath;
+  };
+
+  sops.templates."config-das" = {
+    content = ''
+      [user]
+          name = ${config.sops.placeholder."das/git_name"}
+          email = ${config.sops.placeholder."das/git_email"}
+    '';
+    path = dasGitConfigPath;
   };
 
   programs.git = {
@@ -29,6 +38,9 @@ in
       "http \"https://dev.azure.com\"" = {
         proxy = "socks5h://127.0.0.1:1080";
       };
+      "http \"https://gitlab-ext.digitalaviationservices.com\"" = {
+        proxy = "socks5h://127.0.0.1:1080";
+      };
       extensions = {
         worktreeConfig = true;
       };
@@ -38,6 +50,18 @@ in
       {
         condition = "hasconfig:remote.*.url:https://*@dev.azure.com/**";
         path = azureGitConfigPath;
+      }
+      {
+        condition = "hasconfig:remote.*.url:https://gitlab-ext.digitalaviationservices.com/**";
+        path = dasGitConfigPath;
+      }
+      {
+        condition = "hasconfig:remote.*.url:https://*@gitlab-ext.digitalaviationservices.com/**";
+        path = dasGitConfigPath;
+      }
+      {
+        condition = "hasconfig:remote.*.url:git@gitlab-ext.digitalaviationservices.com:**";
+        path = dasGitConfigPath;
       }
     ];
   };

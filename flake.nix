@@ -27,6 +27,12 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs-virtualbox.url = "github:NixOS/nixpkgs/346dd96ad74dc4457a9db9de4f4f57dab2e5731d";
+    # Pinned to a nixos-unstable rev that ships kernel 6.12.67 — the exact
+    # version the chrollo system was last activated against. Kept here so
+    # `boot.kernelPackages` produces the same derivation as the activated
+    # one, letting the cached `virtualbox-modules-7.2.4-6.12.67` be reused
+    # instead of being rebuilt for a newer kernel.
+    nixpkgs-kernel.url = "github:NixOS/nixpkgs/b92182d173b65ba3055156c5366a0344c802360c";
     homemanager = {
       url = "github:rycee/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -161,6 +167,14 @@
     # agentient/vibekit — cherry-picked skills (see modules/common/programs/dev/claude.nix)
     vibekit = {
       url = "github:agentient/vibekit";
+      flake = false;
+    };
+
+    # karanb192/algo-sensei — DSA/algorithms mentor skill. Wired only into
+    # the `claude-algo` launcher (see modules/common/programs/dev/claude-launchers.nix),
+    # so plain `claude` sessions don't see it.
+    algo-sensei = {
+      url = "github:karanb192/algo-sensei";
       flake = false;
     };
 

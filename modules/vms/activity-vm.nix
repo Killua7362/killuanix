@@ -195,6 +195,13 @@
   '';
 in {
   home.activation.defineWorkVm = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    # Skip silently on hosts where KVM is unavailable (e.g. chrollo blacklists
+    # kvm_intel/kvm). The domain XML uses <domain type='kvm'>, so libvirt
+    # would otherwise emit "Emulator … does not support virt type 'kvm'".
+    if [ ! -e /dev/kvm ]; then
+      exit 0
+    fi
+
     # Ensure directories exist
     mkdir -p "$HOME/VMs"
     mkdir -p "${sharedDir}"
@@ -204,12 +211,12 @@ in {
       ${pkgs.qemu}/bin/qemu-img create -f qcow2 "${diskPath}" 40G
     fi
 
-    # Skip VM definition on hosts without KVM support (e.g. MSI Claw handheld)
-    if [ -e /dev/kvm ]; then
-      if ! ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} 2>/dev/null; then
-        ${pkgs.libvirt}/bin/virsh -c qemu:///system undefine ${vmName} 2>/dev/null || true
-        ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} 2>/dev/null || true
-      fi
+    # Define/update the VM (use full path — virsh may not be in PATH during activation)
+    # Try define first (works for new VMs and updates existing ones with same UUID)
+    # Only undefine+redefine if plain define fails (UUID mismatch)
+    if ! ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} 2>/dev/null; then
+      ${pkgs.libvirt}/bin/virsh -c qemu:///system undefine ${vmName} 2>/dev/null || true
+      ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} 2>/dev/null || true
     fi
   '';
 }
