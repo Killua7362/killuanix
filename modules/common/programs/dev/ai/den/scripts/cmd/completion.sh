@@ -30,7 +30,6 @@ EOF
       ;;
     zsh)
       cat <<'EOF'
-#compdef den
 _den() {
   local cmds
   cmds=(new init list ls status add ignore rm re-add restore pull clean sync stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version)
@@ -46,7 +45,7 @@ _den() {
     *) _files;;
   esac
 }
-_den "$@"
+compdef _den den
 EOF
       ;;
     fish)

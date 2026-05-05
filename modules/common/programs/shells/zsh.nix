@@ -100,6 +100,7 @@
         export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
         autoload -Uz compinit
+        compinit -d "''${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-$ZSH_VERSION"
         eval $(starship init zsh)
         eval $(zoxide init zsh)
 
