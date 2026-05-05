@@ -30,7 +30,7 @@ _do_pull_dry() {
   data="$("$DEN_HELPER_BIN" status --cwd "$root" --project-dir "$pd")"
   echo "$data" | "$DEN_HELPER_BIN" render-status
   echo
-  echo "dry-run: would create the following symlinks:"
+  echo "dry-run: would create the following links:"
   echo "$data" | jq -r '.["missing-link"][] | "  + " + .'
 }
 
@@ -48,7 +48,11 @@ _do_pull() {
   local drift
   drift="$(echo "$data" | jq -r .drift_count)"
 
-  # Build new symlinks for missing-link entries.
+  # Cache kind lookups for the duration of the pull.
+  local kinds
+  kinds="$(_load_manifest_kinds "$pd")"
+
+  # Build new links for missing-link entries.
   local errors=0
   local applied=0
   while IFS= read -r rel; do
@@ -62,8 +66,10 @@ _do_pull() {
       errors=$((errors+1))
       continue
     fi
-    if ! ln -snf "$src" "$target" 2>/dev/null; then
-      _warn "failed to link $rel"
+    local kind
+    kind="$(echo "$kinds" | jq -r --arg r "$rel" '.[$r] // "symlink"')"
+    if ! _link_for_kind "$kind" "$src" "$target" 2>/dev/null; then
+      _warn "failed to $kind $rel"
       errors=$((errors+1))
       [ "$ignore_failures" -eq 1 ] || break
     else
@@ -71,12 +77,16 @@ _do_pull() {
     fi
   done < <(echo "$data" | jq -r '.["missing-link"][]')
 
-  # Update symlinks ledger from current state
+  # Update symlinks ledger from current state. The ledger key stays
+  # `.symlinks` for backwards compat, but each entry now carries a
+  # `kind` field so clean/restore can branch correctly.
   local sym_arr="[]"
   for rel in $(echo "$data" | jq -r '.["missing-link"][]'; echo "$data" | jq -r '.ok[]?'); do
     [ -z "$rel" ] && continue
-    sym_arr="$(echo "$sym_arr" | jq --arg t "$rel" --arg s "files/$rel" \
-      '. + [{src: $s, target: $t, mode: "0644"}]')"
+    local kind
+    kind="$(echo "$kinds" | jq -r --arg r "$rel" '.[$r] // "symlink"')"
+    sym_arr="$(echo "$sym_arr" | jq --arg t "$rel" --arg s "files/$rel" --arg k "$kind" \
+      '. + [{src: $s, target: $t, mode: "0644", kind: $k}]')"
   done
   local mh
   mh="$("$DEN_HELPER_BIN" manifest-hash --root "$pd" | jq -r .hash)"
@@ -97,5 +107,5 @@ _do_pull() {
   if [ "$errors" -gt 0 ] && [ "$ignore_failures" -ne 1 ]; then
     _err 1 "pull failed ($errors error(s)); $applied link(s) applied"
   fi
-  echo "applied $applied symlink(s); drift after = $new_drift"
+  echo "applied $applied link(s); drift after = $new_drift"
 }

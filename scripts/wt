@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# wt — multi-worktree helper.
+# Layout: <repo>/main/ as the primary clone; sibling worktrees at <repo>/<branch>/.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  wt clone <url> [dir]        Clone <url> into <dir>/main (dir defaults to repo basename)
+  wt new <branch> [base]      Add a sibling worktree at ../<branch> tracking [base] (default: HEAD)
+  wt ls                       List worktrees for the current repo
+  wt rm <branch>              Remove the sibling worktree at ../<branch>
+EOF
+}
+
+die() { echo "wt: $*" >&2; exit 1; }
+
+cmd_clone() {
+  local url=${1:-}; [[ -n $url ]] || die "clone: url required"
+  local dir=${2:-}
+  if [[ -z $dir ]]; then
+    dir=$(basename "$url")
+    dir=${dir%.git}
+  fi
+  [[ -e $dir ]] && die "'$dir' already exists"
+  mkdir -p "$dir"
+  git clone "$url" "$dir/main"
+  echo "→ cloned into $dir/main"
+  echo "  add worktrees with:  cd $dir/main && wt new <branch>"
+}
+
+# The "group dir" is the parent of the current worktree, where sibling worktrees live.
+_group_dir() {
+  local top
+  top=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git worktree"
+  dirname "$top"
+}
+
+_sanitize() { printf '%s' "${1//\//-}"; }
+
+cmd_new() {
+  local branch=${1:-}; [[ -n $branch ]] || die "new: branch required"
+  local base=${2:-HEAD}
+  local group; group=$(_group_dir)
+  local target="$group/$(_sanitize "$branch")"
+  [[ -e $target ]] && die "'$target' already exists"
+  if git show-ref --verify --quiet "refs/heads/$branch"; then
+    git worktree add "$target" "$branch"
+  else
+    git worktree add -b "$branch" "$target" "$base"
+  fi
+  echo "→ worktree at $target"
+}
+
+cmd_ls() {
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "not inside a git worktree"
+  git worktree list
+}
+
+cmd_rm() {
+  local branch=${1:-}; [[ -n $branch ]] || die "rm: branch required"
+  local group; group=$(_group_dir)
+  local target="$group/$(_sanitize "$branch")"
+  git worktree remove "$target"
+  echo "→ removed $target"
+}
+
+case ${1:-} in
+  clone)     shift; cmd_clone "$@" ;;
+  new)       shift; cmd_new "$@" ;;
+  ls|list)   shift; cmd_ls "$@" ;;
+  rm|remove) shift; cmd_rm "$@" ;;
+  ""|-h|--help) usage ;;
+  *) echo "wt: unknown command '$1'" >&2; usage; exit 1 ;;
+esac

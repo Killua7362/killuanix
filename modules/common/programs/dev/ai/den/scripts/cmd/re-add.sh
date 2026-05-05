@@ -22,9 +22,36 @@ _do_re_add() {
       _warn "$rel: not a real file; skipping"; continue
     fi
     mkdir -p "$(dirname "$src")"
-    cp -f "$cwd_real" "$src"
+    local kind
+    kind="$(_kind_for_rel "$pd" "$rel")"
+
+    # Hardlink fast path: if cwd and project share an inode, the link
+    # is intact — nothing to do. cp would error with "same file" and
+    # rm would orphan the data.
+    if [ "$kind" = "hardlink" ]; then
+      local cwd_ino src_ino
+      cwd_ino="$(stat -c %i "$cwd_real" 2>/dev/null || echo 0)"
+      src_ino="$(stat -c %i "$src" 2>/dev/null || echo 0)"
+      if [ "$cwd_ino" = "$src_ino" ] && [ "$cwd_ino" != "0" ]; then
+        echo "  re-added $rel (hardlink unchanged)"
+        continue
+      fi
+    fi
+
+    # General path: cwd has the canonical content (post-edit), copy it
+    # into the project, then rebuild the link of the configured kind.
+    # Use a tempfile + rename so we never reach a state where the
+    # project copy is partially written.
+    local tmp
+    tmp="$(mktemp "$src.XXXXXX")"
+    cp -f "$cwd_real" "$tmp"
+    mv -f "$tmp" "$src"
     rm -f "$cwd_real"
-    ln -snf "$src" "$cwd_real"
-    echo "  re-added $rel"
+    _link_for_kind "$kind" "$src" "$cwd_real"
+    if [ "$kind" = "hardlink" ]; then
+      echo "  re-added $rel (hardlink)"
+    else
+      echo "  re-added $rel"
+    fi
   done
 }

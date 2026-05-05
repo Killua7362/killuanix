@@ -250,9 +250,15 @@ Top-level options: `programs.den.{enable,notesPath,snapshotContent,zoxide,starsh
 - `minimal` — `files/CLAUDE.md` placeholder + minimal `.denignore`.
 - `claude-full` (default) — `CLAUDE.md` + `.claude/{settings.json,commands/,agents/,skills/,output-styles/}` + `.mcp.json` + a `.denignore` that filters out `CLAUDE.local.md`, `.claude/settings.local.json`, `.env*`, `*.local.md`.
 
-### Linking strategy (v1)
+### Linking strategy
 
-Symlinks only. `kind = "bind"` (FUSE bindfs, modeled on the existing `ccmanager-bindfs-*` units) is parsed in `manifest.toml` but defers to v2 with a friendly error. Hardlinks/reflinks/runtime-OverlayFS rejected on technical grounds.
+`kind = "symlink"` is the default (absolute symlink from cwd into `Notes/projects/<N>/files/<rel>`). Per-file overrides live in `manifest.toml`:
+
+- **`kind = "hardlink"`** — same-filesystem hardlink. Both paths share an inode and look like a real file. Required for files whose readers don't follow symlinks pointing outside their own tree — most notably `flake.nix` (nix flakes copy the source to `/nix/store/<hash>-source/` before evaluating, then mis-resolve absolute symlink targets relative to that copy, producing errors like `path '/nix/store/.../source/home/.../files/flake.nix' does not exist`). Add with `den add --hardlink <path>`. The flag persists as `[[entry]] kind = "hardlink"` in `manifest.toml`, so subsequent `den pull` on other hosts re-creates the hardlink for that file. Editor atomic-saves (write-tmp + rename) break the inode link; `den status` flags this as `replaced-with-real-file` and `den re-add <path>` rebuilds it. Cross-fs hardlink errors out at add time.
+- **`kind = "bind"`** — FUSE bindfs, modeled on the existing `ccmanager-bindfs-*` units. Parsed in `manifest.toml` but defers to v2 with a friendly error.
+- Reflinks/runtime-OverlayFS rejected on technical grounds (cross-fs, cleanup, snapshot semantics).
+
+The `.den-meta.json.symlinks` ledger entries carry a `kind` field so `clean` / `restore` / `doctor` can branch correctly. Older entries without `kind` default to `"symlink"`.
 
 ### Integration touch-points
 

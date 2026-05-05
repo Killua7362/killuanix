@@ -244,6 +244,32 @@ return {
 					java = {
 						configuration = {
 							runtimes = (function()
+								-- Read the JEP execution-environment name from
+								-- $JAVA_HOME/release so jdtls labels the runtime
+								-- as the version actually on PATH (e.g.
+								-- "JavaSE-25" when direnv loads JDK 25 in the
+								-- Boeing tree).
+								local function detect_java_name(java_home)
+									local release = java_home .. "/release"
+									if vim.fn.filereadable(release) ~= 1 then
+										return "JavaSE-21"
+									end
+									local f = io.open(release, "r")
+									if not f then
+										return "JavaSE-21"
+									end
+									local name = "JavaSE-21"
+									for line in f:lines() do
+										local v = line:match('^JAVA_VERSION="?(%d+)')
+										if v then
+											name = "JavaSE-" .. v
+											break
+										end
+									end
+									f:close()
+									return name
+								end
+
 								local java_home = vim.env.JAVA_HOME
 								if not java_home or java_home == "" then
 									local java_exec = vim.fn.resolve(vim.fn.exepath("java") or "")
@@ -253,7 +279,7 @@ return {
 								end
 								if java_home and vim.fn.isdirectory(java_home) == 1 then
 									return {
-										{ name = "JavaSE-21", path = java_home, default = true },
+										{ name = detect_java_name(java_home), path = java_home, default = true },
 									}
 								end
 								return {
@@ -265,13 +291,18 @@ return {
 						eclipse = {
 							downloadSources = true,
 						},
+						-- Both maven and eclipse importers stay enabled. jdtls
+						-- disambiguates per-project from root markers (pom.xml
+						-- vs .project). Gradle is intentionally off — the only
+						-- Gradle codebase here used the legacy ATG layout and
+						-- has been retired.
 						import = {
 							gradle = {
 								enabled = false,
 								wrapper = { enabled = false },
 								annotationProcessing = { enabled = false },
 							},
-							maven = { enabled = false },
+							maven = { enabled = true },
 							eclipse = { enabled = true },
 							exclusions = {
 								"**/node_modules/**",
@@ -386,7 +417,7 @@ return {
 										wrapper = { enabled = false },
 										annotationProcessing = { enabled = false },
 									},
-									maven = { enabled = false },
+									maven = { enabled = true },
 								},
 							},
 						},

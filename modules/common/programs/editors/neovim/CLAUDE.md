@@ -59,7 +59,7 @@ Sets up nixCatsUtils, bootstraps lazy.nvim (with Nix path resolution), imports L
 | `diffview.lua` | diffview.nvim | Git diff/file-history viewer with Colemak-adapted panel keys (e/i for next/prev entry); `<leader>gd/gh/gH/gq` to open, history, all-history, close |
 | `git-worktree.lua` | git-worktree.nvim | Git worktree management via snacks picker; `<leader>gw` list, `<leader>gW` switch to existing branch, `<leader>gN` create new branch worktree |
 | `gitsigns.lua` | gitsigns.nvim | Git gutter signs, hunk navigation/staging/reset, blame, diff |
-| `java.lua` | nvim-jdtls | Java LSP with nixCats-aware paths for jdtls, lombok, debug adapter, and test bundles; which-key integration for extract/organize/test commands |
+| `java.lua` | nvim-jdtls | Java LSP with nixCats-aware paths for jdtls, lombok, debug adapter, and test bundles; which-key integration for extract/organize/test commands. Both **maven** and **eclipse** importers are enabled — jdtls disambiguates per-project from `pom.xml` vs `.project` markers, so a Maven Spring Boot worktree and an Eclipse-format ATG tree can coexist. Gradle stays off. The default JDK runtime name is auto-derived from `$JAVA_HOME/release` (e.g. `JavaSE-25` when direnv loads JDK 25), falling back to `JavaSE-21` if no release file is readable. |
 | `lsp.lua` | nvim-lspconfig | LSP server overrides (adds qmlls with qmlls6 command) |
 | `lualine.lua` | lualine.nvim | Statusline: mode, branch, diagnostics, path, noice command/mode, DAP status, diff, clock |
 | `marks.lua` | marks.nvim | Visual mark indicators in the sign column with bookmark groups |

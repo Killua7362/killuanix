@@ -10,6 +10,7 @@
     ./qdrant.nix
     ./linkding.nix
     ./cronicle
+    ./boeing
   ];
 
   # ── quadlet-nix: Rootful container orchestration ──
@@ -23,6 +24,9 @@
       cronicle_data.volumeConfig = {};
       cronicle_logs.volumeConfig = {};
       cronicle_plugins.volumeConfig = {};
+      boeing_mongo_data.volumeConfig = {};
+      boeing_redis_data.volumeConfig = {};
+      boeing_pg_data.volumeConfig = {};
     };
 
     # ── Shared networks ──

@@ -6,6 +6,31 @@ from pathlib import Path
 
 from lib.ignore import _matches_ignore, _read_denignore
 from lib.manifest import _walk_files
+from lib.toml_io import tomllib
+
+
+def _load_manifest_kinds(project_dir: Path) -> dict:
+    """Return {rel: kind} from <project_dir>/manifest.toml.
+
+    Default kind for any rel not in the map is "symlink". Tolerates a
+    missing or malformed manifest.
+    """
+    manifest = project_dir / "manifest.toml"
+    if not manifest.exists():
+        return {}
+    try:
+        with manifest.open("rb") as f:
+            data = tomllib.load(f)
+    except Exception:
+        return {}
+    out = {}
+    for entry in data.get("entry", []) or []:
+        src = entry.get("src", "")
+        kind = entry.get("kind")
+        if not src.startswith("files/") or not kind:
+            continue
+        out[src[len("files/"):]] = kind
+    return out
 
 
 def cmd_status(args):
@@ -13,10 +38,16 @@ def cmd_status(args):
 
     Buckets:
       missing-link             : project has the file, cwd has nothing
-      wrong-target             : cwd has a symlink but pointing elsewhere
-      replaced-with-real-file  : cwd has a real file where a symlink should be
+      wrong-target             : link is the wrong kind / points elsewhere
+      replaced-with-real-file  : cwd has a real file where a link should be
+                                 (or a hardlink whose inode no longer matches)
       unmanaged-real-file      : cwd has a real file at a path the manifest expects to be linked
       untracked                : real file in cwd, not symlinked, not in host_only, not ignored
+
+    For entries with kind=hardlink in manifest.toml, "ok" requires the
+    cwd file to be a real file with the same inode as the project copy.
+    A different inode (e.g. after an editor's atomic save) shows up as
+    replaced-with-real-file — `den re-add <path>` rebuilds the hardlink.
     """
     cwd = Path(args.cwd).resolve()
     project_dir = Path(args.project_dir).resolve()
@@ -25,6 +56,7 @@ def cmd_status(args):
     host_only = set(meta.get("host_only", []))
     symlinks_index = {s["target"]: s for s in meta.get("symlinks", [])}
     ignore_patterns = _read_denignore(project_dir)
+    kinds = _load_manifest_kinds(project_dir)
 
     files_dir = project_dir / "files"
     project_files = _walk_files(files_dir) if files_dir.exists() else []
@@ -40,6 +72,33 @@ def cmd_status(args):
             continue
         target = cwd / rel
         expected_src = files_dir / rel
+        kind = kinds.get(rel, "symlink")
+
+        if kind == "hardlink":
+            # cwd should be a real file (no symlink) with the same inode
+            # as the project copy. A symlink here is "wrong-target"; a
+            # mismatched inode is "replaced-with-real-file".
+            if not target.exists() and not target.is_symlink():
+                missing_link.append(rel)
+                continue
+            if target.is_symlink():
+                actual = os.readlink(str(target))
+                wrong_target.append({"path": rel, "actual": actual,
+                                     "expected": f"hardlink ↔ {expected_src}"})
+                continue
+            try:
+                cwd_ino = target.stat().st_ino
+                src_ino = expected_src.stat().st_ino
+            except OSError:
+                missing_link.append(rel)
+                continue
+            if cwd_ino == src_ino:
+                ok.append(rel)
+            else:
+                replaced_with_real_file.append(rel)
+            continue
+
+        # Default: symlink kind
         if not target.exists() and not target.is_symlink():
             missing_link.append(rel)
             continue
@@ -113,7 +172,7 @@ def cmd_render_status(args):
         for p in data["missing-link"]:
             print(f"    - {p}")
     if data["wrong-target"]:
-        print(c("31", "  wrong-target:") + "    (symlink points elsewhere)")
+        print(c("31", "  wrong-target:") + "    (link is wrong kind or points elsewhere)")
         for e in data["wrong-target"]:
             print(f"    - {e['path']} -> {e['actual']} (expected {e['expected']})")
     if data["replaced-with-real-file"]:

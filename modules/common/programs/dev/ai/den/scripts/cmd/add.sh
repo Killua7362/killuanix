@@ -1,27 +1,35 @@
 # shellcheck shell=bash
 den_cmd_add() {
-  local force=0 as_dir=0
+  local force=0 as_dir=0 kind="symlink"
   local -a paths=()
   while [ $# -gt 0 ]; do
     case "$1" in
       --force|-f) force=1; shift;;
       --as-dir) as_dir=1; shift;;
+      --hardlink) kind="hardlink"; shift;;
+      --symlink)  kind="symlink"; shift;;
+      --kind=*)   kind="${1#--kind=}"; shift;;
+      --kind)     kind="${2:-}"; shift 2;;
       --) shift; while [ $# -gt 0 ]; do paths+=("$1"); shift; done;;
       -*) _err 2 "unknown flag: $1";;
       *) paths+=("$1"); shift;;
     esac
   done
-  [ "${#paths[@]}" -gt 0 ] || _err 2 "usage: den add <path>... [--force] [--as-dir]"
+  case "$kind" in
+    symlink|hardlink) ;;
+    *) _err 2 "unknown --kind: $kind (expected symlink|hardlink)";;
+  esac
+  [ "${#paths[@]}" -gt 0 ] || _err 2 "usage: den add <path>... [--force] [--as-dir] [--hardlink|--symlink|--kind=KIND]"
   local out
   out="$(_require_bound)"
   local root proj
   root="$(echo "$out" | sed -n 1p)"
   proj="$(echo "$out" | sed -n 2p)"
-  _with_lock "$root" _do_add "$root" "$proj" "$force" "$as_dir" "${paths[@]}"
+  _with_lock "$root" _do_add "$root" "$proj" "$force" "$as_dir" "$kind" "${paths[@]}"
 }
 
 _do_add() {
-  local root="$1" proj="$2" force="$3" as_dir="$4"; shift 4
+  local root="$1" proj="$2" force="$3" as_dir="$4" kind="$5"; shift 5
   local pd
   pd="$(_project_dir_for "$proj")"
 
@@ -54,10 +62,10 @@ _do_add() {
       # expand to leaf files
       while IFS= read -r f; do
         local frel="${f#"$root"/}"
-        _add_one "$root" "$pd" "$frel"
+        _add_one "$root" "$pd" "$frel" "$kind"
       done < <(find "$abs" -type f)
     else
-      _add_one "$root" "$pd" "$rel"
+      _add_one "$root" "$pd" "$rel" "$kind"
     fi
   done
 
@@ -68,7 +76,7 @@ _do_add() {
 }
 
 _add_one() {
-  local root="$1" pd="$2" rel="$3"
+  local root="$1" pd="$2" rel="$3" kind="${4:-symlink}"
   local abs="$root/$rel" target_in_proj="$pd/files/$rel"
   if [ ! -e "$abs" ] || [ -L "$abs" ]; then
     _warn "$rel not a real file; skipping"
@@ -80,12 +88,20 @@ _add_one() {
   src_dev="$(stat -c %d "$abs" 2>/dev/null || echo 0)"
   tgt_dev="$(stat -c %d "$(dirname "$target_in_proj")" 2>/dev/null || echo 0)"
   if [ "$src_dev" != "$tgt_dev" ]; then
+    if [ "$kind" = "hardlink" ]; then
+      _err 2 "$rel: cannot hardlink across filesystems (src dev $src_dev ≠ project dev $tgt_dev)"
+    fi
     _warn "$rel: cross-filesystem add (cp+unlink, not atomic)"
     cp -a "$abs" "$target_in_proj"
     rm -f "$abs"
   else
     mv -f "$abs" "$target_in_proj"
   fi
-  ln -snf "$target_in_proj" "$abs"
-  echo "  + $rel"
+  _link_for_kind "$kind" "$target_in_proj" "$abs"
+  _set_manifest_kind "$pd" "$rel" "$kind"
+  if [ "$kind" = "hardlink" ]; then
+    echo "  + $rel (hardlink)"
+  else
+    echo "  + $rel"
+  fi
 }

@@ -17,10 +17,10 @@ Binding lifecycle:
 Files in the binding:
   ls                         list files (symlinked / host-only / untracked)
   status [--diff] [--json]   drift report (5 buckets)
-  add <path>... [--force] [--as-dir]
+  add <path>... [--force] [--as-dir] [--hardlink|--symlink|--kind=KIND]
   ignore <path>...           mark host-only
   rm <path>... [--yes]       delete from project
-  re-add <path>...           ingest a real file replacing a project symlink
+  re-add <path>...           ingest a real file replacing a project link
   restore <path>...          undo `den add` (move file back, keep content here)
   pull [--dry-run] [--ignore-failures] [--resume]
 
@@ -138,14 +138,26 @@ EOF
 manifest — Notes/projects/<N>/manifest.toml
 
 Hybrid mode: every file under files/ is auto-walked. The manifest
-only stores entries that need metadata (mode, host filter, kind=dir).
+only stores entries that need metadata (kind, mode, host filter).
 
 Schema:
   [[entry]]
   src = "files/foo"
-  kind = "symlink" | "dir"     # "bind" parses but defers to v2
+  kind = "symlink" | "hardlink" | "dir"   # "bind" parses but defers to v2
   mode = "0644"
   host = "killua"              # optional: skip on other hosts
+
+Kinds:
+  symlink   default. Absolute symlink from cwd into Notes/files/<rel>.
+  hardlink  same-fs hardlink — appears as a real file on both sides
+            and shares an inode. Required for files whose readers don't
+            follow symlinks pointing outside their own tree (most
+            notably nix flakes, which copy the source to /nix/store/
+            and then mis-resolve absolute symlink targets relative to
+            that copy). Add with `den add --hardlink <path>`. Editor
+            atomic-saves (write-tmp + rename) break the inode link;
+            `den status` flags this as replaced-with-real-file and
+            `den re-add <path>` rebuilds it.
 EOF
       ;;
     nix)

@@ -9,8 +9,9 @@ except ImportError:  # pragma: no cover
 
 
 def _toml_dump(data: dict) -> str:
-    # Minimal TOML serializer — we only emit flat tables and arrays of
-    # strings/numbers/booleans for .den-project.toml and meta.toml.
+    # Minimal TOML serializer — emits flat tables, scalar arrays, and
+    # arrays-of-tables (`[[entry]]`) for .den-project.toml, meta.toml,
+    # and manifest.toml.
     def fmt_val(v):
         if isinstance(v, bool):
             return "true" if v else "false"
@@ -22,15 +23,26 @@ def _toml_dump(data: dict) -> str:
             return "[" + ", ".join(fmt_val(x) for x in v) + "]"
         raise TypeError(f"unsupported toml type: {type(v)}")
 
+    def is_array_of_tables(v):
+        return isinstance(v, list) and len(v) > 0 and all(isinstance(x, dict) for x in v)
+
     out = io.StringIO()
-    # top-level scalars first
+    # Top-level scalars and scalar arrays first.
     for k, v in data.items():
-        if not isinstance(v, dict):
-            out.write(f"{k} = {fmt_val(v)}\n")
-    # then [tables]
+        if isinstance(v, dict) or is_array_of_tables(v):
+            continue
+        out.write(f"{k} = {fmt_val(v)}\n")
+    # Then [tables].
     for k, v in data.items():
         if isinstance(v, dict):
             out.write(f"\n[{k}]\n")
             for kk, vv in v.items():
                 out.write(f"{kk} = {fmt_val(vv)}\n")
+    # Then [[arrays of tables]].
+    for k, v in data.items():
+        if is_array_of_tables(v):
+            for table in v:
+                out.write(f"\n[[{k}]]\n")
+                for kk, vv in table.items():
+                    out.write(f"{kk} = {fmt_val(vv)}\n")
     return out.getvalue()
