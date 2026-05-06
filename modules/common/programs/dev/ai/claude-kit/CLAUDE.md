@@ -8,7 +8,8 @@ Originally a single `claude-kit.nix` file with a ~1200-line `writeShellApplicati
 
 | File | Description |
 |---|---|
-| `default.nix` | Wraps the bash tree as a `writeShellApplication`. Copies `./scripts/` into a nix-store derivation, exports its path as `$CLAUDE_KIT_LIB_DIR`, and `exec bash $CLAUDE_KIT_LIB_DIR/claude-kit.sh`. Runtime deps: `jq fzf bat coreutils findutils gnused gnugrep yazi`. |
+| `default.nix` | Wraps the bash tree as a `writeShellApplication`. Copies `./scripts/` into a nix-store derivation, exports its path as `$CLAUDE_KIT_LIB_DIR`, and `exec bash $CLAUDE_KIT_LIB_DIR/claude-kit.sh`. Also imports the python sidecar venv from `./plan/package.nix` and exports its `bin/claude-kit-plan` as `$CLAUDE_KIT_PLAN_BIN`. Runtime deps: `jq fzf bat coreutils findutils gnused gnugrep yazi`. |
+| `plan/` | Python sidecar for `claude-kit plan` — two-stage prompt-to-plan tool built via uv2nix (same lane as `packages/jupyter-env-mcp/`). Layout: `pyproject.toml`, `uv.lock`, `package.nix` (venv builder), `src/claude_kit_plan/{cli,suggest,plan,sdk_helpers,frontmatter}.py`, and `src/claude_kit_plan/prompts/{suggestion,plan-template}.md` shipped as package-data. Reads its prompts via `importlib.resources` so editing `prompts/*.md` requires a rebuild (intentional — the prompts are versioned with the code). The CLI uses the `claude-agent-sdk` python package, which authenticates against your local `~/.claude/.credentials.json` — no API key. |
 | `scripts/claude-kit.sh` | Entrypoint. Sets globals (`CLAUDE_DIR`, `KIT_CACHE`, `SOURCES_DIR`, `LAZY_DIR`), sources `lib/*.sh`, prints `usage`, and dispatches `$1` to `cmd/<name>.sh`. |
 | `scripts/lib/common.sh` | Shared helpers: `die`, `_list_agents`/`_list_commands`/`_list_skills`, `_resolve_file`. Sourced eagerly from the entrypoint. |
 | `scripts/lib/session.sh` | `_render_session` — turns a Claude Code `*.jsonl` conversation log into a markdown preview file (cached by mtime). Used by `cmd/resume.sh`. |
@@ -17,6 +18,7 @@ Originally a single `claude-kit.nix` file with a ~1200-line `writeShellApplicati
 | `scripts/cmd/show.sh` | `claude-kit show <name>` — bat-renders an agent/command/skill markdown. |
 | `scripts/cmd/search.sh` | `claude-kit search [query]` — grep filter or fzf picker with live preview. |
 | `scripts/cmd/run.sh` | `claude-kit run <command> [args…]` — exec `claude --print "/<command> args"`. |
+| `scripts/cmd/plan.sh` | `claude-kit plan` — thin shim that `exec`s `$CLAUDE_KIT_PLAN_BIN` (the python sidecar in `plan/`). |
 | `scripts/cmd/resume.sh` | `claude-kit resume [-a] [-f]` — yazi-based session picker over rendered jsonl previews; `cd`'s into the recorded cwd and `exec claude --resume <id>`. |
 | `scripts/cmd/clean.sh` | `claude-kit clean [-a]` — prune `*.jsonl` past the 50 most recent per project (plus matching markdown cache). Requires typing `yes` exactly. |
 | `scripts/cmd/plugin.sh` | Pass-through to `claude plugin <install\|uninstall\|enable\|disable\|update\|list>`. |
@@ -39,11 +41,12 @@ Originally a single `claude-kit.nix` file with a ~1200-line `writeShellApplicati
 
 ## Env-var contract
 
-`default.nix` sets exactly one env var before exec'ing the entrypoint:
+`default.nix` sets two env vars before exec'ing the entrypoint:
 
 | Env var | Value | Why |
 |---|---|---|
 | `CLAUDE_KIT_LIB_DIR` | nix-store path of `./scripts/` (after `runCommand` copy) | Used by `claude-kit.sh` to source `lib/*.sh` and `cmd/*.sh`. **Don't** introduce nix interpolation `${...}` inside the `.sh` files — it would break the LSP and the round-trip. |
+| `CLAUDE_KIT_PLAN_BIN` | nix-store path to `bin/claude-kit-plan` inside the uv2nix venv built from `./plan/` | Used by `cmd/plan.sh` to exec the python sidecar. Bumping `claude-agent-sdk` is `cd plan/ && uv lock`; bumping the python source is just an edit. |
 
 The bash bodies use `$HOME`, `$XDG_CACHE_HOME`, `$PWD`, `$YAZI_CONFIG_HOME` straight from the runtime environment; pinned strings (ruflo/wshobson revs) are hardcoded in `cmd/version.sh`.
 

@@ -131,6 +131,13 @@
       status = {
         disabled = false;
       };
+
+      direnv = {
+        disabled = false;
+        format = "[$symbol$loaded/$allowed]($style) ";
+        symbol = " ";
+        style = "bold yellow";
+      };
     };
   };
 }

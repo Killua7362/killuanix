@@ -186,6 +186,16 @@
       flake = false;
     };
 
+    # the-nix-way/dev-templates — collection of Nix dev-shell templates
+    # (Python, Go, Rust, Node, Java, …). Source path is exposed to `den`
+    # as DEN_DEV_TEMPLATES_DIR; `den new --devshell <lang>` copies the
+    # matching subdir into a new project's files/. See
+    # modules/common/programs/dev/ai/den/.
+    dev-templates = {
+      url = "github:the-nix-way/dev-templates";
+      flake = false;
+    };
+
     # wshobson/agents — Claude Code plugin marketplace (78 plugins, 184 agents,
     # 98 commands, 150 skills). Flattened into ~/.claude/ by claude-resources.nix.
     wshobson-agents = {

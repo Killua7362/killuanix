@@ -27,6 +27,12 @@ Shared/declarative entries go through `policies.ManagedBookmarks` instead. This 
 - **Self-hosted** -- toolbar shortcuts to local container UIs (Dashboard, Portainer, SearXNG, LiteLLM, Qdrant, MCP Hub, Excalidraw, Mermaid Live)
 - **Userscripts** -- direct links to `*.user.js` URLs on greasyfork.org; Violentmonkey auto-prompts to install on click. Violentmonkey stores installed scripts in IndexedDB which cannot be materialized from the Nix store, so this curated link list is the realistic declarative path. If a URL 404s after a Greasyfork slug update, strip to `/scripts/<id>` and Greasyfork will redirect; update the pin afterwards.
 
+## Vendored userscripts
+
+`scripts/` holds Violentmonkey-style `*.user.js` files vendored into the repo (Greasy Fork scripts, gists, etc.). Violentmonkey can't load them from the Nix store directly -- install by opening the file in Firefox (`file://...`) or pasting its contents into Violentmonkey's editor. Currently:
+
+- `medium-paywall-bypass.user.js` -- redirects medium.com articles via freedium-mirror.cfd (originally a [gist by mathix420](https://gist.github.com/mathix420/e0604ab0e916622972372711d2829555)).
+
 ## uBlock Origin Policy
 
 uBlock Origin is configured via managed storage with a dark UI theme, cloud storage disabled, and custom filter lists including OISD, YouTube Shorts hiding, and a custom `ytbetter` list. Standard lists (EasyList, EasyPrivacy, AdGuard, uBlock built-ins, URLhaus) are also enabled.

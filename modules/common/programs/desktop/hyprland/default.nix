@@ -17,7 +17,7 @@
     ./keybinds.nix
     ./hyprlock.nix
     ./hypridle.nix
-    ./dms.nix
+    ./dms
     ./clipboard.nix
   ];
 

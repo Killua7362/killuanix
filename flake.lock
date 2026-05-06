@@ -219,6 +219,22 @@
         "type": "github"
       }
     },
+    "dev-templates": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777907784,
+        "narHash": "sha256-mDT6dUA4kdEpmCGBgWJSxSYPmFFV54+4+ZuaYzG99Kc=",
+        "owner": "the-nix-way",
+        "repo": "dev-templates",
+        "rev": "d94a04795dfce731aada15bbf1714389cc07ba23",
+        "type": "github"
+      },
+      "original": {
+        "owner": "the-nix-way",
+        "repo": "dev-templates",
+        "type": "github"
+      }
+    },
     "dms": {
       "inputs": {
         "nixpkgs": [
@@ -2419,6 +2435,7 @@
         "chaotic": "chaotic",
         "claude-code": "claude-code",
         "darwin": "darwin",
+        "dev-templates": "dev-templates",
         "dms": "dms",
         "emacs": "emacs",
         "firefox": "firefox",

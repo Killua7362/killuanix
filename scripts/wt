@@ -38,6 +38,52 @@ _group_dir() {
 
 _sanitize() { printf '%s' "${1//\//-}"; }
 
+# Replicate untracked symlinks from main/ into the new worktree, hand off
+# to `den replicate` for hardlinks (which are invisible to a `find -type l`
+# walk), and drop a .wt-sibling marker. Best-effort — failures here do not
+# fail the worktree creation.
+_post_create_replicate() {
+  local target=$1 group=$2
+  local main="$group/main"
+  [[ -d $main ]] || return 0
+  [[ "$(realpath -- "$main")" == "$(realpath -- "$target")" ]] && return 0
+
+  local n_sym=0
+  while IFS= read -r -d '' link; do
+    local rel=${link#"$main"/}
+    local dst="$target/$rel"
+    [[ -e $dst || -L $dst ]] && continue
+    mkdir -p -- "$(dirname -- "$dst")"
+    if cp -P -- "$link" "$dst"; then
+      n_sym=$((n_sym+1))
+    fi
+  done < <(find "$main" -type l -not -path "*/.git/*" -print0 2>/dev/null)
+
+  local den_msg=""
+  if [[ -f "$main/.den-meta.json" ]] && command -v den >/dev/null 2>&1; then
+    den_msg=$(den replicate --source "$main" "$target" 2>&1) || \
+      echo "wt: den replicate failed (continuing): $den_msg" >&2
+  fi
+
+  local common_dir
+  if common_dir=$(git -C "$target" rev-parse --git-common-dir 2>/dev/null); then
+    [[ $common_dir = /* ]] || common_dir="$target/$common_dir"
+    local exclude="$common_dir/info/exclude"
+    if [[ -f $exclude ]] && ! grep -qxF '.wt-sibling' "$exclude" 2>/dev/null; then
+      printf '.wt-sibling\n' >> "$exclude"
+    fi
+  fi
+
+  {
+    printf 'main=%s\n' "$(realpath -- "$main")"
+    printf 'created=%s\n' "$(date -Iseconds)"
+  } > "$target/.wt-sibling"
+
+  printf '→ replicated %d symlink(s) from main/' "$n_sym"
+  [[ -n $den_msg ]] && printf '; %s' "$den_msg"
+  printf '\n'
+}
+
 cmd_new() {
   local branch=${1:-}; [[ -n $branch ]] || die "new: branch required"
   local base=${2:-HEAD}
@@ -50,6 +96,7 @@ cmd_new() {
     git worktree add -b "$branch" "$target" "$base"
   fi
   echo "→ worktree at $target"
+  _post_create_replicate "$target" "$group" || true
 }
 
 cmd_ls() {

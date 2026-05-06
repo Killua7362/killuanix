@@ -204,9 +204,86 @@
     )
     // lib.optionalAttrs (def ? args && !(def ? gitSource)) {inherit (def) args;}
     // lib.optionalAttrs (mergedEnv != {}) {env = mergedEnv;};
+
+  # ── /effort overlay wrapper ───────────────────────────────────────────────
+  # `~/.claude/settings.json` is a HM-symlink into the read-only nix store, so
+  # Claude Code's `/effort medium|auto|low|xhigh` commands (which open the file
+  # O_RDWR to mutate-in-place) hit EACCES before they touch JSON. `/effort max`
+  # works only because Claude treats max as a transient session boost (no
+  # write); `/model` works because it writes to ~/.claude.json (a separate
+  # file Claude owns, mode 0600).
+  #
+  # Boot every `claude` process through this wrapper: per-PID overlay dir
+  # under $XDG_RUNTIME_DIR mirrors ~/.claude/ as symlinks for everything
+  # except settings.json, which gets a fresh writable copy from the
+  # nix-managed source. CLAUDE_CONFIG_DIR points Claude at the overlay, so
+  # `/effort medium` mutates the overlay copy — declarative source untouched,
+  # changes evaporate at next launch.
+  #
+  # If a caller (e.g. claude-launchers.nix' claude-algo) already prepared a
+  # CLAUDE_CONFIG_DIR, we don't replace it — we just rewrite that dir's
+  # settings.json from symlink-into-store into a writable copy. One conditional
+  # covers both code paths so the launchers don't need parallel logic.
+  overlayClaude = pkgs.writeShellApplication {
+    name = "claude";
+    runtimeInputs = [pkgs.coreutils pkgs.findutils];
+    text = ''
+      src="$HOME/.claude"
+
+      if [ -n "''${CLAUDE_CONFIG_DIR:-}" ] && [ -d "$CLAUDE_CONFIG_DIR" ]; then
+        if [ -e "$CLAUDE_CONFIG_DIR/settings.json" ] \
+           && { [ -L "$CLAUDE_CONFIG_DIR/settings.json" ] || [ ! -w "$CLAUDE_CONFIG_DIR/settings.json" ]; }; then
+          _real=$(readlink -f "$CLAUDE_CONFIG_DIR/settings.json")
+          rm -f "$CLAUDE_CONFIG_DIR/settings.json"
+          install -m 0644 "$_real" "$CLAUDE_CONFIG_DIR/settings.json"
+        fi
+      else
+        state_dir="$(mktemp -d "''${XDG_RUNTIME_DIR:-/tmp}/claude-session.XXXXXX")"
+        trap 'rm -rf "$state_dir"' EXIT INT TERM HUP
+        if [ -d "$src" ]; then
+          while IFS= read -r -d "" entry; do
+            base="$(basename "$entry")"
+            [ "$base" = settings.json ] && continue
+            ln -sfn "$entry" "$state_dir/$base"
+          done < <(find "$src" -mindepth 1 -maxdepth 1 -print0)
+        fi
+        if [ -e "$src/settings.json" ]; then
+          install -m 0644 "$src/settings.json" "$state_dir/settings.json"
+        fi
+        # Auth + onboarding state lives at $HOME/.claude.json (sibling of
+        # ~/.claude/, NOT inside it). With CLAUDE_CONFIG_DIR set, Claude reads
+        # this file from that dir — symlink it through so writes (token
+        # refresh, onboarding flags) persist back to the real file instead of
+        # evaporating with the per-PID state_dir.
+        if [ -e "$HOME/.claude.json" ]; then
+          ln -sfn "$HOME/.claude.json" "$state_dir/.claude.json"
+        fi
+        export CLAUDE_CONFIG_DIR="$state_dir"
+      fi
+
+      ${pkgs.claude-code}/bin/claude "$@"
+    '';
+  };
+
+  # Wrap upstream claude-code so its bin/claude resolves to overlayClaude.
+  # `cp -as` mirrors the upstream tree as symlinks so future additions to the
+  # package (man pages, completions, …) flow through; only bin/claude is
+  # swapped. Inherits version/meta so `claude --version`, ccstatusline, and
+  # any other consumer reading cfg.finalPackage.{version,meta} stay accurate.
+  claudeWithOverlay =
+    pkgs.runCommand "claude-code-${pkgs.claude-code.version}-overlay" {
+      inherit (pkgs.claude-code) version meta;
+    } ''
+      mkdir -p $out
+      cp -as ${pkgs.claude-code}/. $out/
+      chmod -R +w $out/bin
+      rm -f $out/bin/claude
+      ln -s ${overlayClaude}/bin/claude $out/bin/claude
+    '';
 in {
   programs.claude-code = {
     enable = true;
+    package = claudeWithOverlay;
 
     # Local skills override upstream on name clash (later foldl' entries win).
     skills = allSkills;
@@ -219,6 +296,7 @@ in {
     # you want stricter behavior. `skip*PermissionPrompt` suppress the
     # first-run opt-in dialogs for auto and bypass modes.
     settings = {
+      model = "claude-sonnet-4-6";
       effortLevel = "high";
       skipAutoPermissionPrompt = true;
       skipDangerousModePermissionPrompt = true;
@@ -229,6 +307,18 @@ in {
       # `Ctrl+O` then `[` inside Claude Code to dump the transcript into
       # scrollback on demand.
       tui = "fullscreen";
+
+      # Status line — declarative config lives in `ccstatusline.nix` and is
+      # rendered to ~/.config/ccstatusline/settings.json. PATH lookup of the
+      # `ccstatusline` shim works for plain `claude` and for launchers under
+      # `claude-launchers.nix` (which inherit the user's PATH).
+      # `refreshInterval` is honoured on Claude Code >= 2.1.97.
+      statusLine = {
+        type = "command";
+        command = "ccstatusline";
+        padding = 0;
+        refreshInterval = 10;
+      };
 
       # Declaratively register the ruflo marketplace. Equivalent to running
       # `/plugin marketplace add ruvnet/ruflo` once, but reproducible across

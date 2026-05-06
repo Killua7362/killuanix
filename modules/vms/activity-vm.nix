@@ -115,6 +115,7 @@
   domainXml = pkgs.writeText "${vmName}.xml" ''
     <domain type='kvm'>
       <name>${vmName}</name>
+      <uuid>a1b2c3d4-e5f6-7890-abcd-ef1234567890</uuid>
       <memory unit='GiB'>6</memory>
       <vcpu placement='static'>4</vcpu>
       <memoryBacking>
@@ -211,12 +212,13 @@ in {
       ${pkgs.qemu}/bin/qemu-img create -f qcow2 "${diskPath}" 40G
     fi
 
-    # Define/update the VM (use full path — virsh may not be in PATH during activation)
-    # Try define first (works for new VMs and updates existing ones with same UUID)
-    # Only undefine+redefine if plain define fails (UUID mismatch)
-    if ! ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} 2>/dev/null; then
-      ${pkgs.libvirt}/bin/virsh -c qemu:///system undefine ${vmName} 2>/dev/null || true
-      ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} 2>/dev/null || true
+    # Only redefine when the XML store path changed — avoids noise on every switch.
+    # stdout is redirected too (virsh prints status lines there, not stderr).
+    _xml_marker="$HOME/.vm-${vmName}-xml"
+    if [ "$(cat "$_xml_marker" 2>/dev/null)" != "${domainXml}" ]; then
+      ${pkgs.libvirt}/bin/virsh -c qemu:///system undefine ${vmName} &>/dev/null || true
+      ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} &>/dev/null || true
+      echo "${domainXml}" > "$_xml_marker"
     fi
   '';
 }

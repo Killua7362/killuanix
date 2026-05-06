@@ -70,6 +70,14 @@
         # Curated extras — these are the reason this launcher exists.
         ${extraLinks}
 
+        # Auth + onboarding state lives at $HOME/.claude.json (sibling of
+        # ~/.claude/, NOT inside it). With CLAUDE_CONFIG_DIR set, Claude reads
+        # this file from the alternate dir — without this symlink, every
+        # launch lands in onboarding/re-auth.
+        if [ -e "$HOME/.claude.json" ]; then
+          ln -sfn "$HOME/.claude.json" "$state_dir/.claude.json"
+        fi
+
         export CLAUDE_CONFIG_DIR="$state_dir"
         exec claude "$@"
       '';

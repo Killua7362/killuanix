@@ -10,6 +10,11 @@ Usage: den <command> [args]
 
 Binding lifecycle:
   new <NAME> [.|--path P] [--from N] [--preset bare|minimal|claude-full]
+            [--devshell LANG|--no-devshell]
+                             bootstrap a Nix dev shell from
+                             the-nix-way/dev-templates (LANG ⇒ template
+                             name; --no-devshell skips; default is to
+                             prompt on TTY)
   init <NAME> [.|--path P]   bind cwd to existing project; runs pull
   clean [--yes]              remove this binding's symlinks; keep host-only files
   list                       projects in Notes/projects/
@@ -23,6 +28,10 @@ Files in the binding:
   re-add <path>...           ingest a real file replacing a project link
   restore <path>...          undo `den add` (move file back, keep content here)
   pull [--dry-run] [--ignore-failures] [--resume]
+  replicate [--source <dir>] <target>
+                             re-create source binding's links under <target>
+                             without registering <target> as a binding
+                             (used by `wt new` to seed sibling worktrees)
 
 Patches:
   stash <SERIES> [--message M] [--edit]

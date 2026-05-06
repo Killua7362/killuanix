@@ -19,7 +19,7 @@ Hyprland window manager configuration, split into focused submodules. The primar
 | `misc.nix` | Miscellaneous: animations enabled but all durations set to 0, `misc.vfr`/`misc.vrr` enabled, DPMS on mouse/key, swallow regex (disabled via `enable_swallow = false`), session lock restore + xray, background color, Hyprland logo/splash disabled, `force_default_wallpaper = -1`, `focus_on_activate`, scroller plugin `column_widths = "onehalf one"`, xwayland forced zero scaling. |
 | `hypridle.nix` | Idle daemon: screen off after 5400s (90 min), DPMS restore on resume. Lock command uses `hyprlock` with duplicate prevention. |
 | `hyprlock.nix` | Lock screen: blurred background image, centered clock and date labels, input field at bottom. Font: Rubik / Rubik Extrabold. |
-| `dms.nix` | Enables dank-material-shell and its `vmManager` plugin (sourced from `vms/vm-manager-plugin`). |
+| `dms/` | Modular DankMaterialShell config. `default.nix` owns module-level options (`enable`, commented `systemd.*`/`enable*`/`quickshell.package`/`dgop.package`/`clipboardSettings`/`session` references), the plugin schema example, the `vmManager` plugin wiring, and the `xdg.configFile.…force = lib.mkForce true` escape hatch. The remaining files each contribute a topic-scoped slice of `programs.dank-material-shell.settings` (theme, bar, control-center, dock, launcher, greeter, notifications, lock-power, theming-templates, fonts-sounds, display, misc) — Nix module merging assembles them into the JSON written to `~/.config/DankMaterialShell/settings.json`. See [`dms/CLAUDE.md`](dms/CLAUDE.md) for the topic→file routing table and a built-in drift-check command. |
 
 ## Notable Details
 

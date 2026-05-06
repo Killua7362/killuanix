@@ -33,6 +33,8 @@ in {
     programs.direnv = {
       enable = true;
       nix-direnv.enable = true;
+      # Silence direnv's stdout chatter (loading/export lines); status shows in starship instead.
+      silent = true;
     };
 
     programs.nix-index.enable = true;

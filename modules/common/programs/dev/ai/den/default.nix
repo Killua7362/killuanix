@@ -14,6 +14,7 @@
   pkgs,
   lib,
   config,
+  inputs,
   ...
 }: let
   cfg = config.programs.den;
@@ -59,6 +60,7 @@
       util-linux # flock
       getopt
       openssh
+      direnv # `den new --devshell` auto-runs `direnv allow` after the bind
       den-helper
     ];
     excludeShellChecks = [
@@ -80,6 +82,7 @@
     text = ''
       export DEN_LIB_DIR=${denScripts}
       export DEN_HELPER_BIN=${den-helper}/bin/den-helper
+      export DEN_DEV_TEMPLATES_DIR=${inputs.dev-templates}
       exec bash ${denScripts}/den.sh "$@"
     '';
   };

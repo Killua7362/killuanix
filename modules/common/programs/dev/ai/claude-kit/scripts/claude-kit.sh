@@ -45,6 +45,13 @@ Per-project lazy catalog (Notes/claude/lazy/)
 Run a slash command headlessly
   run <command> [args] Execute `claude --print "/<command> args"` in cwd.
 
+Two-stage prompt-to-plan
+  plan "<prompt>"       Stage 1 picks a model+effort for your prompt; stage 2
+  plan -f FILE          drafts a plan markdown with those settings in plan
+  plan --help           mode. See `claude-kit plan --help` for the full flag
+                        set (--output, --no-stage1, --model, --effort,
+                        --dry-run).
+
 Prune old conversations (keeps the 50 most recent per project)
   clean [-a|--all]     Delete `*.jsonl` files older than the 50 most recent
                        in the current project's `~/.claude/projects/<enc>/`
@@ -103,6 +110,7 @@ main() {
     show|cat)             source "$CLAUDE_KIT_LIB_DIR/cmd/show.sh";        cmd_show "$@" ;;
     search|s|find)        source "$CLAUDE_KIT_LIB_DIR/cmd/search.sh";      cmd_search "$@" ;;
     run)                  source "$CLAUDE_KIT_LIB_DIR/cmd/run.sh";         cmd_run "$@" ;;
+    plan)                 source "$CLAUDE_KIT_LIB_DIR/cmd/plan.sh";        cmd_plan "$@" ;;
     resume|r)             source "$CLAUDE_KIT_LIB_DIR/cmd/resume.sh";      cmd_resume "$@" ;;
     clean)                source "$CLAUDE_KIT_LIB_DIR/cmd/clean.sh";       cmd_clean "$@" ;;
     plugin|plugins)       source "$CLAUDE_KIT_LIB_DIR/cmd/plugin.sh";      cmd_plugin "$@" ;;

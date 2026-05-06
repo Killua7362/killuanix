@@ -1,0 +1,22 @@
+[project]
+name = "claude-kit-plan"
+version = "0.1.0"
+description = "Two-stage prompt-to-plan tool for Claude Code (suggest model+effort, then draft a plan)."
+requires-python = ">=3.11"
+dependencies = [
+    "claude-agent-sdk>=0.1.73",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+claude-kit-plan = "claude_kit_plan.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"claude_kit_plan.prompts" = ["*.md"]
