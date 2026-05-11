@@ -38,6 +38,7 @@ Originally a single `claude-kit.nix` file with a ~1200-line `writeShellApplicati
 | `scripts/cmd/lazy/refresh.sh` | `lazy refresh <name>` — regenerate `<name>/catalog.json` from contents. |
 | `scripts/cmd/lazy/doctor.sh` | `lazy doctor` — validate `lazy.json` + every `catalog.json`. |
 | `scripts/cmd/lazy/bundle.sh` | `lazy bundle <ls\|show\|add\|rm\|status>` — apply/remove named groups (plugins + MCP + symlinks) in one shot, with reversible state in `./.claude/.lazy-bundles.json`. Internal dispatcher (`_lazy_bundle`) routes to the per-verb function. |
+| `scripts/cmd/project.sh` | `claude-kit project <sync\|envrc\|show\|status>` — flake-driven project sync. Reads `./claude-kit.nix` (walks upward from `$PWD`) via `nix-instantiate --eval --strict --json`. `sync` reconciles `./.claude/{skills,agents,commands}/`, `./.claude/settings.local.json` (plugins), and `./.mcp.json` (servers mirrored from `~/.claude.json:.mcpServers`). `envrc` prints `export VAR=val` lines for non-empty `envVars` (empty entries inherit from the host shell). Sync state lives at `./.claude/.flake-managed.json` so the next run removes items that were dropped from the schema, while hand-added symlinks survive. Auto-invoked from the `.envrc` den drops on `den new --devshell`. |
 
 ## Env-var contract
 
@@ -67,4 +68,30 @@ Imported by `../default.nix` as `./claude-kit` (resolves to this `default.nix`).
 - `~/.cache/claude-kit/sessions/<encoded-cwd>/<sid>.md` — its own jsonl→markdown render cache (mtime-keyed; pruned daily by `modules/containers/cronicle/events/claude-kit-prune.nix`).
 - `Notes/claude/lazy/<catalog>/catalog.json` and `Notes/claude/lazy/<catalog>/bundles/*.json` — the per-project lazy catalog (set up by `../claude-resources/` for `upstream`, hand-curated otherwise).
 
-Writes per-project state into `./.claude/{skills,agents,commands,settings.local.json,.lazy-bundles.json}` and `./.mcp.json` when `lazy add` / `lazy bundle add` runs.
+Writes per-project state into `./.claude/{skills,agents,commands,settings.local.json,.lazy-bundles.json,.flake-managed.json}` and `./.mcp.json` when `lazy add` / `lazy bundle add` / `project sync` runs.
+
+## `project sync` flow
+
+`claude-kit project sync` is the declarative path. It reads `./claude-kit.nix` (the schema lives in `den/templates/claude-kit.nix`) — pure attrset:
+
+```nix
+{
+  envVars  = { APP_HOST = "killua"; DATABASE_URL = ""; };  # "" = inherit
+  skills   = [ "code-search" ];
+  agents   = [];
+  commands = [];
+  plugins  = [ "ruflo-core@ruflo" ];
+  mcp      = [ "code-index" ];
+}
+```
+
+Resolution rules:
+
+- **skills/agents/commands** — looked up in the lazy catalog (`_lazy_find`, same lane as `lazy add`). Names not in any catalog are reported and skipped, not fatal.
+- **plugins** — written verbatim into `enabledPlugins.<slug>=true` in `./.claude/settings.local.json` (no catalog lookup).
+- **mcp** — server stanza copied out of `~/.claude.json:.mcpServers.<name>` into `./.mcp.json`. Servers not in the global registry are skipped with a notice. The user's global Claude Code config remains the source of truth for *how* to launch each server; the project file is just an opt-in list of names.
+- **envVars** — emitted by `claude-kit project envrc` as `export VAR=val` lines, with **empty values skipped** (so the host shell value, if any, passes through). Hooked from `.envrc` via `eval "$(claude-kit project envrc)"` before the `sync` call.
+
+State at `./.claude/.flake-managed.json` records what `sync` wrote on the prior run. The next run removes items that were dropped from the schema (additive list diff); items that were hand-added with `lazy add` are not in this file and are left alone. The bundle path (`.lazy-bundles.json`) is independent — bundles layer on top of `project sync` cleanly.
+
+Globally-enabled skills/MCP (from `programs.claude-code` and `mcp-servers.nix`) stay loaded; the project file is purely additive.

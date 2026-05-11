@@ -18,6 +18,14 @@ Extensions are installed through two mechanisms:
 - **`policies.ExtensionSettings`** -- force-installed via Mozilla enterprise policy: Tree Style Tab, uBlock Origin, Bitwarden, Tabliss, uMatrix, LibreRedirect, ClearURLs
 - **`extensions.packages`** (NUR) -- installed into the default profile. Privacy/QoL: uBlock Origin, SponsorBlock, ClearURLs, Old Reddit Redirect, YouTube Redux, Return YouTube Dislikes, Reddit Enhancement Suite, Dark Reader, FastForward, Violentmonkey, Web Clipper Obsidian. Power-user additions: Multi-Account Containers, Temporary Containers, CanvasBlocker, Consent-O-Matic, LibRedirect, Header Editor, User-Agent String Switcher, Hoppscotch, Refined GitHub, SingleFile, Stylus, DeArrow, Linkding Extension (paired with the linkding container at http://localhost:9090 -- needs an API token from Settings → Integrations on first run)
 
+## Bitwarden Desktop Integration
+
+`pkgs.bitwarden-desktop` is added to `home.packages`, and a Mozilla native-messaging manifest is generated via `pkgs.writeTextFile` (the upstream nix package ships `libexec/desktop_proxy` but no manifest). The manifest is wired in via `programs.firefox.nativeMessagingHosts`, landing at `~/.mozilla/native-messaging-hosts/com.8bit.bitwarden.json` and pointing at the desktop_proxy binary. Allowed extension is locked to Bitwarden's UUID `{446900e4-71c2-419f-a6a7-df9c091e268b}`.
+
+After first run: open the desktop app, log in, then **Settings → Allow browser integration** (and **Allow browser communication over WebSockets** if needed). In the Firefox extension: **Settings → Biometrics → Use browser integration**. Enables biometric/PIN unlock from the extension via the desktop app.
+
+**Vault timeout / lock action cannot be set declaratively.** It is per-account state in the extension's IndexedDB and the desktop app's encrypted `data.json`. The Bitwarden browser-extension managed-storage schema only exposes `environment`, `enableBrowserIntegration`, `enableBrowserIntegrationFingerprint`, and `disablePersonalVaultExport` -- timeout is not in there. Only Bitwarden Enterprise org policies (server-side, paid plan) can enforce timeout. Set it once via the extension UI: **Account security → Vault timeout (15 min) + Vault timeout action (Lock)**. Aggressive auto-lock is the main mitigation for the WebExtensions process growing to 1+ GB on long sessions.
+
 ## Bookmarks
 
 **User bookmarks are NOT managed declaratively.** The HM `profiles.<name>.bookmarks` option with `force = true` overwrites `places.sqlite` on every switch and wipes user-added bookmarks -- never use it.

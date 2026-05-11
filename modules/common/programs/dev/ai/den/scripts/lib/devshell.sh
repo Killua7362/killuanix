@@ -103,15 +103,39 @@ _devshell_apply() {
   _set_manifest_kind "$pd" "flake.nix" "hardlink"
   [ -f "$pd/files/flake.lock" ] && _set_manifest_kind "$pd" "flake.lock" "hardlink"
 
-  # .envrc — symlink is fine; direnv evaluates it in the bound cwd.
-  if [ ! -f "$pd/files/.envrc" ]; then
-    printf 'use flake\n' >"$pd/files/.envrc"
+  # claude-kit.nix sibling — project-scoped Claude resources (envVars,
+  # skills, MCP, plugins). Pure attrset; consumed by `claude-kit project
+  # sync` via direnv. The .envrc below wires the sync. Both files are
+  # idempotent — only written when absent so user edits survive `den new`
+  # re-runs against an existing project dir.
+  if [ -n "${DEN_CLAUDEKIT_SHIM:-}" ] && [ -d "$DEN_CLAUDEKIT_SHIM" ]; then
+    if [ ! -f "$pd/files/claude-kit.nix" ]; then
+      cp "$DEN_CLAUDEKIT_SHIM/claude-kit.nix" "$pd/files/claude-kit.nix"
+      chmod u+w "$pd/files/claude-kit.nix"
+    fi
+    # Replace upstream's bare `use flake` .envrc with the augmented
+    # claude-kit-aware version. Only overwrite when the existing file
+    # is the upstream one-liner (or absent) — user-customised .envrc
+    # (e.g. someone already added project-specific direnv hooks) is
+    # preserved untouched.
+    if [ ! -f "$pd/files/.envrc" ] || [ "$(cat "$pd/files/.envrc")" = "use flake" ]; then
+      cp "$DEN_CLAUDEKIT_SHIM/envrc" "$pd/files/.envrc"
+      chmod u+w "$pd/files/.envrc"
+    fi
+  else
+    # Fallback for environments without the shim — plain `use flake`.
+    if [ ! -f "$pd/files/.envrc" ]; then
+      printf 'use flake\n' >"$pd/files/.envrc"
+    fi
   fi
 
-  # Keep direnv's working dir out of project history.
-  if ! grep -qxF '.direnv/' "$pd/.denignore" 2>/dev/null; then
-    printf '.direnv/\n' >>"$pd/.denignore"
-  fi
+  # Keep direnv's working dir + claude-kit state out of project history.
+  local ign
+  for ign in '.direnv/' '.claude/.flake-managed.json'; do
+    if ! grep -qxF "$ign" "$pd/.denignore" 2>/dev/null; then
+      printf '%s\n' "$ign" >>"$pd/.denignore"
+    fi
+  done
 }
 
 # _devshell_post_pull <bound-cwd>

@@ -95,23 +95,14 @@ _lazy_bundle_add() {
     ' "$mcpfile" > "$tmp" && mv "$tmp" "$mcpfile"
   fi
 
-  # Apply skills/agents/commands via _lazy_add (catalog symlink).
-  # We loop and ignore "already enabled" errors so partial overlaps
-  # with other bundles don't fail the whole bundle apply.
+  # Apply skills/agents/commands via _lazy_apply_one (catalog symlink).
+  # Ignore non-success return codes so partial overlaps with other
+  # bundles don't fail the whole bundle apply.
   source "$CLAUDE_KIT_LIB_DIR/cmd/lazy/add.sh"
   local item
-  for item in $(echo "$skills" | jq -r '.[]'); do
-    (PARSED_CAT="" PARSED_TYPE=skills PARSED_NAME="$item" \
-      _lazy_add skills "$item" 2>/dev/null) || true
-  done
-  for item in $(echo "$agents" | jq -r '.[]'); do
-    (PARSED_CAT="" PARSED_TYPE=agents PARSED_NAME="$item" \
-      _lazy_add agents "$item" 2>/dev/null) || true
-  done
-  for item in $(echo "$commands" | jq -r '.[]'); do
-    (PARSED_CAT="" PARSED_TYPE=commands PARSED_NAME="$item" \
-      _lazy_add commands "$item" 2>/dev/null) || true
-  done
+  for item in $(echo "$skills"   | jq -r '.[]'); do _lazy_apply_one skills   "$item" || true; done
+  for item in $(echo "$agents"   | jq -r '.[]'); do _lazy_apply_one agents   "$item" || true; done
+  for item in $(echo "$commands" | jq -r '.[]'); do _lazy_apply_one commands "$item" || true; done
 
   # Record state
   tmp=$(mktemp)

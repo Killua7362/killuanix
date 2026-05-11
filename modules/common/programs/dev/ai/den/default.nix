@@ -42,6 +42,14 @@
     cp -r ${./scripts}/* $out/
   '';
 
+  # claude-kit shim + .envrc template — copied next to the dev-shell
+  # flake.nix during `den new --devshell <lang>`. See devshell.sh.
+  denClaudeKitShim = pkgs.runCommand "den-claudekit-shim" {} ''
+    mkdir -p $out
+    cp ${./templates/claude-kit.nix} $out/claude-kit.nix
+    cp ${./templates/envrc}         $out/envrc
+  '';
+
   den = pkgs.writeShellApplication {
     name = "den";
     runtimeInputs = with pkgs; [
@@ -83,6 +91,7 @@
       export DEN_LIB_DIR=${denScripts}
       export DEN_HELPER_BIN=${den-helper}/bin/den-helper
       export DEN_DEV_TEMPLATES_DIR=${inputs.dev-templates}
+      export DEN_CLAUDEKIT_SHIM=${denClaudeKitShim}
       exec bash ${denScripts}/den.sh "$@"
     '';
   };

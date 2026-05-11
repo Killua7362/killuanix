@@ -16,6 +16,29 @@
     rev = "76232083171a8d609bf0258549d843b0536685e1";
   };
 
+  # Bitwarden desktop app native-messaging manifest. Bitwarden's desktop
+  # package ships `desktop_proxy` at libexec/ but does not ship the Mozilla
+  # manifest that points Firefox at it, so build one here. Wired into
+  # `programs.firefox.nativeMessagingHosts` below.
+  #
+  # Vault timeout / lock action is per-account state stored in the extension's
+  # IndexedDB and the desktop app's encrypted data.json -- it cannot be set
+  # declaratively for personal Bitwarden. Set it once via:
+  #   Extension -> Settings -> Account security -> Vault timeout (15 min) +
+  #   Vault timeout action (Lock).
+  # Only Bitwarden Enterprise server-side org policies can enforce it.
+  bitwardenFirefoxManifest = pkgs.writeTextFile {
+    name = "bitwarden-firefox-native-messaging-manifest";
+    destination = "/lib/mozilla/native-messaging-hosts/com.8bit.bitwarden.json";
+    text = builtins.toJSON {
+      name = "com.8bit.bitwarden";
+      description = "Bitwarden desktop <-> browser bridge";
+      path = "${pkgs.bitwarden-desktop}/libexec/desktop_proxy";
+      type = "stdio";
+      allowed_extensions = ["{446900e4-71c2-419f-a6a7-df9c091e268b}"];
+    };
+  };
+
   mergedChrome = pkgs.runCommand "merged-firefox-chrome" {} ''
     mkdir -p $out
 
@@ -45,6 +68,8 @@ in {
 
   # home.sessionVariables.DEFAULT_BROWSER = "${Firefox-custom}/bin/firefox";
 
+  home.packages = [pkgs.bitwarden-desktop];
+
   home.file.".mozilla/firefox/default/chrome" = {
     source = mergedChrome;
     recursive = true;
@@ -52,6 +77,7 @@ in {
 
   programs.firefox = {
     enable = true;
+    nativeMessagingHosts = [bitwardenFirefoxManifest];
     configPath = ".mozilla/firefox";
     arkenfox = {
       enable = true;

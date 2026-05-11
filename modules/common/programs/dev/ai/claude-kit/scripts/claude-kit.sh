@@ -28,6 +28,15 @@ Browse installed resources (~/.claude/)
   source <name>        Print the originating repo (ruflo / wshobson/<plugin>
                        / local) inferred from the filename prefix.
 
+Flake-driven project sync (./claude-kit.nix)
+  project sync [--dry-run] [--quiet]  Reconcile ./.claude/ + ./.mcp.json with
+                                      the project's claude-kit.nix declarations.
+                                      Auto-run from .envrc on direnv reload.
+  project envrc                       Print `export VAR=val` for non-empty
+                                      envVars (empty entries inherit from host).
+  project show                        Print parsed claude-kit.nix as JSON.
+  project status                      Show which items are flake-managed.
+
 Per-project lazy catalog (Notes/claude/lazy/)
   lazy ls [<catalog>]                 List sub-catalogs or contents.
   lazy ls --type <kind>               Filter by skills|agents|commands|plugins.
@@ -119,6 +128,7 @@ main() {
     source|src)           source "$CLAUDE_KIT_LIB_DIR/cmd/source.sh";      cmd_source "$@" ;;
     ruflo)                source "$CLAUDE_KIT_LIB_DIR/cmd/ruflo.sh";       cmd_ruflo "$@" ;;
     lazy)                 source "$CLAUDE_KIT_LIB_DIR/cmd/lazy.sh";        cmd_lazy "$@" ;;
+    project|proj)         source "$CLAUDE_KIT_LIB_DIR/cmd/project.sh";     cmd_project "$@" ;;
     doctor)               source "$CLAUDE_KIT_LIB_DIR/cmd/doctor.sh";      cmd_doctor ;;
     version|-V|--version) source "$CLAUDE_KIT_LIB_DIR/cmd/version.sh";     cmd_version ;;
     *) echo "claude-kit: unknown subcommand '$sub'" >&2; echo >&2; usage >&2; exit 2 ;;

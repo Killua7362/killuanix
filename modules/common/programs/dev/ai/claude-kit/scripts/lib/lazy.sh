@@ -112,3 +112,32 @@ _lazy_bundle_resolve() {
 }
 
 _lazy_bundle_state() { echo "$PWD/.claude/.lazy-bundles.json"; }
+
+# _lazy_find_project_config — walk up from $PWD looking for claude-kit.nix.
+# Echoes the absolute path on hit, exits non-zero on miss. Stops at $HOME
+# and at filesystem root.
+_lazy_find_project_config() {
+  local d="$PWD"
+  while [ "$d" != "/" ] && [ "$d" != "${HOME%/}" ]; do
+    if [ -f "$d/claude-kit.nix" ]; then printf '%s' "$d/claude-kit.nix"; return 0; fi
+    d=$(dirname "$d")
+  done
+  return 1
+}
+
+# _lazy_resolve_mcp <name>
+# Echo the JSON stanza for an MCP server registered globally in
+# ~/.claude.json (the user's Claude Code config) under .mcpServers.
+# Empty output + non-zero rc on miss.
+_lazy_resolve_mcp() {
+  local name="$1"
+  local src="$HOME/.claude.json"
+  [ -f "$src" ] || return 1
+  local stanza
+  stanza=$(jq -c --arg n "$name" '.mcpServers[$n] // empty' "$src" 2>/dev/null)
+  [ -n "$stanza" ] || return 1
+  printf '%s' "$stanza"
+}
+
+# _lazy_state_file — flake-managed sync state, sibling of .lazy-bundles.json.
+_lazy_state_file() { echo "$PWD/.claude/.flake-managed.json"; }

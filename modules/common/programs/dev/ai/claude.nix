@@ -302,6 +302,15 @@ in {
       skipDangerousModePermissionPrompt = true;
       permissions.defaultMode = "bypassPermissions";
 
+      # Pin to the nix-managed binary. Claude Code's built-in updater
+      # drops a fresh `claude` into ~/.local/bin/ on each launch, which
+      # shadows ~/.nix-profile/bin/claude on PATH and bypasses the
+      # `--plugin-dir` wrapper that loads our .mcp.json bundle (so MCP
+      # servers silently disappear). Disabling auto-updates keeps the
+      # flake-pinned `pkgs.claude-code` authoritative; bump it via
+      # `nix flake update` instead.
+      autoUpdates = false;
+
       # Use the flicker-free alt-screen renderer so the live conversation
       # doesn't get mirrored into the terminal's normal scrollback. Use
       # `Ctrl+O` then `[` inside Claude Code to dump the transcript into
@@ -329,6 +338,20 @@ in {
         repo = "ruvnet/ruflo";
       };
 
+      # JuliusBrussee/caveman — communication-style plugin that compresses
+      # assistant output ~75% via "caveman-speak". Bundles companion skills
+      # (caveman, compress, cavecrew, caveman-{commit,review,help,stats})
+      # and Node-based SessionStart/UserPromptSubmit hooks that auto-activate
+      # the mode. The upstream `caveman-shrink` MCP proxy is intentionally
+      # not registered — it's a stdio wrapper for compressing *another* MCP
+      # server's output, not a standalone server, and bare registration
+      # (the way upstream's install.sh does it) fails with "missing upstream
+      # command" on every session start.
+      extraKnownMarketplaces.caveman.source = {
+        source = "github";
+        repo = "JuliusBrussee/caveman";
+      };
+
       # Plugins are disabled by default — every enabled entry adds its
       # skills/agents/commands to the always-on startup blob. Flip a single
       # plugin to `true` only when you actively need it; re-run
@@ -345,6 +368,7 @@ in {
         "ruflo-rag-memory@ruflo" = false; # HNSW memory + AgentDB
         "ruflo-testgen@ruflo" = false; # Test gap detection + TDD
         "ruflo-docs@ruflo" = false; # Doc generation + drift detection
+        "caveman@caveman" = true; # Token-compressed response style + Shrink MCP
       };
     };
   };

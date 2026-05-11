@@ -1,0 +1,11 @@
+use flake
+
+# claude-kit project integration — exports envVars from ./claude-kit.nix
+# (empty values fall through to the parent shell) and reconciles
+# ./.claude/ + ./.mcp.json with the project's skills/MCP/plugin lists.
+# Both lines are no-ops when claude-kit.nix is missing or claude-kit
+# isn't on PATH.
+if has claude-kit && [ -f "$PWD/claude-kit.nix" ]; then
+  eval "$(claude-kit project envrc 2>/dev/null || true)"
+  claude-kit project sync --quiet || true
+fi

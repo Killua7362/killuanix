@@ -1,0 +1,4 @@
+# Sentinels live in $XDG_STATE_HOME, not here, but keep this in case
+# a future step writes host-local notes inside post-install/.
+state/
+*.local.md
