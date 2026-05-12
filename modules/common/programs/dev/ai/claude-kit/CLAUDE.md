@@ -13,7 +13,7 @@ Originally a single `claude-kit.nix` file with a ~1200-line `writeShellApplicati
 | `scripts/claude-kit.sh` | Entrypoint. Sets globals (`CLAUDE_DIR`, `KIT_CACHE`, `SOURCES_DIR`, `LAZY_DIR`), sources `lib/*.sh`, prints `usage`, and dispatches `$1` to `cmd/<name>.sh`. |
 | `scripts/lib/common.sh` | Shared helpers: `die`, `_list_agents`/`_list_commands`/`_list_skills`, `_resolve_file`. Sourced eagerly from the entrypoint. |
 | `scripts/lib/session.sh` | `_render_session` — turns a Claude Code `*.jsonl` conversation log into a markdown preview file (cached by mtime). Used by `cmd/resume.sh`. |
-| `scripts/lib/lazy.sh` | Catalog discovery (`_lazy_catalogs`, `_lazy_count`, `_lazy_find`), target-arg parsing (`_lazy_parse_target` → `PARSED_CAT`/`PARSED_TYPE`/`PARSED_NAME`), bundle helpers (`_lazy_bundle_files`, `_lazy_bundle_resolve`, `_lazy_bundle_state`), and `_lazy_help`. Sourced eagerly so any `cmd/lazy/*.sh` file can use them without a second source. |
+| `scripts/lib/lazy.sh` | Catalog discovery (`_lazy_catalogs`, `_lazy_count`, `_lazy_find`), target-arg parsing (`_lazy_parse_target` → `PARSED_CAT`/`PARSED_TYPE`/`PARSED_NAME`), bundle helpers (`_lazy_bundle_files`, `_lazy_bundle_resolve`, `_lazy_bundle_state`), `_lazy_find_project_config` (walks $PWD upward for `claude-kit.nix`), `_lazy_type_to_key` (CLI type → list key in `claude-kit.nix`), `_project_edit_list` (awk-based mutator that inserts/removes `"<item>"` inside a top-level `<key> = [ … ];` block), `_project_load_sync` (lazy-source `cmd/project.sh`), and `_lazy_help`. Sourced eagerly so any `cmd/lazy/*.sh` file can use them without a second source. |
 | `scripts/cmd/list.sh` | `claude-kit list [agents\|commands\|skills\|plugins\|mcp\|marketplaces\|all]`. |
 | `scripts/cmd/show.sh` | `claude-kit show <name>` — bat-renders an agent/command/skill markdown. |
 | `scripts/cmd/search.sh` | `claude-kit search [query]` — grep filter or fzf picker with live preview. |
@@ -31,14 +31,14 @@ Originally a single `claude-kit.nix` file with a ~1200-line `writeShellApplicati
 | `scripts/cmd/lazy.sh` | `claude-kit lazy <verb>` dispatcher — sources `cmd/lazy/<verb>.sh` lazily. |
 | `scripts/cmd/lazy/ls.sh` | `lazy ls [<catalog>] [--type <kind>]` — list catalogs or contents. |
 | `scripts/cmd/lazy/show.sh` | `lazy show <type> <name>` — print catalog item path + rendered markdown. |
-| `scripts/cmd/lazy/add.sh` | `lazy add <type> <name>` — symlink catalog item into `./.claude/<type>/`, or flip `enabledPlugins.<name>=true` in `./.claude/settings.local.json` for the `plugin` type. |
-| `scripts/cmd/lazy/rm.sh` | `lazy rm <type> <name>` — reverse of `add`. |
+| `scripts/cmd/lazy/add.sh` | `lazy add [--imperative] <type> <name>` — if a `claude-kit.nix` is found upward from `$PWD`, edit it in place (insert `"<name>"` into the matching list) and run `project sync --quiet`; otherwise (or with `--imperative`) fall back to the legacy direct path: symlink the catalog item into `./.claude/<type>/`, or flip `enabledPlugins.<name>=true` in `./.claude/settings.local.json` for the `plugin` type. |
+| `scripts/cmd/lazy/rm.sh` | `lazy rm [--imperative] <type> <name>` — same dual path as `add`: in a declarative project the entry is removed from `claude-kit.nix` and a re-sync prunes `./.claude/`; with `--imperative` (or outside a den project) the symlink / `settings.local.json` key is deleted directly. |
 | `scripts/cmd/lazy/project.sh` | `lazy project [--global]` — list project-scope items; `--global` also dumps the catalog. |
 | `scripts/cmd/lazy/new.sh` | `lazy new <name>` — scaffold a new sub-catalog under `Notes/claude/lazy/`. |
 | `scripts/cmd/lazy/refresh.sh` | `lazy refresh <name>` — regenerate `<name>/catalog.json` from contents. |
 | `scripts/cmd/lazy/doctor.sh` | `lazy doctor` — validate `lazy.json` + every `catalog.json`. |
-| `scripts/cmd/lazy/bundle.sh` | `lazy bundle <ls\|show\|add\|rm\|status>` — apply/remove named groups (plugins + MCP + symlinks) in one shot, with reversible state in `./.claude/.lazy-bundles.json`. Internal dispatcher (`_lazy_bundle`) routes to the per-verb function. |
-| `scripts/cmd/project.sh` | `claude-kit project <sync\|envrc\|show\|status>` — flake-driven project sync. Reads `./claude-kit.nix` (walks upward from `$PWD`) via `nix-instantiate --eval --strict --json`. `sync` reconciles `./.claude/{skills,agents,commands}/`, `./.claude/settings.local.json` (plugins), and `./.mcp.json` (servers mirrored from `~/.claude.json:.mcpServers`). `envrc` prints `export VAR=val` lines for non-empty `envVars` (empty entries inherit from the host shell). Sync state lives at `./.claude/.flake-managed.json` so the next run removes items that were dropped from the schema, while hand-added symlinks survive. Auto-invoked from the `.envrc` den drops on `den new --devshell`. |
+| `scripts/cmd/lazy/bundle.sh` | `lazy bundle <ls\|show\|add\|rm\|status>` — apply/remove named groups (plugins + MCP + skills/agents/commands) in one shot. In a declarative project (`claude-kit.nix` found upward) every entry the bundle expands to is written into the matching list of `claude-kit.nix`, then a single `project sync` materializes `./.claude/`; outside such a project the legacy direct-write path runs. Reversible state in `./.claude/.lazy-bundles.json` carries a `mode: "declarative"\|"imperative"` marker so `bundle rm` reverses the same way `add` applied. Internal dispatcher (`_lazy_bundle`) routes to the per-verb function. |
+| `scripts/cmd/project.sh` | `claude-kit project <sync\|add\|rm\|envrc\|show\|status>` — flake-driven project sync. Reads `./claude-kit.nix` (walks upward from `$PWD`) via `nix-instantiate --eval --strict --json`. `sync` reconciles `./.claude/{skills,agents,commands}/`, `./.claude/settings.local.json` (plugins), and `./.mcp.json` (servers mirrored from `~/.claude.json:.mcpServers`). `add`/`rm` mutate `claude-kit.nix` via `_project_edit_list` (type ∈ `skill\|agent\|command\|plugin\|mcp`) and re-run `sync`. `envrc` prints `export VAR=val` lines for non-empty `envVars` (empty entries inherit from the host shell). Sync state lives at `./.claude/.flake-managed.json` so the next run removes items that were dropped from the schema, while hand-added symlinks survive. Auto-invoked from the `.envrc` den drops on `den new --devshell`. |
 
 ## Env-var contract
 
@@ -89,9 +89,33 @@ Resolution rules:
 
 - **skills/agents/commands** — looked up in the lazy catalog (`_lazy_find`, same lane as `lazy add`). Names not in any catalog are reported and skipped, not fatal.
 - **plugins** — written verbatim into `enabledPlugins.<slug>=true` in `./.claude/settings.local.json` (no catalog lookup).
-- **mcp** — server stanza copied out of `~/.claude.json:.mcpServers.<name>` into `./.mcp.json`. Servers not in the global registry are skipped with a notice. The user's global Claude Code config remains the source of truth for *how* to launch each server; the project file is just an opt-in list of names.
+- **mcp** — server stanza resolved by `_lazy_resolve_mcp`, which checks two sources in order: (1) `$XDG_DATA_HOME/claude-kit/all-mcp-servers.json` — the full Nix-emitted catalog from `mcp-servers.nix` (includes `optional = true` entries excluded from the global wiring); (2) `~/.claude.json:.mcpServers` — fallback for runtime additions via `claude mcp add`. Resolved stanza copied verbatim into `./.mcp.json`. Names not in either source are skipped with a notice. This means `optional = true` registry entries (currently `claude-flow`, `gitnexus`) only load in projects whose `claude-kit.nix` lists them.
 - **envVars** — emitted by `claude-kit project envrc` as `export VAR=val` lines, with **empty values skipped** (so the host shell value, if any, passes through). Hooked from `.envrc` via `eval "$(claude-kit project envrc)"` before the `sync` call.
 
-State at `./.claude/.flake-managed.json` records what `sync` wrote on the prior run. The next run removes items that were dropped from the schema (additive list diff); items that were hand-added with `lazy add` are not in this file and are left alone. The bundle path (`.lazy-bundles.json`) is independent — bundles layer on top of `project sync` cleanly.
+State at `./.claude/.flake-managed.json` records what `sync` wrote on the prior run. The next run removes items that were dropped from the schema (additive list diff); items that were hand-added with `lazy add --imperative` are not in this file and are left alone. The bundle path (`.lazy-bundles.json`) is independent — bundles layer on top of `project sync` cleanly.
 
 Globally-enabled skills/MCP (from `programs.claude-code` and `mcp-servers.nix`) stay loaded; the project file is purely additive.
+
+### CLI mutators auto-route through `claude-kit.nix`
+
+When `_lazy_find_project_config` finds a `claude-kit.nix` above `$PWD`, every mutator (`lazy add`, `lazy rm`, `lazy bundle add`, `lazy bundle rm`) edits the nix file in place via `_project_edit_list` and then calls `_project_sync --quiet` — `claude-kit.nix` is the single source of truth, the CLI is sugar over editing it. The edit is awk-based and expects the canonical multi-line list format (one entry per line, closing `];` on its own line). Pass `--imperative` to `lazy add`/`lazy rm` to bypass detection and use the legacy direct-symlink path (useful for one-off ad-hoc additions outside the declared set).
+
+Equivalent declarative-only entry points:
+
+```
+claude-kit project add <type> <name>     # type: skill|agent|command|plugin|mcp
+claude-kit project rm  <type> <name>
+```
+
+These never fall back to imperative — they `die` if no `claude-kit.nix` is found.
+
+`_project_edit_list` exit codes:
+
+| rc | Meaning |
+|---|---|
+| 0  | Edited; file rewritten via `mktemp` + `mv -f`. |
+| 2  | List key not present in the file. |
+| 3  | List opens and closes on the same line — needs reformat (one entry per line). |
+| 4  | `add`: item already in the block (no-op). |
+| 5  | `add`: closing `];` not found (malformed file). |
+| 6  | `rm`: item not in the block (no-op). |

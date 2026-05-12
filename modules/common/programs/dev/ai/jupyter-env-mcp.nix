@@ -129,8 +129,17 @@
     '';
   };
 in {
-  programs.claude-code.mcpServers = {
-    jupyter-env.command = lib.getExe jupyter-env-wrapper;
-    jupyter.command = lib.getExe jupyter-mcp-wrapper;
+  # Routed through claude.nix's `local.extraMcpServers` side-channel so the
+  # `optional = true` flag gates both global wiring and the all-mcp-servers.json
+  # catalog the same way registry-defined servers are gated.
+  local.extraMcpServers = {
+    jupyter-env = {
+      command = lib.getExe jupyter-env-wrapper;
+      optional = true;
+    };
+    jupyter = {
+      command = lib.getExe jupyter-mcp-wrapper;
+      optional = true;
+    };
   };
 }

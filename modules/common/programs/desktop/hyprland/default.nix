@@ -15,6 +15,7 @@
     ./layout.nix
     ./input.nix
     ./keybinds.nix
+    ./leader.nix
     ./hyprlock.nix
     ./hypridle.nix
     ./dms

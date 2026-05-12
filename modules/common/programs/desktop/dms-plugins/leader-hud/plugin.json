@@ -1,0 +1,11 @@
+{
+    "id": "leaderHud",
+    "name": "Leader HUD",
+    "description": "Bar pill showing active Hyprland leader submap and its slot legend",
+    "version": "1.0.0",
+    "author": "killua",
+    "icon": "keyboard_command_key",
+    "type": "widget",
+    "capabilities": ["dankbar-widget"],
+    "component": "./LeaderHudWidget.qml"
+}

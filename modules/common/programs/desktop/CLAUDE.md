@@ -13,6 +13,7 @@ Desktop environment configuration shared across Linux platforms. Covers the Hypr
 ## Submodules
 
 - **`hyprland/`** -- Full Hyprland window manager configuration split into keybinds, layout, window rules, environment, gestures, idle/lock, and more. See [`hyprland/CLAUDE.md`](hyprland/CLAUDE.md) for details.
+- **`dms-plugins/`** -- In-repo DankMaterialShell plugins (QML widgets) wired into DMS via `programs.dank-material-shell.plugins.<id>.src` in `hyprland/dms/default.nix`. Currently: `leader-hud` (bar pill showing active Hyprland leader submap; reads `~/.cache/leader-hud/state` + `~/.config/leader-hud/slots.json` written by `hyprland/leader.nix`).
 
 ## Integration
 

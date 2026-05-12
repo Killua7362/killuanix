@@ -33,33 +33,21 @@
   registry = inputs.self.commonModules.mcpServers;
   mcp = inputs.mcp-servers-nix.packages.${pkgs.stdenv.hostPlatform.system};
 
-  # List each root directory that contains skill subdirectories.
-  # Every subdir of every root gets auto-imported into ~/.claude/skills/ —
-  # i.e. always-on, billed in every session's startup blob.
+  # Cherry-pick individual skills from larger flake-input repos where you
+  # don't want the whole tree. Key = skill name (becomes ~/.claude/skills/<key>/),
+  # value = nix-store path. These are nix-managed (read-only) and require
+  # `scripts/nix_switch` to update.
   #
-  # Upstream bundles (anthropics/skills, ruflo, wshobson) used to live here
-  # but are now in the lazy catalog (Notes/claude/lazy/upstream/) — opt in
-  # per-project via `claude-kit lazy add skill <name>`.
+  # Upstream bundles (anthropics/skills, ruflo, wshobson) live in the lazy
+  # catalog (Notes/claude/lazy/upstream/) — opt in per-project via
+  # `claude-kit lazy add skill <name>`.
   #
-  # Keep this list to local skills you genuinely want loaded everywhere.
-  skillRoots = [
-    ./skills
-  ];
-
-  # Cherry-pick individual skills from larger repos where you don't want the
-  # whole tree. Key = skill name (becomes ~/.claude/skills/<key>/), value = path.
+  # Local hand-authored always-on skills live in Notes/claude/skills/ and are
+  # wired as out-of-store symlinks under `config.home.file` below (same
+  # live-edit pattern as Notes/claude/{global.md,memory,commands}).
   extraSkills = {
     er-diagram-and-data-modeling = "${inputs.vibekit}/plugins/architecture-tools/skills/er-diagram-and-data-modeling";
   };
-
-  # Enumerate every direct subdirectory of a root and turn it into a
-  # (name → path) pair suitable for programs.claude-code.skills.
-  collectSkills = root:
-    lib.mapAttrs'
-    (name: _: lib.nameValuePair name "${toString root}/${name}")
-    (lib.filterAttrs (_: t: t == "directory") (builtins.readDir root));
-
-  allSkills = (lib.foldl' (acc: root: acc // collectSkills root) {} skillRoots) // extraSkills;
 
   # Wrapper for git-sourced MCP servers. The fetched source lives in the Nix
   # store (read-only), but uv/pipx/npm need a writable project dir to create
@@ -268,7 +256,7 @@
   # Wrap upstream claude-code so its bin/claude resolves to overlayClaude.
   # `cp -as` mirrors the upstream tree as symlinks so future additions to the
   # package (man pages, completions, …) flow through; only bin/claude is
-  # swapped. Inherits version/meta so `claude --version`, ccstatusline, and
+  # swapped. Inherits version/meta so `claude --version`, claude-powerline, and
   # any other consumer reading cfg.finalPackage.{version,meta} stay accurate.
   claudeWithOverlay =
     pkgs.runCommand "claude-code-${pkgs.claude-code.version}-overlay" {
@@ -281,157 +269,215 @@
       ln -s ${overlayClaude}/bin/claude $out/bin/claude
     '';
 in {
-  programs.claude-code = {
-    enable = true;
-    package = claudeWithOverlay;
-
-    # Local skills override upstream on name clash (later foldl' entries win).
-    skills = allSkills;
-
-    mcpServers = lib.mapAttrs mkClaudeServer registry;
-
-    # ~/.claude/settings.json contents. `bypassPermissions` is the default
-    # mode so new project folders (including ccmanager bindfs mounts) are
-    # trusted without a prompt — flip via `/permissions` per-session when
-    # you want stricter behavior. `skip*PermissionPrompt` suppress the
-    # first-run opt-in dialogs for auto and bypass modes.
-    settings = {
-      model = "claude-sonnet-4-6";
-      effortLevel = "high";
-      skipAutoPermissionPrompt = true;
-      skipDangerousModePermissionPrompt = true;
-      permissions.defaultMode = "bypassPermissions";
-
-      # Pin to the nix-managed binary. Claude Code's built-in updater
-      # drops a fresh `claude` into ~/.local/bin/ on each launch, which
-      # shadows ~/.nix-profile/bin/claude on PATH and bypasses the
-      # `--plugin-dir` wrapper that loads our .mcp.json bundle (so MCP
-      # servers silently disappear). Disabling auto-updates keeps the
-      # flake-pinned `pkgs.claude-code` authoritative; bump it via
-      # `nix flake update` instead.
-      autoUpdates = false;
-
-      # Use the flicker-free alt-screen renderer so the live conversation
-      # doesn't get mirrored into the terminal's normal scrollback. Use
-      # `Ctrl+O` then `[` inside Claude Code to dump the transcript into
-      # scrollback on demand.
-      tui = "fullscreen";
-
-      # Status line — declarative config lives in `ccstatusline.nix` and is
-      # rendered to ~/.config/ccstatusline/settings.json. PATH lookup of the
-      # `ccstatusline` shim works for plain `claude` and for launchers under
-      # `claude-launchers.nix` (which inherit the user's PATH).
-      # `refreshInterval` is honoured on Claude Code >= 2.1.97.
-      statusLine = {
-        type = "command";
-        command = "ccstatusline";
-        padding = 0;
-        refreshInterval = 10;
-      };
-
-      # Declaratively register the ruflo marketplace. Equivalent to running
-      # `/plugin marketplace add ruvnet/ruflo` once, but reproducible across
-      # machines. Claude Code resolves the source on first launch into
-      # ~/.claude/plugins/marketplaces/ruflo/.
-      extraKnownMarketplaces.ruflo.source = {
-        source = "github";
-        repo = "ruvnet/ruflo";
-      };
-
-      # JuliusBrussee/caveman — communication-style plugin that compresses
-      # assistant output ~75% via "caveman-speak". Bundles companion skills
-      # (caveman, compress, cavecrew, caveman-{commit,review,help,stats})
-      # and Node-based SessionStart/UserPromptSubmit hooks that auto-activate
-      # the mode. The upstream `caveman-shrink` MCP proxy is intentionally
-      # not registered — it's a stdio wrapper for compressing *another* MCP
-      # server's output, not a standalone server, and bare registration
-      # (the way upstream's install.sh does it) fails with "missing upstream
-      # command" on every session start.
-      extraKnownMarketplaces.caveman.source = {
-        source = "github";
-        repo = "JuliusBrussee/caveman";
-      };
-
-      # Plugins are disabled by default — every enabled entry adds its
-      # skills/agents/commands to the always-on startup blob. Flip a single
-      # plugin to `true` only when you actively need it; re-run
-      # `scripts/nix_switch` afterwards. The flat ruflo/wshobson bundles
-      # under ~/.claude/{agents,commands,skills}/ are governed separately
-      # by `claude-resources.nix` — see the cleanup notes there.
-      enabledPlugins = {
-        "frontend-design@claude-plugins-official" = false;
-        "ruflo-core@ruflo" = false; # MCP server + base agents
-        "ruflo-swarm@ruflo" = false; # Swarm coordination + Monitor
-        "ruflo-autopilot@ruflo" = false; # Autonomous /loop completion
-        "ruflo-loop-workers@ruflo" = false; # Background workers + CronCreate
-        "ruflo-security-audit@ruflo" = false; # Security scanning
-        "ruflo-rag-memory@ruflo" = false; # HNSW memory + AgentDB
-        "ruflo-testgen@ruflo" = false; # Test gap detection + TDD
-        "ruflo-docs@ruflo" = false; # Doc generation + drift detection
-        "caveman@caveman" = true; # Token-compressed response style + Shrink MCP
-      };
-    };
+  # Side-channel for MCP server stanzas defined outside mcp-servers.nix
+  # (servers that need `pkgs` / sops in scope, e.g. code-index, jupyter-env,
+  # jupyter). Each entry may include `optional = true` — same semantics as
+  # the registry: excluded from global wiring, still resolvable through
+  # `claude-kit project sync` via the all-mcp-servers.json catalog below.
+  options.local.extraMcpServers = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.attrsOf lib.types.unspecified);
+    default = {};
+    description = "Pre-resolved MCP server stanzas defined outside mcp-servers.nix.";
   };
 
-  # Memory centralisation — Notes/claude/ is the single source of truth.
-  #
-  # Both global instructions and per-project auto-memory live as committed
-  # markdown in the Notes submodule. mkOutOfStoreSymlink points at the live
-  # path (not the Nix store), so edits flow bidirectionally and Claude's
-  # auto-memory writes land in the vault for the user to commit via Obsidian's
-  # `Obsidian Git: Create backup` command (auto-intervals are intentionally 0).
-  home.file.".claude/CLAUDE.md".source =
-    config.lib.file.mkOutOfStoreSymlink
-    "${config.home.homeDirectory}/killuanix/Notes/claude/global.md";
+  config = {
+    programs.claude-code = {
+      enable = true;
+      package = claudeWithOverlay;
 
-  home.file.".claude/projects/-home-killua-killuanix/memory".source =
-    config.lib.file.mkOutOfStoreSymlink
-    "${config.home.homeDirectory}/killuanix/Notes/claude/memory";
+      # Cherry-picked skills from flake-input repos. Local always-on skills
+      # are wired separately via home.file mkOutOfStoreSymlink (see below) so
+      # they live-edit out of Notes/claude/skills/.
+      skills = extraSkills;
 
-  # User-defined slash commands sourced from the vault. Live alongside the
-  # flattened ruflo--*/wshobson--* command bundle (claude-resources.nix uses
-  # `recursive = true` so per-file additions don't conflict). Add new commands
-  # by dropping a markdown file into Notes/claude/commands/ and a matching
-  # `home.file.".claude/commands/<name>.md".source = mkOutOfStoreSymlink ...`
-  # entry below — same pattern as save-chat.
-  home.file.".claude/commands/save-chat.md".source =
-    config.lib.file.mkOutOfStoreSymlink
-    "${config.home.homeDirectory}/killuanix/Notes/claude/commands/save-chat.md";
+      # Optional entries (`optional = true` in mcp-servers.nix) are excluded
+      # from the global wiring — they're per-project tools that should only
+      # load when a project's claude-kit.nix opts in via `mcp = [ "name" ]`.
+      # The full resolved registry (including optionals) is emitted to
+      # $XDG_DATA_HOME/claude-kit/all-mcp-servers.json below so
+      # `claude-kit project sync` can still mirror their stanzas into a
+      # project's ./.mcp.json on demand.
+      mcpServers =
+        (lib.mapAttrs mkClaudeServer
+          (lib.filterAttrs (_: v: !(v.optional or false)) registry))
+        // (lib.mapAttrs (_: v: builtins.removeAttrs v ["optional"])
+          (lib.filterAttrs (_: v: !(v.optional or false)) config.local.extraMcpServers));
 
-  # One-shot cleanup: HM activation refuses to replace a real file/dir with
-  # a symlink. Pre-2026-04-29:
-  #   - ~/.claude/projects/-home-killua-killuanix/memory was a real dir of
-  #     auto-memory files (now migrated into Notes/claude/memory/).
-  #   - ~/.claude/CLAUDE.md was a 4-line file generated by ruflo init (now
-  #     replaced by Notes/claude/global.md).
-  # Both stale artefacts are removed before checkLinkTargets runs. Idempotent
-  # — only acts when the target is NOT already a symlink.
-  home.activation.cleanupOldClaudeMemoryDir = lib.hm.dag.entryBefore ["checkLinkTargets"] ''
-    _memdir="$HOME/.claude/projects/-home-killua-killuanix/memory"
-    if [ -d "$_memdir" ] && [ ! -L "$_memdir" ]; then
-      echo "claude.nix: removing stale auto-memory dir at $_memdir (migrated to Notes/claude/memory/)"
-      rm -rf "$_memdir"
-    fi
+      # ~/.claude/settings.json contents. `bypassPermissions` is the default
+      # mode so new project folders (including ccmanager bindfs mounts) are
+      # trusted without a prompt — flip via `/permissions` per-session when
+      # you want stricter behavior. `skip*PermissionPrompt` suppress the
+      # first-run opt-in dialogs for auto and bypass modes.
+      settings = {
+        model = "claude-sonnet-4-6";
+        effortLevel = "high";
+        skipAutoPermissionPrompt = true;
+        skipDangerousModePermissionPrompt = true;
+        permissions.defaultMode = "bypassPermissions";
 
-    _claudemd="$HOME/.claude/CLAUDE.md"
-    if [ -e "$_claudemd" ] && [ ! -L "$_claudemd" ]; then
-      echo "claude.nix: removing stale ~/.claude/CLAUDE.md (replaced by Notes/claude/global.md)"
-      rm -f "$_claudemd"
-    fi
-  '';
+        # Pin to the nix-managed binary. Claude Code's built-in updater
+        # drops a fresh `claude` into ~/.local/bin/ on each launch, which
+        # shadows ~/.nix-profile/bin/claude on PATH and bypasses the
+        # `--plugin-dir` wrapper that loads our .mcp.json bundle (so MCP
+        # servers silently disappear). Disabling auto-updates keeps the
+        # flake-pinned `pkgs.claude-code` authoritative; bump it via
+        # `nix flake update` instead.
+        autoUpdates = false;
 
-  # Patch ruflo plugin settings after Claude Code materializes the marketplace
-  # clone. Disables the daemon scheduler so background workers don't linger
-  # after sessions end.
-  home.activation.patchRufloPluginSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    _ruflo_settings="$HOME/.claude/plugins/marketplaces/ruflo/.claude/settings.json"
-    if [ -f "$_ruflo_settings" ]; then
-      ${lib.getExe pkgs.jq} '
-        .claudeFlow.daemon.autoStart = false |
-        .claudeFlow.daemon.workers = [] |
-        .claudeFlow.daemon.schedules = {}
-      ' "$_ruflo_settings" > "$_ruflo_settings.tmp" && mv "$_ruflo_settings.tmp" "$_ruflo_settings"
-      echo "claude.nix: patched ruflo daemon settings (autoStart=false, no scheduled workers)"
-    fi
-  '';
+        # Use the flicker-free alt-screen renderer so the live conversation
+        # doesn't get mirrored into the terminal's normal scrollback. Use
+        # `Ctrl+O` then `[` inside Claude Code to dump the transcript into
+        # scrollback on demand.
+        tui = "fullscreen";
+
+        # Status line — declarative config lives in `claude-powerline.nix` and
+        # is rendered to ~/.config/claude-powerline/config.json. The shim lazy-
+        # compiles upstream into a Bun-native single binary on first run and
+        # exec's it on every refresh after that (no per-render Node boot).
+        # PATH lookup works for plain `claude` and for `claude-launchers.nix`
+        # wrappers. `refreshInterval` honoured on Claude Code >= 2.1.97.
+        statusLine = {
+          type = "command";
+          command = "claude-powerline";
+          padding = 0;
+          refreshInterval = 10;
+        };
+
+        # Declaratively register the ruflo marketplace. Equivalent to running
+        # `/plugin marketplace add ruvnet/ruflo` once, but reproducible across
+        # machines. Claude Code resolves the source on first launch into
+        # ~/.claude/plugins/marketplaces/ruflo/.
+        extraKnownMarketplaces.ruflo.source = {
+          source = "github";
+          repo = "ruvnet/ruflo";
+        };
+
+        # JuliusBrussee/caveman — communication-style plugin that compresses
+        # assistant output ~75% via "caveman-speak". Bundles companion skills
+        # (caveman, compress, cavecrew, caveman-{commit,review,help,stats})
+        # and Node-based SessionStart/UserPromptSubmit hooks that auto-activate
+        # the mode. The upstream `caveman-shrink` MCP proxy is intentionally
+        # not registered — it's a stdio wrapper for compressing *another* MCP
+        # server's output, not a standalone server, and bare registration
+        # (the way upstream's install.sh does it) fails with "missing upstream
+        # command" on every session start.
+        extraKnownMarketplaces.caveman.source = {
+          source = "github";
+          repo = "JuliusBrussee/caveman";
+        };
+
+        # Plugins are disabled by default — every enabled entry adds its
+        # skills/agents/commands to the always-on startup blob. Flip a single
+        # plugin to `true` only when you actively need it; re-run
+        # `scripts/nix_switch` afterwards. The flat ruflo/wshobson bundles
+        # under ~/.claude/{agents,commands,skills}/ are governed separately
+        # by `claude-resources.nix` — see the cleanup notes there.
+        enabledPlugins = {
+          "frontend-design@claude-plugins-official" = false;
+          "ruflo-core@ruflo" = false; # MCP server + base agents
+          "ruflo-swarm@ruflo" = false; # Swarm coordination + Monitor
+          "ruflo-autopilot@ruflo" = false; # Autonomous /loop completion
+          "ruflo-loop-workers@ruflo" = false; # Background workers + CronCreate
+          "ruflo-security-audit@ruflo" = false; # Security scanning
+          "ruflo-rag-memory@ruflo" = false; # HNSW memory + AgentDB
+          "ruflo-testgen@ruflo" = false; # Test gap detection + TDD
+          "ruflo-docs@ruflo" = false; # Doc generation + drift detection
+          "caveman@caveman" = true; # Token-compressed response style + Shrink MCP
+        };
+      };
+    };
+
+    # Full MCP registry catalog (including `optional = true` entries excluded
+    # from the global wiring above). Read by `claude-kit project sync` to
+    # resolve server stanzas requested via a project's claude-kit.nix `mcp`
+    # list. Read-only nix-store symlink; never hand-edit.
+    xdg.dataFile."claude-kit/all-mcp-servers.json".source =
+      pkgs.writeText "all-mcp-servers.json"
+      (builtins.toJSON
+        ((lib.mapAttrs mkClaudeServer registry)
+          // (lib.mapAttrs (_: v: builtins.removeAttrs v ["optional"])
+            config.local.extraMcpServers)));
+
+    # Memory centralisation — Notes/claude/ is the single source of truth.
+    #
+    # Global instructions, per-project auto-memory, always-on local skills,
+    # and user-defined slash commands all live as committed markdown in the
+    # Notes submodule. mkOutOfStoreSymlink points at the live path (not the
+    # Nix store), so content edits flow bidirectionally and Claude's
+    # auto-memory writes land in the vault for the user to commit via
+    # Obsidian's `Obsidian Git: Create backup` command (auto-intervals are
+    # intentionally 0).
+    #
+    # Skills and commands are auto-discovered via builtins.readDir on the
+    # vault path: each subdir of Notes/claude/skills/ becomes
+    # ~/.claude/skills/<name>, each .md file under Notes/claude/commands/
+    # becomes ~/.claude/commands/<file>.md. Adding a new dir/file requires
+    # `scripts/nix_switch` (re-evaluates readDir); content edits inside
+    # existing entries don't. Commands sit alongside the flattened
+    # ruflo--*/wshobson--* bundle (claude-resources.nix uses `recursive =
+    # true` so per-file additions don't conflict).
+    home.file = let
+      notesClaude = ../../../../../Notes/claude;
+      liveBase = "${config.home.homeDirectory}/killuanix/Notes/claude";
+
+      mkSkill = name: _:
+        lib.nameValuePair ".claude/skills/${name}" {
+          source = config.lib.file.mkOutOfStoreSymlink "${liveBase}/skills/${name}";
+        };
+      mkCommand = name: _:
+        lib.nameValuePair ".claude/commands/${name}" {
+          source = config.lib.file.mkOutOfStoreSymlink "${liveBase}/commands/${name}";
+        };
+
+      skillDirs = lib.filterAttrs (_: t: t == "directory")
+        (builtins.readDir (notesClaude + "/skills"));
+      commandFiles = lib.filterAttrs (n: t: t == "regular" && lib.hasSuffix ".md" n)
+        (builtins.readDir (notesClaude + "/commands"));
+    in
+      {
+        ".claude/CLAUDE.md".source =
+          config.lib.file.mkOutOfStoreSymlink "${liveBase}/global.md";
+        ".claude/projects/-home-killua-killuanix/memory".source =
+          config.lib.file.mkOutOfStoreSymlink "${liveBase}/memory";
+      }
+      // (lib.mapAttrs' mkSkill skillDirs)
+      // (lib.mapAttrs' mkCommand commandFiles);
+
+    # One-shot cleanup: HM activation refuses to replace a real file/dir with
+    # a symlink. Pre-2026-04-29:
+    #   - ~/.claude/projects/-home-killua-killuanix/memory was a real dir of
+    #     auto-memory files (now migrated into Notes/claude/memory/).
+    #   - ~/.claude/CLAUDE.md was a 4-line file generated by ruflo init (now
+    #     replaced by Notes/claude/global.md).
+    # Both stale artefacts are removed before checkLinkTargets runs. Idempotent
+    # — only acts when the target is NOT already a symlink.
+    home.activation.cleanupOldClaudeMemoryDir = lib.hm.dag.entryBefore ["checkLinkTargets"] ''
+      _memdir="$HOME/.claude/projects/-home-killua-killuanix/memory"
+      if [ -d "$_memdir" ] && [ ! -L "$_memdir" ]; then
+        echo "claude.nix: removing stale auto-memory dir at $_memdir (migrated to Notes/claude/memory/)"
+        rm -rf "$_memdir"
+      fi
+
+      _claudemd="$HOME/.claude/CLAUDE.md"
+      if [ -e "$_claudemd" ] && [ ! -L "$_claudemd" ]; then
+        echo "claude.nix: removing stale ~/.claude/CLAUDE.md (replaced by Notes/claude/global.md)"
+        rm -f "$_claudemd"
+      fi
+    '';
+
+    # Patch ruflo plugin settings after Claude Code materializes the marketplace
+    # clone. Disables the daemon scheduler so background workers don't linger
+    # after sessions end.
+    home.activation.patchRufloPluginSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      _ruflo_settings="$HOME/.claude/plugins/marketplaces/ruflo/.claude/settings.json"
+      if [ -f "$_ruflo_settings" ]; then
+        ${lib.getExe pkgs.jq} '
+          .claudeFlow.daemon.autoStart = false |
+          .claudeFlow.daemon.workers = [] |
+          .claudeFlow.daemon.schedules = {}
+        ' "$_ruflo_settings" > "$_ruflo_settings.tmp" && mv "$_ruflo_settings.tmp" "$_ruflo_settings"
+        echo "claude.nix: patched ruflo daemon settings (autoStart=false, no scheduled workers)"
+      fi
+    '';
+  }; # config
 }

@@ -90,11 +90,13 @@
           }
         ];
         centerWidgets = [
-          "music"
           "clock"
-          "weather"
         ];
         rightWidgets = [
+          {
+            id = "leaderHud";
+            enabled = true;
+          }
           "systemTray"
           "clipboard"
           "cpuUsage"
@@ -102,10 +104,6 @@
           "notificationButton"
           "battery"
           "controlCenterButton"
-          {
-            id = "vmManager";
-            enabled = true;
-          }
         ];
         spacing = 4;
         innerPadding = 4;

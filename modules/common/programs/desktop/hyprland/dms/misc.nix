@@ -1,7 +1,7 @@
 {
   programs.dank-material-shell.settings = {
     # ---- Time / date / weather units ----
-    use24HourClock = true;
+    use24HourClock = false;
     showSeconds = false;
     padHours12Hour = false;
     useFahrenheit = false;

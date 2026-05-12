@@ -5,8 +5,14 @@
 # declarations below. Global skills and MCP servers (from ~/.claude/)
 # stay loaded — these lists are purely additive.
 #
+# Edit by hand, or let the CLI manage it: `claude-kit lazy add <type>
+# <name>` (and `lazy rm`, `lazy bundle add/rm`) auto-detect this file
+# and edit the relevant list in place, then re-sync. Pass `--imperative`
+# to bypass and write `./.claude/` directly.
+#
 # Pure attrset — no `inputs`, no `pkgs`, no `lib`. Evaluated with
 # `nix-instantiate --eval --strict --json` (no flake context needed).
+# Keep one entry per line so the CLI mutator can edit safely.
 {
   # envVars — exported into the dev shell on direnv reload.
   #

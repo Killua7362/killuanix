@@ -54,6 +54,17 @@
 #                        `uvx <package>`. Use when the package's MCP entrypoint
 #                        needs a subcommand (e.g. `basic-memory mcp`).
 #    env               - environment variables (optional).
+#
+# Per-entry flags applicable to all shapes:
+#
+#    optional = true  — exclude from Claude Code's global mcpServers wiring
+#                       (programs.claude-code.mcpServers in claude.nix). Resolved
+#                       stanza still appears in $XDG_DATA_HOME/claude-kit/
+#                       all-mcp-servers.json so `claude-kit project sync` can
+#                       mirror it into a project's local ./.mcp.json on demand.
+#                       Use for servers that need per-project setup (e.g.
+#                       claude-flow after `ruflo init`, gitnexus after
+#                       `gitnexus analyze`) and shouldn't load everywhere.
 {
   filesystem = {
     mcpServerNix = "mcp-server-filesystem";
@@ -95,6 +106,10 @@
     #     (previously wrote 0-byte via touch()).
     #   - New write_spreadsheet_data tool for populating .xlsx / .ods cells.
     patches = [./programs/dev/ai/patches/mcp-libre-calc-and-write.patch];
+    # Per-project — heavy LibreOffice runtime (uv venv + chromium-class binary
+    # pulls), only useful when the project actively edits .odt/.ods/.docx. Opt
+    # in via `claude-kit.nix:mcp = [ "libreoffice" ];`.
+    optional = true;
   };
 
   # yctimlin/mcp_excalidraw — MCP tools for creating and editing .excalidraw
@@ -110,6 +125,10 @@
       PORT = "3031";
       EXPRESS_SERVER_URL = "http://localhost:3031";
     };
+    # Per-project — binds :3031 and writes WebSocket canvas server state.
+    # Only useful when actively producing .excalidraw scenes. Opt in via
+    # `claude-kit.nix:mcp = [ "excalidraw" ];`.
+    optional = true;
   };
 
   # @peng-shawn/mermaid-mcp-server — renders Mermaid source to PNG/SVG via
@@ -162,6 +181,10 @@
     };
     runtime = "npx-direct";
     args = ["mcp" "start"];
+    # Per-project — claude-flow needs `ruflo init` to scaffold .mcp.json /
+    # .claude-flow/ / .swarm/ in the project root before it does anything
+    # useful. Opt in via `claude-kit.nix:mcp = [ "claude-flow" ];`.
+    optional = true;
   };
 
   # abhigyanpatwari/GitNexus — Tree-sitter-backed code knowledge graph.
@@ -190,5 +213,9 @@
     };
     runtime = "npx-direct";
     args = ["mcp"];
+    # Per-project — gitnexus requires `gitnexus analyze` to build the
+    # per-repo knowledge graph at <repo>/.gitnexus/ first. Opt in via
+    # `claude-kit.nix:mcp = [ "gitnexus" ];`.
+    optional = true;
   };
 }

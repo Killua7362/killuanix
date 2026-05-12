@@ -9,7 +9,7 @@
     ./claude-flow-cli.nix
     ./ccr.nix
     ./ccmanager.nix
-    ./ccstatusline.nix
+    ./claude-powerline.nix
     ./code-index.nix
     ./gitnexus-cli.nix
     ./jupyter-env-mcp.nix

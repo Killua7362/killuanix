@@ -10,7 +10,7 @@ attribute-wise.
 `default.nix` owns everything outside the settings attrset: `enable`, the
 commented module-level option reference (`systemd`, `enable*`, `quickshell.package`,
 `dgop.package`, `clipboardSettings`, `session`), the plugin schema example, the
-`vmManager` plugin wiring, and the `xdg.configFile.…force = lib.mkForce true`
+`leaderHud` plugin wiring, and the `xdg.configFile.…force = lib.mkForce true`
 escape hatch.
 
 ## When you want to change X, open Y

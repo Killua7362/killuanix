@@ -75,44 +75,82 @@ _lazy_bundle_add() {
   agents=$(jq -c '.agents // []' "$bundle_path")
   commands=$(jq -c '.commands // []' "$bundle_path")
 
-  # Apply plugins → settings.local.json
-  local sjson="$pdir/settings.local.json"
-  [ -f "$sjson" ] || echo '{}' > "$sjson"
-  tmp=$(mktemp)
-  jq --argjson p "$plugins" '
-    .enabledPlugins = ((.enabledPlugins // {}) +
-      ($p | map({(.): true}) | add // {}))
-  ' "$sjson" > "$tmp" && mv "$tmp" "$sjson"
+  # Declarative path: claude-kit.nix exists upward — route every entry
+  # through _project_edit_list and then a single project sync.
+  local cfg mode="imperative"
+  if cfg=$(_lazy_find_project_config); then
+    mode="declarative"
+    _project_load_sync
+    local list_key list_var item rc
+    for list_key in plugins skills agents commands; do
+      case "$list_key" in
+        plugins)  list_var="$plugins" ;;
+        skills)   list_var="$skills" ;;
+        agents)   list_var="$agents" ;;
+        commands) list_var="$commands" ;;
+      esac
+      while IFS= read -r item; do
+        [ -n "$item" ] || continue
+        rc=0
+        _project_edit_list "$cfg" add "$list_key" "$item" || rc=$?
+        case "$rc" in
+          0|4) ;;   # added or already present
+          *) die "claude-kit.nix edit failed for $list_key/$item (rc=$rc)" ;;
+        esac
+      done < <(echo "$list_var" | jq -r '.[]')
+    done
+    while IFS= read -r item; do
+      [ -n "$item" ] || continue
+      rc=0
+      _project_edit_list "$cfg" add mcp "$item" || rc=$?
+      case "$rc" in
+        0|4) ;;
+        *) die "claude-kit.nix edit failed for mcp/$item (rc=$rc)" ;;
+      esac
+    done < <(echo "$mcp_keys" | jq -r '.[]')
 
-  # Apply mcp → ./.mcp.json (merge; do not overwrite existing keys)
-  local mcpfile="$PWD/.mcp.json"
-  local has_mcp; has_mcp=$(jq -r '(.mcp // {}) | length' "$bundle_path")
-  if [ "$has_mcp" -gt 0 ]; then
-    [ -f "$mcpfile" ] || echo '{"mcpServers": {}}' > "$mcpfile"
+    # One sync materializes everything (.claude/, settings.local.json, .mcp.json).
+    _project_sync --quiet
+  else
+    # Imperative legacy path — write directly into ./.claude/.
+    local sjson="$pdir/settings.local.json"
+    [ -f "$sjson" ] || echo '{}' > "$sjson"
     tmp=$(mktemp)
-    jq --slurpfile b <(jq '.mcp' "$bundle_path") '
-      .mcpServers = ((.mcpServers // {}) + $b[0])
-    ' "$mcpfile" > "$tmp" && mv "$tmp" "$mcpfile"
+    jq --argjson p "$plugins" '
+      .enabledPlugins = ((.enabledPlugins // {}) +
+        ($p | map({(.): true}) | add // {}))
+    ' "$sjson" > "$tmp" && mv "$tmp" "$sjson"
+
+    local mcpfile="$PWD/.mcp.json"
+    local has_mcp; has_mcp=$(jq -r '(.mcp // {}) | length' "$bundle_path")
+    if [ "$has_mcp" -gt 0 ]; then
+      [ -f "$mcpfile" ] || echo '{"mcpServers": {}}' > "$mcpfile"
+      tmp=$(mktemp)
+      jq --slurpfile b <(jq '.mcp' "$bundle_path") '
+        .mcpServers = ((.mcpServers // {}) + $b[0])
+      ' "$mcpfile" > "$tmp" && mv "$tmp" "$mcpfile"
+    fi
+
+    source "$CLAUDE_KIT_LIB_DIR/cmd/lazy/add.sh"
+    local item
+    for item in $(echo "$skills"   | jq -r '.[]'); do _lazy_apply_one skills   "$item" || true; done
+    for item in $(echo "$agents"   | jq -r '.[]'); do _lazy_apply_one agents   "$item" || true; done
+    for item in $(echo "$commands" | jq -r '.[]'); do _lazy_apply_one commands "$item" || true; done
   fi
 
-  # Apply skills/agents/commands via _lazy_apply_one (catalog symlink).
-  # Ignore non-success return codes so partial overlaps with other
-  # bundles don't fail the whole bundle apply.
-  source "$CLAUDE_KIT_LIB_DIR/cmd/lazy/add.sh"
-  local item
-  for item in $(echo "$skills"   | jq -r '.[]'); do _lazy_apply_one skills   "$item" || true; done
-  for item in $(echo "$agents"   | jq -r '.[]'); do _lazy_apply_one agents   "$item" || true; done
-  for item in $(echo "$commands" | jq -r '.[]'); do _lazy_apply_one commands "$item" || true; done
-
-  # Record state
+  # Record state — same shape regardless of mode, plus a `mode` marker
+  # so rm knows how to reverse. mcp_keys remains the list of stanza
+  # names because that's what we need to remove on rm.
   tmp=$(mktemp)
   jq --arg k "$key" \
+     --arg mode "$mode" \
      --argjson plugins "$plugins" \
      --argjson mcp_keys "$mcp_keys" \
      --argjson skills "$skills" \
      --argjson agents "$agents" \
      --argjson commands "$commands" \
      '.bundles[$k] = {
+       mode: $mode,
        plugins: $plugins,
        mcp_keys: $mcp_keys,
        skills: $skills,
@@ -120,7 +158,7 @@ _lazy_bundle_add() {
        commands: $commands
      }' "$statefile" > "$tmp" && mv "$tmp" "$statefile"
 
-  echo "applied bundle: $key"
+  echo "applied bundle: $key ($mode)"
   local pcount mcount
   pcount=$(echo "$plugins" | jq -r 'length')
   mcount=$(echo "$mcp_keys" | jq -r 'length')
@@ -152,44 +190,71 @@ _lazy_bundle_rm() {
   local pdir="$PWD/.claude"
   local entry; entry=$(jq --arg k "$key" '.bundles[$k]' "$statefile")
   local plugins mcp_keys skills agents commands tmp
+  local mode; mode=$(echo "$entry" | jq -r '.mode // "imperative"')
   plugins=$(echo "$entry"  | jq -c '.plugins  // []')
   mcp_keys=$(echo "$entry" | jq -c '.mcp_keys // []')
   skills=$(echo "$entry"   | jq -c '.skills   // []')
   agents=$(echo "$entry"   | jq -c '.agents   // []')
   commands=$(echo "$entry" | jq -c '.commands // []')
 
-  # Remove plugins
-  local sjson="$pdir/settings.local.json"
-  if [ -f "$sjson" ]; then
-    tmp=$(mktemp)
-    jq --argjson p "$plugins" '
-      .enabledPlugins = ((.enabledPlugins // {}) |
-        with_entries(select(.key as $k | ($p | index($k)) | not)))
-    ' "$sjson" > "$tmp" && mv "$tmp" "$sjson"
-  fi
+  if [ "$mode" = "declarative" ]; then
+    local cfg
+    if ! cfg=$(_lazy_find_project_config); then
+      die "bundle $key was applied declaratively but claude-kit.nix is no longer present — restore the file or remove the entry from $statefile by hand"
+    fi
+    _project_load_sync
+    local list_key list_var item rc
+    for list_key in plugins skills agents commands mcp; do
+      case "$list_key" in
+        plugins)  list_var="$plugins" ;;
+        skills)   list_var="$skills" ;;
+        agents)   list_var="$agents" ;;
+        commands) list_var="$commands" ;;
+        mcp)      list_var="$mcp_keys" ;;
+      esac
+      while IFS= read -r item; do
+        [ -n "$item" ] || continue
+        rc=0
+        _project_edit_list "$cfg" rm "$list_key" "$item" || rc=$?
+        case "$rc" in
+          0|6) ;;   # removed or already absent — both fine
+          *) die "claude-kit.nix edit failed for $list_key/$item (rc=$rc)" ;;
+        esac
+      done < <(echo "$list_var" | jq -r '.[]')
+    done
+    _project_sync --quiet
+  else
+    # Imperative legacy reversal.
+    local sjson="$pdir/settings.local.json"
+    if [ -f "$sjson" ]; then
+      tmp=$(mktemp)
+      jq --argjson p "$plugins" '
+        .enabledPlugins = ((.enabledPlugins // {}) |
+          with_entries(select(.key as $k | ($p | index($k)) | not)))
+      ' "$sjson" > "$tmp" && mv "$tmp" "$sjson"
+    fi
 
-  # Remove mcp keys
-  local mcpfile="$PWD/.mcp.json"
-  if [ -f "$mcpfile" ]; then
-    tmp=$(mktemp)
-    jq --argjson k "$mcp_keys" '
-      .mcpServers = ((.mcpServers // {}) |
-        with_entries(select(.key as $kk | ($k | index($kk)) | not)))
-    ' "$mcpfile" > "$tmp" && mv "$tmp" "$mcpfile"
-  fi
+    local mcpfile="$PWD/.mcp.json"
+    if [ -f "$mcpfile" ]; then
+      tmp=$(mktemp)
+      jq --argjson k "$mcp_keys" '
+        .mcpServers = ((.mcpServers // {}) |
+          with_entries(select(.key as $kk | ($k | index($kk)) | not)))
+      ' "$mcpfile" > "$tmp" && mv "$tmp" "$mcpfile"
+    fi
 
-  # Remove symlinks; ignore errors (file may have been manually rm'd)
-  local item
-  for item in $(echo "$skills"   | jq -r '.[]'); do rm -f "$pdir/skills/$item" 2>/dev/null || true; done
-  for item in $(echo "$agents"   | jq -r '.[]'); do rm -f "$pdir/agents/$item.md" 2>/dev/null || true; done
-  for item in $(echo "$commands" | jq -r '.[]'); do rm -f "$pdir/commands/$item.md" 2>/dev/null || true; done
+    local item
+    for item in $(echo "$skills"   | jq -r '.[]'); do rm -f "$pdir/skills/$item" 2>/dev/null || true; done
+    for item in $(echo "$agents"   | jq -r '.[]'); do rm -f "$pdir/agents/$item.md" 2>/dev/null || true; done
+    for item in $(echo "$commands" | jq -r '.[]'); do rm -f "$pdir/commands/$item.md" 2>/dev/null || true; done
+  fi
 
   tmp=$(mktemp)
   jq --arg k "$key" 'del(.bundles[$k])' "$statefile" > "$tmp" && mv "$tmp" "$statefile"
   # Drop the state file entirely if no bundles remain.
   if [ "$(jq '.bundles | length' "$statefile")" = "0" ]; then rm -f "$statefile"; fi
 
-  echo "removed bundle: $key"
+  echo "removed bundle: $key ($mode)"
 }
 
 _lazy_bundle_status() {

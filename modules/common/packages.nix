@@ -102,6 +102,7 @@
       loupe
       mpv
       papers
+      vial
     ];
 
   # Development packages

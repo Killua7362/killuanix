@@ -124,6 +124,7 @@
     };
   };
   services.blueman.enable = true;
+  services.udev.packages = [pkgs.vial];
 
   # Intel Lunar Lake BT controller drops the ACL link when HFP/SCO initializes,
   # symptom: "Unable to get Hands-Free Voice gateway SDP record: Host is down"

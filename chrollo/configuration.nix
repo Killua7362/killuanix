@@ -338,6 +338,7 @@ in {
   boot.blacklistedKernelModules = ["kvm_intel" "kvm"];
 
   services.dbus.packages = [pkgs.blueman pkgs.openvpn3];
+  services.udev.packages = [pkgs.vial];
   programs.hyprland = {
     enable = true;
     package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;

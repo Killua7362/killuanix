@@ -43,7 +43,54 @@ _lazy_apply_one() {
 }
 
 _lazy_add() {
-  _lazy_parse_target "$@" || die "usage: claude-kit lazy add <type> <name>  |  add <catalog>/<type>/<name>"
+  local imperative=0
+  while [ $# -gt 0 ]; do
+    case "${1:-}" in
+      --imperative) imperative=1; shift ;;
+      --) shift; break ;;
+      *) break ;;
+    esac
+  done
+  _lazy_parse_target "$@" || die "usage: claude-kit lazy add [--imperative] <type> <name>  |  add <catalog>/<type>/<name>"
+
+  # Declarative path: if a claude-kit.nix sits above $PWD, edit it
+  # instead of writing symlinks/json straight into ./.claude/.
+  local cfg
+  if [ "$imperative" = 0 ] && cfg=$(_lazy_find_project_config); then
+    local key; key=$(_lazy_type_to_key "$PARSED_TYPE") \
+      || die "unknown type: $PARSED_TYPE (try skill|agent|command|plugin|mcp)"
+    # Validate catalog membership for resource-shaped types so we don't
+    # write unknown names into the nix file. Plugins and MCP are
+    # registry-less by design — trust the user.
+    case "$PARSED_TYPE" in
+      skill|skills|agent|agents|command|commands)
+        local matches; matches=$(_lazy_find "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT")
+        local n; n=$(printf '%s' "$matches" | grep -c . 2>/dev/null || true)
+        case "$n" in
+          0) die "not found: $PARSED_TYPE/$PARSED_NAME" ;;
+          1) ;;
+          *)
+            echo "lazy: multiple matches:" >&2
+            printf '%s\n' "$matches" | awk '{print "  " $1 "/" }' >&2
+            die "use <catalog>/$PARSED_TYPE/$PARSED_NAME to disambiguate"
+            ;;
+        esac
+        ;;
+    esac
+    _project_load_sync
+    local rc=0
+    _project_edit_list "$cfg" add "$key" "$PARSED_NAME" || rc=$?
+    case "$rc" in
+      0)
+        echo "+ $key: $PARSED_NAME (edited claude-kit.nix)"
+        _project_sync --quiet
+        return 0 ;;
+      4) echo "already in claude-kit.nix: $key/$PARSED_NAME"; return 0 ;;
+      *) die "claude-kit.nix edit failed (rc=$rc)" ;;
+    esac
+  fi
+
+  # Imperative legacy path — direct symlink / settings.local.json edit.
   if [ "$PARSED_TYPE" = "plugin" ] || [ "$PARSED_TYPE" = "plugins" ]; then
     _lazy_apply_plugin "$PARSED_NAME"
     echo "enabled plugin: $PARSED_NAME"

@@ -36,6 +36,7 @@
     };
     scrolling = {
       explicit_column_widths = "1.0, 0.5";
+      column_width = 1.0;
       fullscreen_on_one_column = true;
       follow_focus = true;
     };

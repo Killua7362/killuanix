@@ -16,6 +16,11 @@ claude-kit project — flake-driven project resource sync.
 
   sync [--dry-run] [--quiet]    Reconcile ./.claude/ + ./.mcp.json against
                                 ./claude-kit.nix. Default verb.
+  add <type> <name>             Insert <name> into the matching list in
+                                ./claude-kit.nix and re-sync.
+  rm  <type> <name>             Remove <name> from the matching list in
+                                ./claude-kit.nix and re-sync.
+                                (<type> ∈ skill|agent|command|plugin|mcp)
   envrc                         Print `export VAR=val` lines for non-empty
                                 entries in claude-kit.nix:envVars. Empty
                                 entries are skipped so the host env wins.
@@ -210,6 +215,28 @@ _project_sync() {
   fi
 }
 
+# _project_mutate <add|rm> <type> <name>
+# Public wrapper around _project_edit_list — validates args, locates
+# claude-kit.nix, edits in place, then runs project sync.
+_project_mutate() {
+  local mode="$1" type="$2" name="$3"
+  case "$mode" in add|rm) ;; *) die "project $mode: bad mode" ;; esac
+  [ -n "$type" ] && [ -n "$name" ] || die "usage: claude-kit project $mode <type> <name>"
+  local key; key=$(_lazy_type_to_key "$type") || die "unknown type: $type (try skill|agent|command|plugin|mcp)"
+  local cfg; cfg=$(_lazy_find_project_config) || die "no claude-kit.nix found above $PWD"
+  local rc=0
+  _project_edit_list "$cfg" "$mode" "$key" "$name" || rc=$?
+  case "$rc" in
+    0)
+      if [ "$mode" = add ]; then echo "+ $key: $name"; else echo "- $key: $name"; fi
+      _project_sync --quiet
+      return 0 ;;
+    4) echo "already in claude-kit.nix: $key/$name"; return 0 ;;
+    6) echo "not in claude-kit.nix: $key/$name"; return 1 ;;
+    *) die "claude-kit.nix edit failed (rc=$rc)" ;;
+  esac
+}
+
 _project_status() {
   local statefile; statefile=$(_lazy_state_file)
   if [ ! -f "$statefile" ]; then
@@ -225,11 +252,13 @@ cmd_project() {
   local verb="${1:-sync}"
   case "$verb" in
     sync|"")          shift; _project_sync "$@" ;;
+    add)              shift; _project_mutate add "$@" ;;
+    rm|remove)        shift; _project_mutate rm  "$@" ;;
     envrc)            _project_envrc ;;
     show)             _project_show ;;
     status|st)        _project_status ;;
     help|-h|--help)   _project_help ;;
     --dry-run|--quiet|-n|-q) _project_sync "$@" ;;   # bare flags → sync
-    *) die "project: unknown verb '$verb' (try: sync envrc show status)" ;;
+    *) die "project: unknown verb '$verb' (try: sync add rm envrc show status)" ;;
   esac
 }

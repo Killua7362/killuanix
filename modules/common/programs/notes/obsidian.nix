@@ -506,7 +506,7 @@ in {
 
     "${vaultRel}/_claude/skills".source =
       config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/killuanix/modules/common/programs/dev/ai/skills";
+      "${config.home.homeDirectory}/killuanix/Notes/claude/skills";
 
     "${vaultRel}/_claude/docs/root-CLAUDE.md".source =
       config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/killuanix/CLAUDE.md";

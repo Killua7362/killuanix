@@ -10,6 +10,15 @@
     enable = lib.mkDefault true;
     enableZshIntegration = true;
     settings = {
+      right_format = "$time$cmd_duration";
+
+      cmd_duration = {
+        min_time = 2000;
+        format = "[ (took $duration)]($style)";
+        style = "dimmed italic";
+        show_milliseconds = false;
+      };
+
       aws = {
         symbol = " ";
       };
@@ -130,6 +139,14 @@
 
       status = {
         disabled = false;
+      };
+
+      time = {
+        disabled = false;
+        format = "[ $time]($style)";
+        time_format = "%I:%M:%S %p";
+        style = "dimmed yellow";
+        use_12hr = true;
       };
 
       direnv = {

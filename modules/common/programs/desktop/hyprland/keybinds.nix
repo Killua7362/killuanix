@@ -1,4 +1,20 @@
-{lib, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: let
+  toggleColWidth = pkgs.writeShellScript "hypr-toggle-col-width" ''
+    state="''${XDG_RUNTIME_DIR:-/tmp}/hypr-colresize-dir"
+    last=$(cat "$state" 2>/dev/null || echo "-")
+    if [ "$last" = "+" ]; then
+      dir="-"
+    else
+      dir="+"
+    fi
+    echo "$dir" > "$state"
+    ${pkgs.hyprland}/bin/hyprctl dispatch layoutmsg "colresize ''${dir}conf"
+  '';
+in {
   wayland.windowManager.hyprland.settings = {
     bindd = [
       "Super, Period, Emoji >> clipboard, global, quickshell:overviewEmojiToggle"
@@ -93,7 +109,7 @@
       "Super SHIFT, N, layoutmsg, swapcol l"
       "Super SHIFT, O, layoutmsg, swapcol r"
       "Super SHIFT, E, layoutmsg, colresize -conf"
-      "Super SHIFT, I, layoutmsg, colresize +conf"
+      "Super SHIFT, I, exec, ${toggleColWidth}"
       "Super, U, exec, uwsm-app -- rctl"
       "Super SHIFT, 1, movetoworkspace, 1"
       "Super SHIFT, 2, movetoworkspace, 2"

@@ -160,10 +160,42 @@
   #     sha256 = "sha256-VoJCaygWnKpv0s0pqTOmzZnPM922qPDMHk4EPcgVnaU=";
   #   };
   # };
-  programs.dank-material-shell.plugins.vmManager = {
+  programs.dank-material-shell.plugins.leaderHud = {
     enable = true;
-    src = ../../../../../vms/vm-manager-plugin;
+    src = ../../dms-plugins/leader-hud;
   };
+
+  # plugin_settings.json is owned by DMS at runtime (DMS rewrites it on UI toggle),
+  # so HM can't safely declare it as a symlink. Instead, merge our managed plugin
+  # IDs into the existing file on every activation. Idempotent.
+  home.activation.dmsPluginEnable = let
+    mergeScript = pkgs.writers.writePython3 "dms-plugin-enable" {} ''
+      import json
+      import os
+      p = os.path.expanduser("~/.config/DankMaterialShell/plugin_settings.json")
+      os.makedirs(os.path.dirname(p), exist_ok=True)
+      try:
+          d = json.load(open(p))
+      except Exception:
+          d = {}
+      managed = ["leaderHud"]
+      changed = False
+      for pid in managed:
+          if d.get(pid, {}).get("enabled") is not True:
+              d[pid] = {"enabled": True}
+              changed = True
+      if changed:
+          json.dump(d, open(p, "w"), indent=2)
+    '';
+  in
+    lib.hm.dag.entryAfter ["writeBoundary"] ''
+      ${mergeScript}
+      # Qt caches compiled QML by source path. Plugin paths are stable across
+      # store generations (~/.config/DankMaterialShell/plugins/<id>/Foo.qml),
+      # so a content change can be masked by a stale .qmlc. Bust on every
+      # activation — cheap, idempotent.
+      rm -rf "$HOME/.cache/quickshell/qmlcache"
+    '';
 
   # HM otherwise refuses to overwrite the existing runtime-managed settings.json
   # (DMS rewrites this file on UI changes), so force HM to win on activation.
