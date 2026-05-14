@@ -165,39 +165,84 @@
     src = ../../dms-plugins/leader-hud;
   };
 
-  # plugin_settings.json is owned by DMS at runtime (DMS rewrites it on UI toggle),
-  # so HM can't safely declare it as a symlink. Instead, merge our managed plugin
-  # IDs into the existing file on every activation. Idempotent.
-  home.activation.dmsPluginEnable = let
-    mergeScript = pkgs.writers.writePython3 "dms-plugin-enable" {} ''
-      import json
-      import os
-      p = os.path.expanduser("~/.config/DankMaterialShell/plugin_settings.json")
-      os.makedirs(os.path.dirname(p), exist_ok=True)
-      try:
-          d = json.load(open(p))
-      except Exception:
-          d = {}
-      managed = ["leaderHud"]
-      changed = False
-      for pid in managed:
-          if d.get(pid, {}).get("enabled") is not True:
-              d[pid] = {"enabled": True}
-              changed = True
-      if changed:
-          json.dump(d, open(p, "w"), indent=2)
-    '';
-  in
+  # Upstream community plugins from AvengeMedia/dms-plugins.
+  # Pinned to the rev recorded in the old DotFiles submodule (5f36976).
+  programs.dank-material-shell.plugins.dankActions = let
+    dmsPluginsRepo = pkgs.fetchFromGitHub {
+      owner = "AvengeMedia";
+      repo = "dms-plugins";
+      rev = "5f36976676ece21d0c838c0639f193ecc77ea3f2";
+      sha256 = "03bv6kq1iwrps8wv7qzssldjailyyrikdrmhbw0wg7amlvqg3na4";
+    };
+  in {
+    enable = true;
+    src = "${dmsPluginsRepo}/DankActions";
+    settings = {
+      variants = [
+        {
+          icon = "terminal";
+          displayText = "uwsm";
+          displayCommand = "systemctl --user show --type=service,scope,socket,target --all --no-pager --property=Id,UnitFileState | grep -B1 'UnitFileState=transient' | grep '^Id='  | wc -l";
+          clickCommand = "uuctl";
+          middleClickCommand = "";
+          rightClickCommand = "";
+          updateInterval = 5;
+          showIcon = true;
+          showText = true;
+          id = "variant_uwsm";
+          name = "uwsm";
+        }
+        {
+          icon = "⌨️";
+          displayText = "";
+          displayCommand = "";
+          clickCommand = "sh ${config.home.homeDirectory}/killuanix/DotFiles/scripts/wvkbd-toggle.sh";
+          middleClickCommand = "";
+          rightClickCommand = "";
+          updateInterval = 0;
+          showIcon = true;
+          showText = true;
+          id = "variant_wvkbd";
+          name = "On screen keyboard";
+        }
+      ];
+    };
+  };
+
+  programs.dank-material-shell.plugins.dankHooks = {
+    enable = true;
+    src = "${pkgs.fetchFromGitHub {
+      owner = "AvengeMedia";
+      repo = "dms-plugins";
+      rev = "5f36976676ece21d0c838c0639f193ecc77ea3f2";
+      sha256 = "03bv6kq1iwrps8wv7qzssldjailyyrikdrmhbw0wg7amlvqg3na4";
+    }}/DankHooks";
+  };
+
+  programs.dank-material-shell.plugins.dankPomodoroTimer = {
+    enable = true;
+    src = "${pkgs.fetchFromGitHub {
+      owner = "AvengeMedia";
+      repo = "dms-plugins";
+      rev = "5f36976676ece21d0c838c0639f193ecc77ea3f2";
+      sha256 = "03bv6kq1iwrps8wv7qzssldjailyyrikdrmhbw0wg7amlvqg3na4";
+    }}/DankPomodoroTimer";
+  };
+
+  # Both files are rewritten by DMS at runtime, so HM would otherwise refuse to
+  # overwrite them on activation. plugin_settings.json is owned by the upstream
+  # module (auto-active because dankActions ships `settings = { variants = … }`,
+  # which flips `managePluginSettings` on); per-plugin `enabled` is derived from
+  # each plugin's `enable` flag.
+  xdg.configFile."DankMaterialShell/settings.json".force = lib.mkForce true;
+  xdg.configFile."DankMaterialShell/plugin_settings.json".force = lib.mkForce true;
+
+  # Qt caches compiled QML by source path. Plugin paths are stable across
+  # store generations (~/.config/DankMaterialShell/plugins/<id>/Foo.qml),
+  # so a content change can be masked by a stale .qmlc. Bust on every
+  # activation — cheap, idempotent.
+  home.activation.dmsQmlcacheBust =
     lib.hm.dag.entryAfter ["writeBoundary"] ''
-      ${mergeScript}
-      # Qt caches compiled QML by source path. Plugin paths are stable across
-      # store generations (~/.config/DankMaterialShell/plugins/<id>/Foo.qml),
-      # so a content change can be masked by a stale .qmlc. Bust on every
-      # activation — cheap, idempotent.
       rm -rf "$HOME/.cache/quickshell/qmlcache"
     '';
-
-  # HM otherwise refuses to overwrite the existing runtime-managed settings.json
-  # (DMS rewrites this file on UI changes), so force HM to win on activation.
-  xdg.configFile."DankMaterialShell/settings.json".force = lib.mkForce true;
 }

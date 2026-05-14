@@ -8,14 +8,16 @@
     windSpeedUnit = "kmh"; # kmh | mph | ms | knots
     weatherEnabled = true;
     useAutoLocation = false;
+    weatherLocation = "Sirsi, 581401";
+    weatherCoordinates = "14.6192362,74.8388611";
     clockDateFormat = ""; # "" = locale default
     lockDateFormat = "";
 
     # ---- Network preference ----
-    networkPreference = "auto"; # auto | wifi | wired
+    networkPreference = "wifi"; # auto | wifi | wired
 
     # ---- Persisted user-launch prefix (e.g. firejail / box) ----
-    launchPrefix = "";
+    launchPrefix = "uwsm-app -- ";
 
     # ---- Clipboard popup ----
     clipboardEnterToPaste = false;

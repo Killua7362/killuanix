@@ -27,6 +27,10 @@
     "vm.compaction_proactiveness" = 0; # Reduce latency spikes during gaming
     "vm.max_map_count" = 2147483642; # Required by many Steam/Proton games
     "kernel.nmi_watchdog" = 1; # Detect hard lockups (needed for Xe GPU hang recovery)
+    "kernel.softlockup_panic" = 1; # Panic on soft lockup so pstore captures it
+    "kernel.hardlockup_panic" = 1; # Panic on hard lockup (NMI-detected)
+    "kernel.panic_on_oops" = 1; # Promote oops to panic for pstore capture
+    "kernel.panic" = 10; # Auto-reboot 10s after panic (so freezes self-recover)
     "fs.file-max" = 2097152;
     "net.ipv4.tcp_fin_timeout" = 5; # Quick TCP port reuse for games
     "dev.i915.perf_stream_paranoid" = 0; # GPU perf counter access

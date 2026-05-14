@@ -53,7 +53,7 @@
     showWorkspaceName = false;
     showWorkspacePadding = false;
     workspaceScrolling = false;
-    showWorkspaceApps = false;
+    showWorkspaceApps = true;
     workspaceDragReorder = true;
     maxWorkspaceIcons = 3;
     workspaceAppIconSizeOffset = 0;
@@ -95,6 +95,10 @@
         rightWidgets = [
           {
             id = "leaderHud";
+            enabled = true;
+          }
+          {
+            id = "dankActions:variant_uwsm";
             enabled = true;
           }
           "systemTray"

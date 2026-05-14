@@ -48,6 +48,9 @@
     jetbrains.idea
     jetbrains.webstorm
     antimicrox
+    # Ships org.kde.ksshaskpass.desktop into XDG_DATA_DIRS so xdg-desktop-portal
+    # can resolve the app id when SSH_ASKPASS=ksshaskpass is invoked under Qt.
+    kdePackages.ksshaskpass
   ];
 
   # antimicrox desktop controller profile

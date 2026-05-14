@@ -122,6 +122,7 @@ do_home() {
   ( cd "$FLAKE_DIR" \
     && "${user_wrap[@]}" nix build \
        --extra-experimental-features 'nix-command flakes' \
+       --impure \
        --out-link "$link" \
        ".#${attr}" "${nix_flags[@]}" \
     && "${user_wrap[@]}" "$link/activate" )
@@ -134,6 +135,7 @@ do_system() {
       log "system: nixos-rebuild switch --flake .#${host}"
       ( cd "$FLAKE_DIR" \
         && sudo "${sys_wrap[@]}" nixos-rebuild switch \
+           --impure \
            --flake ".#${host}" "${nix_flags[@]}" )
       ;;
     archnix)

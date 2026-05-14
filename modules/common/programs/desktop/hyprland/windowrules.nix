@@ -77,6 +77,17 @@
       "fullscreen 1, match:class ^(kodi).*"
       "xray 0, match:class ^(kodi).*"
       "no_shadow 1, match:float no"
+      # JetBrains (IntelliJ/WebStorm/etc) on Xwayland: tooltip + popup windows
+      # use title pattern "win<N>" and the IDE misbehaves under wlroots focus
+      # handling — popups flicker, get focus-stolen, or never settle.
+      # Rule names use repo's snake_case + match: prefix + explicit value form
+      # (Hyprland 0.54 parser expects it; see other entries in this file).
+      "no_focus 1, match:class ^(jetbrains-.*)$, match:title ^(win.*)$"
+      "no_initial_focus 1, match:class ^(.*jetbrains.*)$, match:title ^(win.*)$"
+      # Generic bad-X11-tooltip catch-all (Xwayland-only win<N> popups).
+      "float 1, match:xwayland 1, match:title ^win[0-9]+$"
+      "no_focus 1, match:xwayland 1, match:title ^win[0-9]+$"
+      "no_anim 1, match:xwayland 1, match:title ^win[0-9]+$"
     ];
     workspace = [
       "special:special, gapsout:30"

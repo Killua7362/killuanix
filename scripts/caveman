@@ -1,0 +1,255 @@
+#!/usr/bin/env bash
+# caveman — multi-tool front-end for caveman state held in ~/.claude/.
+#
+# Subcommands:
+#   stats     Cost view for the **current 5h Anthropic rate-limit block**.
+#             Scans every jsonl under ~/.claude/projects/ modified within
+#             the last 5h, sums per-token-type usage from assistant entries
+#             whose `timestamp` falls inside the rolling 5h window, then
+#             multiplies by per-model Anthropic prices to surface USD cost.
+#             Independent of how long any single claude process has been
+#             running — a day-long session that straddled three blocks
+#             will only show this block's portion.
+#
+#             Caveman savings estimate (current-block `full`-mode tokens
+#             only) is appended when applicable. Mode read from
+#             ~/.claude/.caveman-active.
+#   help      Print usage.
+#
+# History is populated by the Stop hook in claude.nix (or by manual
+# /caveman-stats invocations) — figures are only as fresh as your last
+# assistant turn.
+set -euo pipefail
+
+# Always target the real ~/.claude/ — the per-PID overlay dir set by
+# claude.nix's overlayClaude wrapper is torn down at session exit, so
+# CLAUDE_CONFIG_DIR cannot be trusted to point at persistent state.
+CLAUDE_DIR="$HOME/.claude"
+HISTORY="$CLAUDE_DIR/.caveman-history.jsonl"
+STATS_SCRIPT="$HOME/.claude/plugins/marketplaces/caveman/hooks/caveman-stats.js"
+
+usage() {
+  cat <<EOF
+Usage: caveman <subcommand> [args]
+
+Subcommands:
+  stats   Block-scoped (~5h) caveman token + savings totals.
+  help    Show this message.
+EOF
+}
+
+cmd_stats() {
+  if [ ! -f "$STATS_SCRIPT" ]; then
+    echo "caveman: caveman-stats.js missing at $STATS_SCRIPT" >&2
+    exit 1
+  fi
+
+  CAVEMAN_STATS_PATH="$STATS_SCRIPT" \
+  CAVEMAN_CLAUDE_DIR="$CLAUDE_DIR" \
+  exec node -e '
+const fs = require("fs");
+const path = require("path");
+const mod = require(process.env.CAVEMAN_STATS_PATH);
+const claudeDir = process.env.CAVEMAN_CLAUDE_DIR;
+
+const FIVE_H_MS = 5 * 60 * 60 * 1000;
+const now = Date.now();
+const cutoff = now - FIVE_H_MS;
+
+// USD cost tracking is disabled — user is on a flat-rate plan, not raw API
+// billing, so dollar figures are meaningless for their workflow. The pricing
+// table + helpers below are kept (commented out) so re-enabling is a single
+// edit: flip SHOW_COST to true and uncomment the PRICES const + pricesFor /
+// tokenCost. Refresh rates from https://www.anthropic.com/pricing when
+// re-enabling.
+const SHOW_COST = false;
+/*
+const PRICES = [
+  ["claude-opus-4",      { input: 15.00, output: 75.00, cache_read: 1.50, cache_create: 18.75 }],
+  ["claude-sonnet-4",    { input:  3.00, output: 15.00, cache_read: 0.30, cache_create:  3.75 }],
+  ["claude-haiku-4",     { input:  0.80, output:  4.00, cache_read: 0.08, cache_create:  1.00 }],
+  ["claude-3-5-sonnet",  { input:  3.00, output: 15.00, cache_read: 0.30, cache_create:  3.75 }],
+  ["claude-3-5-haiku",   { input:  0.80, output:  4.00, cache_read: 0.08, cache_create:  1.00 }],
+  ["claude-3-opus",      { input: 15.00, output: 75.00, cache_read: 1.50, cache_create: 18.75 }],
+];
+function pricesFor(model) {
+  if (!model) return null;
+  for (const [prefix, p] of PRICES) if (model.startsWith(prefix)) return p;
+  return null;
+}
+function tokenCost(tokens, ratePerM) { return (tokens / 1_000_000) * ratePerM; }
+function formatUsd(amount) {
+  if (amount >= 1)    return `$${amount.toFixed(2)}`;
+  if (amount >= 0.01) return `$${amount.toFixed(3)}`;
+  return `$${amount.toFixed(4)}`;
+}
+*/
+
+// Walk ~/.claude/projects/ for jsonl files modified within the last 5h.
+// Files older than that cant hold any in-window assistant entries.
+function findRecentJsonl(dir) {
+  const projectsDir = path.join(dir, "projects");
+  const out = [];
+  const stack = [projectsDir];
+  while (stack.length) {
+    const p = stack.pop();
+    let st;
+    try { st = fs.statSync(p); } catch { continue; }
+    if (st.isDirectory()) {
+      try { for (const c of fs.readdirSync(p)) stack.push(path.join(p, c)); }
+      catch {}
+    } else if (p.endsWith(".jsonl") && st.mtimeMs >= cutoff) {
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+const files = findRecentJsonl(claudeDir);
+if (files.length === 0) {
+  process.stdout.write("\nCaveman Stats — Current 5h Block\n");
+  process.stdout.write("No assistant activity in the last 5h.\n");
+  process.exit(0);
+}
+
+// Per-model tallies (a block can mix Opus/Sonnet/Haiku if user switched).
+const perModel = new Map();
+function bucket(model) {
+  if (!perModel.has(model)) perModel.set(model, {
+    input: 0, output: 0, cache_read: 0, cache_create: 0, turns: 0,
+  });
+  return perModel.get(model);
+}
+let earliestTs = null, latestTs = null;
+let sessionIds = new Set();
+
+for (const file of files) {
+  let raw;
+  try { raw = fs.readFileSync(file, "utf8"); } catch { continue; }
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    let e;
+    try { e = JSON.parse(line); } catch { continue; }
+    if (e.type !== "assistant" || !e.message) continue;
+    const ts = e.timestamp ? new Date(e.timestamp).getTime() : null;
+    if (!ts || ts < cutoff || ts > now + 1000) continue;
+    const u = e.message.usage;
+    if (!u) continue;
+    const model = e.message.model || "unknown";
+    const b = bucket(model);
+    b.input        += u.input_tokens                  || 0;
+    b.output       += u.output_tokens                 || 0;
+    b.cache_read   += u.cache_read_input_tokens       || 0;
+    b.cache_create += u.cache_creation_input_tokens   || 0;
+    b.turns += 1;
+    if (earliestTs === null || ts < earliestTs) earliestTs = ts;
+    if (latestTs   === null || ts > latestTs)   latestTs   = ts;
+    sessionIds.add(path.basename(file, ".jsonl"));
+  }
+}
+
+if (perModel.size === 0) {
+  process.stdout.write("\nCaveman Stats — Current 5h Block\n");
+  process.stdout.write("No assistant turns timestamped within the last 5h.\n");
+  process.exit(0);
+}
+
+// Mode flag (defaults to off / unset). For terminal-side reads, look at
+// the most-recently-modified .caveman-active across the real dir and any
+// per-PID overlay still on disk — caveman-activate writes only to the
+// overlays CLAUDE_CONFIG_DIR.
+function readMode() {
+  const candidates = [path.join(claudeDir, ".caveman-active")];
+  try {
+    const xdg = process.env.XDG_RUNTIME_DIR || "/tmp";
+    for (const d of fs.readdirSync(xdg)) {
+      if (!d.startsWith("claude-session.")) continue;
+      candidates.push(path.join(xdg, d, ".caveman-active"));
+    }
+  } catch {}
+  let best = null;
+  for (const p of candidates) {
+    try {
+      const st = fs.statSync(p);
+      if (!best || st.mtimeMs > best.mtime) best = { p, mtime: st.mtimeMs };
+    } catch {}
+  }
+  if (!best) return null;
+  try {
+    return fs.readFileSync(best.p, "utf8")
+      .trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || null;
+  } catch { return null; }
+}
+const mode = readMode();
+
+const sep = "──────────────────────────────────";
+const blockStartLabel = new Date(earliestTs).toLocaleString();
+const elapsedMs = now - earliestTs;
+const elapsedStr = `${Math.floor(elapsedMs / 3600000)}h ${Math.round((elapsedMs % 3600000) / 60000)}m`;
+const remainMs = Math.max(0, FIVE_H_MS - elapsedMs);
+const remainStr = `${Math.floor(remainMs / 3600000)}h ${Math.round((remainMs % 3600000) / 60000)}m`;
+
+let totalOut = 0, totalIn = 0, totalCR = 0, totalCC = 0, totalTurns = 0;
+const lines = [];
+for (const [model, b] of perModel.entries()) {
+  totalIn    += b.input;
+  totalOut   += b.output;
+  totalCR    += b.cache_read;
+  totalCC    += b.cache_create;
+  totalTurns += b.turns;
+  lines.push(
+    `  ${model}\n` +
+    `    turns: ${b.turns.toLocaleString()}  ` +
+    `in: ${b.input.toLocaleString()}  out: ${b.output.toLocaleString()}  ` +
+    `cache-r: ${b.cache_read.toLocaleString()}  cache-c: ${b.cache_create.toLocaleString()}`
+  );
+}
+
+// Caveman savings: benchmark ratio applies to output tokens only.
+const ratio = mod.COMPRESSION[mode];
+let savingsBlock = "";
+if (ratio != null) {
+  let savedTokens = 0;
+  for (const [, b] of perModel.entries()) {
+    savedTokens += Math.round(b.output / (1 - ratio)) - b.output;
+  }
+  savingsBlock =
+    `${sep}\nCaveman savings (mode=${mode}, ~${Math.round(ratio * 100)}% benchmark)\n` +
+    `  Est. extra output tokens you would have spent: ${savedTokens.toLocaleString()}\n`;
+} else if (mode && mode !== "off") {
+  savingsBlock = `${sep}\nMode "${mode}" has no benchmark — savings estimate unavailable.\n`;
+}
+
+process.stdout.write(
+  `\nCaveman Stats — Current 5h Block\n${sep}\n` +
+  `Block start:    ${blockStartLabel}  (elapsed ${elapsedStr}, ~${remainStr} left in window)\n` +
+  `Sessions seen:  ${sessionIds.size}  (jsonl files touched in last 5h)\n` +
+  `Mode:           ${mode || "off"}\n${sep}\n` +
+  `Totals (last 5h)\n` +
+  `  turns:        ${totalTurns.toLocaleString()}\n` +
+  `  input:        ${totalIn.toLocaleString()}\n` +
+  `  output:       ${totalOut.toLocaleString()}\n` +
+  `  cache-read:   ${totalCR.toLocaleString()}\n` +
+  `  cache-create: ${totalCC.toLocaleString()}\n${sep}\n` +
+  `Per-model breakdown\n${lines.join("\n")}\n` +
+  savingsBlock + sep + "\n"
+);
+'
+}
+
+if [ $# -eq 0 ]; then
+  usage
+  exit 0
+fi
+
+sub="$1"
+shift
+case "$sub" in
+  stats) cmd_stats "$@" ;;
+  help|-h|--help) usage ;;
+  *)
+    echo "caveman: unknown subcommand '$sub'" >&2
+    usage >&2
+    exit 1
+    ;;
+esac

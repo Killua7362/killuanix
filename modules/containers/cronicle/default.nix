@@ -134,7 +134,7 @@ in {
     autoStart = true;
 
     containerConfig = {
-      image = "docker.io/soulteary/cronicle:v0.9.16";
+      image = "docker.io/soulteary/cronicle:0.9.80";
       publishPorts = ["127.0.0.1:3012:3012"];
       volumes =
         [

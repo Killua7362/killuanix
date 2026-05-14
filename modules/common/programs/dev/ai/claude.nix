@@ -228,10 +228,38 @@
       else
         state_dir="$(mktemp -d "''${XDG_RUNTIME_DIR:-/tmp}/claude-session.XXXXXX")"
         trap 'rm -rf "$state_dir"' EXIT INT TERM HUP
+        # Caveman state files that must not be symlinked into the overlay.
+        # Each session's `.caveman-statusline-suffix` is *per-session* (the
+        # statusline badge tracks the current claude run, not lifetime), so
+        # both files must live inside the overlay where they're isolated
+        # from other concurrent sessions. Symlinking either one through to
+        # `~/.claude/` would (a) let every session's Stop hook follow the
+        # symlink and write through to one shared real file (badges
+        # converge), and (b) trigger upstream symlink-refusal guards.
+        #   - `.caveman-active` — caveman's SessionStart hook
+        #     (caveman-activate.js) writes it via `safeWriteFlag`, which
+        #     silently aborts on existing symlinks (caveman-config.js:
+        #     122-141 — defence against an attacker pointing the flag at
+        #     ~/.ssh/id_rsa). Symlinking it would block activation and
+        #     leave the statusline with no `[CAVEMAN]` badge at all.
+        #   - `.caveman-statusline-suffix` — caveman-statusline.sh refuses
+        #     to render the badge if this file is a symlink (same
+        #     anti-ANSI-injection defence).
+        # Neither file is pre-copied — caveman-activate.js creates the
+        # active flag fresh on SessionStart, and the Stop hook fills the
+        # suffix after the first assistant turn. Suffix is empty in
+        # between, which renders nothing (caveman-statusline.sh only
+        # emits the `⛏ N` tail when the file is non-empty).
+        caveman_skip_symlink=(.caveman-active .caveman-statusline-suffix)
         if [ -d "$src" ]; then
           while IFS= read -r -d "" entry; do
             base="$(basename "$entry")"
             [ "$base" = settings.json ] && continue
+            _skip=0
+            for _cf in "''${caveman_skip_symlink[@]}"; do
+              [ "$base" = "$_cf" ] && _skip=1 && break
+            done
+            [ "$_skip" -eq 1 ] && continue
             ln -sfn "$entry" "$state_dir/$base"
           done < <(find "$src" -mindepth 1 -maxdepth 1 -print0)
         fi
@@ -343,6 +371,102 @@ in {
           refreshInterval = 10;
         };
 
+        # Auto-refresh caveman lifetime savings suffix after every assistant
+        # turn. caveman-stats.js parses the live session jsonl, appends a
+        # snapshot to ~/.claude/.caveman-history.jsonl, and rewrites
+        # ~/.claude/.caveman-statusline-suffix — the pre-rendered string the
+        # statusline reads (see caveman-statusline.sh). Without this hook the
+        # suffix only updates when /caveman-stats is invoked by hand, so a
+        # fresh shell never shows the badge until the user types the command.
+        # `node` resolves from PATH (provided by nodejs_20 in
+        # ruflo-cli.nix/claude-flow-cli.nix). Output silenced; only side-effect
+        # we want is the suffix file write.
+        hooks.Stop = [
+          {
+            hooks = [
+              {
+                type = "command";
+                # Per-session caveman savings badge.
+                #
+                # Reads the hook stdin payload (Claude Code passes
+                # `{transcript_path, session_id, …}` to Stop hooks), parses
+                # *only that session's jsonl* to sum output tokens, looks
+                # up the live mode from the overlay's .caveman-active, and
+                # writes a per-overlay
+                # `$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix` of the
+                # form `⛏ Nk`. Intentionally bypasses the upstream
+                # `caveman-stats.js`, which aggregates lifetime totals
+                # across every session's history snapshot and would render
+                # the same number in every concurrent session's badge.
+                #
+                # Lifetime / 5h block aggregation lives separately in the
+                # `caveman stats` shell wrapper (scripts/caveman) which
+                # reads jsonls directly from ~/.claude/projects/.
+                #
+                # Savings ratio comes from caveman's `full`-mode benchmark
+                # (~65% mean per-task token reduction; the only mode with
+                # benchmark data). Other modes render an empty suffix.
+                command = ''
+                  node -e '
+                  const fs = require("fs");
+                  const path = require("path");
+                  const os = require("os");
+                  const COMPRESSION = { full: 0.65 };
+
+                  let input = "";
+                  process.stdin.on("data", d => input += d);
+                  process.stdin.on("end", () => {
+                    let payload = {};
+                    try { payload = JSON.parse(input); } catch {}
+                    const transcript = payload.transcript_path;
+                    const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
+                    const suffixPath = path.join(claudeDir, ".caveman-statusline-suffix");
+
+                    let mode = null;
+                    try {
+                      mode = fs.readFileSync(path.join(claudeDir, ".caveman-active"), "utf8")
+                        .trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+                    } catch {}
+                    const ratio = COMPRESSION[mode];
+
+                    function safeWrite(s) {
+                      try {
+                        try { if (fs.lstatSync(suffixPath).isSymbolicLink()) return; } catch (e) { if (e.code !== "ENOENT") return; }
+                        fs.writeFileSync(suffixPath, s, { mode: 0o600 });
+                      } catch {}
+                    }
+
+                    if (!ratio || !transcript || !fs.existsSync(transcript)) {
+                      safeWrite("");
+                      return;
+                    }
+
+                    let outTokens = 0;
+                    try {
+                      for (const line of fs.readFileSync(transcript, "utf8").split("\n")) {
+                        if (!line.trim()) continue;
+                        try {
+                          const e = JSON.parse(line);
+                          if (e.type !== "assistant" || !e.message || !e.message.usage) continue;
+                          outTokens += e.message.usage.output_tokens || 0;
+                        } catch {}
+                      }
+                    } catch {}
+
+                    const saved = Math.round(outTokens / (1 - ratio)) - outTokens;
+                    const humanize = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M"
+                                      : n >= 1e3 ? (n / 1e3).toFixed(1) + "k"
+                                      : String(n);
+                    safeWrite(saved > 0 ? "⛏ " + humanize(saved) : "");
+                  });
+                  ' 2>/dev/null || true
+                '';
+                timeout = 5;
+              }
+            ];
+          }
+        ];
+
         # Declaratively register the ruflo marketplace. Equivalent to running
         # `/plugin marketplace add ruvnet/ruflo` once, but reproducible across
         # machines. Claude Code resolves the source on first launch into
@@ -417,8 +541,14 @@ in {
     # ruflo--*/wshobson--* bundle (claude-resources.nix uses `recursive =
     # true` so per-file additions don't conflict).
     home.file = let
-      notesClaude = ../../../../../Notes/claude;
+      # Absolute path constructed from a string so Nix doesn't try to
+      # treat it as part of the flake source tree (which would require
+      # every entry inside the Notes submodule to be tracked at the
+      # parent repo level — impossible by definition). Requires
+      # `nix --impure` at build time; scripts/nix_switch passes it.
       liveBase = "${config.home.homeDirectory}/killuanix/Notes/claude";
+      notesSkills = /. + "${liveBase}/skills";
+      notesCommands = /. + "${liveBase}/commands";
 
       mkSkill = name: _:
         lib.nameValuePair ".claude/skills/${name}" {
@@ -429,10 +559,12 @@ in {
           source = config.lib.file.mkOutOfStoreSymlink "${liveBase}/commands/${name}";
         };
 
-      skillDirs = lib.filterAttrs (_: t: t == "directory")
-        (builtins.readDir (notesClaude + "/skills"));
-      commandFiles = lib.filterAttrs (n: t: t == "regular" && lib.hasSuffix ".md" n)
-        (builtins.readDir (notesClaude + "/commands"));
+      skillDirs =
+        lib.filterAttrs (_: t: t == "directory")
+        (builtins.readDir notesSkills);
+      commandFiles =
+        lib.filterAttrs (n: t: t == "regular" && lib.hasSuffix ".md" n)
+        (builtins.readDir notesCommands);
     in
       {
         ".claude/CLAUDE.md".source =
