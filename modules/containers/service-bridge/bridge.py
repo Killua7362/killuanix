@@ -325,17 +325,53 @@ async def _greader_categories(client: httpx.AsyncClient) -> list[str]:
 
 
 async def _greader_fetch(client: httpx.AsyncClient, category: Optional[str]) -> list[dict]:
+    # FreshRSS's atom variant of GReader returns "Bad Request!" on some builds,
+    # so we use the JSON stream/contents endpoint instead.
     from urllib.parse import quote
     if category:
-        path = f"/reader/atom/user/-/label/{quote(category, safe='')}"
+        stream_id = f"user/-/label/{quote(category, safe='')}"
         feed_label = category
     else:
-        path = "/reader/atom/user/-/state/com.google/reading-list"
+        stream_id = "user/-/state/com.google/reading-list"
         feed_label = "All"
-    r = await _greader_get(client, path, {"n": str(FEEDS_LIMIT)})
+    path = f"/reader/api/0/stream/contents/{stream_id}"
+    r = await _greader_get(client, path, {"n": str(FEEDS_LIMIT), "output": "json"})
     if r.status_code != 200:
         return []
-    return _parse_feed(r.content, feed_label)
+    try:
+        data = r.json()
+    except ValueError:
+        return []
+    # Spec form: {"items": [...]}. Some FreshRSS builds return the bare array.
+    raw = data.get("items") if isinstance(data, dict) else data
+    if not isinstance(raw, list):
+        return []
+    items: list[dict] = []
+    for it in raw:
+        title = (it.get("title") or "").strip()
+        url = ""
+        for alt in it.get("alternate") or []:
+            href = alt.get("href")
+            if href:
+                url = href
+                break
+        if not url:
+            url = it.get("canonical", [{}])[0].get("href", "") if isinstance(it.get("canonical"), list) else ""
+        # GReader publishes epoch seconds in `published`; fall back to crawlTimeMsec.
+        pub_raw = it.get("published")
+        if pub_raw is None and "crawlTimeMsec" in it:
+            try:
+                pub_raw = int(it["crawlTimeMsec"]) // 1000
+            except (TypeError, ValueError):
+                pub_raw = None
+        if isinstance(pub_raw, (int, float)):
+            pub = datetime.fromtimestamp(pub_raw, tz=timezone.utc).isoformat()
+        else:
+            pub = str(pub_raw or "")
+        origin = it.get("origin") or {}
+        feed_name = (origin.get("title") or feed_label).strip()
+        items.append({"title": title, "url": url, "feed": feed_name, "published": pub})
+    return items
 
 
 @app.get("/feeds/categories")

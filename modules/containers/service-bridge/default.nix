@@ -58,7 +58,7 @@ in {
       umask 077
       {
         printf 'FRESHRSS_BASE=%s\n' 'http://localhost:8083'
-        printf 'FRESHRSS_USER=%s\n' 'akshay'
+        printf 'FRESHRSS_USER=%s\n' 'killua'
         printf 'FRESHRSS_API_PASSWORD=%s\n' "$(read_secret ${sopsPath "freshrss_admin_api_password"})"
       } > /run/service-bridge/env
     '';

@@ -118,7 +118,9 @@ in {
   # Polls pg_isready over the matrix-net network from a throwaway container.
   systemd.services.matrix-postgres-ready = {
     description = "Wait for matrix-postgres to accept connections";
-    wantedBy = ["multi-user.target"];
+    # No wantedBy: synapse + bridges already `requires` this gate, so it's
+    # pulled in only when something downstream starts. Keeps the matrix stack
+    # fully off at boot (matches `autoStart = false` on the quadlet).
     after = ["matrix-postgres.service"];
     requires = ["matrix-postgres.service"];
     path = [pkgs.podman pkgs.coreutils];

@@ -327,10 +327,13 @@
         done
 
         export CLAUDE_CONFIG_DIR="$state_dir"
+        # NOTE: do NOT add `--dev /dev` here. `--dev-bind / /` already
+        # exposes the real /dev (including /dev/pts/<N> for the parent's
+        # controlling terminal). A fresh `--dev /dev` shadows /dev/pts and
+        # Claude Code's interactive TUI hangs waiting on its tty.
         exec bwrap \
           --dev-bind / / \
           --proc /proc \
-          --dev /dev \
           --die-with-parent \
           ''${mask_args[@]+"''${mask_args[@]}"} \
           -- ${claudeWrapped} --plugin-dir "$plugin_dir" "$@"

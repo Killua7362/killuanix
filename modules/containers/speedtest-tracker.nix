@@ -42,7 +42,7 @@
   sopsPath = name: config.sops.secrets.${name}.path;
 in {
   virtualisation.quadlet.containers.speedtest-tracker = {
-    autoStart = true;
+    autoStart = false;
 
     containerConfig = {
       image = "lscr.io/linuxserver/speedtest-tracker:latest";

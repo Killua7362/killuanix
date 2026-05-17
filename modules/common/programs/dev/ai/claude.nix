@@ -335,7 +335,7 @@ in {
       # you want stricter behavior. `skip*PermissionPrompt` suppress the
       # first-run opt-in dialogs for auto and bypass modes.
       settings = {
-        model = "claude-sonnet-4-6";
+        model = "claude-opus-4-7";
         effortLevel = "high";
         skipAutoPermissionPrompt = true;
         skipDangerousModePermissionPrompt = true;

@@ -216,7 +216,10 @@ in {
 
   systemd.services.cronicle-bootstrap = {
     description = "Sync Cronicle events with modules/containers/cronicle/events/";
-    wantedBy = ["multi-user.target"];
+    # Tied to cronicle.service rather than multi-user.target so it only runs
+    # when cronicle is started manually — otherwise `requires` here would drag
+    # the cronicle container up at boot, defeating `autoStart = false`.
+    wantedBy = ["cronicle.service"];
     after = ["cronicle.service" "cronicle-init.service"];
     requires = ["cronicle.service" "cronicle-init.service"];
     path = [pkgs.curl pkgs.coreutils pkgs.jq];
