@@ -36,6 +36,7 @@ Zsh-only:
 - `chrome-socks` -- launches Chrome through the SOCKS proxy.
 - `opencode` -- runs opencode in a rootless podman container with bind mounts.
 - `ta`/`td` -- tmux attach/kill wrappers (needed as functions for argument passing).
+- `zboot` -- boots three zellij sessions in parallel (`killuanix` in `~/killuanix`, `bdsi` + `mod` in `~`) and foreground-attaches to `killuanix`. Background sessions spawn detached via `script -qfc` because zellij refuses to run without a tty; `&!` disowns them. Idempotent: skips creation if `zellij list-sessions -s` already lists the name.
 
 ## Zsh Details
 

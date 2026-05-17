@@ -134,10 +134,13 @@
   # @peng-shawn/mermaid-mcp-server — renders Mermaid source to PNG/SVG via
   # puppeteer. The PUPPETEER_EXECUTABLE_PATH override lives in claude.nix
   # (needs pkgs.chromium at eval time). Companion live-editor container at
-  # http://localhost:8898 (modules/containers/mermaid-live.nix).
+  # http://localhost:8898 (modules/containers/mermaid-live.nix). Marked
+  # `optional` — diagram authoring is niche per project, opt in via
+  # `claude-kit.nix:mcp = [ "mermaid" ];` or a launcher's `mcp` list.
   mermaid = {
     npxDirect.package = "@peng-shawn/mermaid-mcp-server";
     runtime = "npx-direct";
+    optional = true;
   };
 
   # basicmachines-co/basic-memory — markdown-backed knowledge graph MCP.

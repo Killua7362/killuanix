@@ -120,7 +120,7 @@ in {
     };
 
     containers.litellm = {
-      autoStart = true;
+      autoStart = false;
 
       containerConfig = {
         image = "localhost/litellm-mcp:latest";

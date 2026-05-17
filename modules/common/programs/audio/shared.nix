@@ -147,6 +147,15 @@
                 sbc_xq sbc
                 faststream faststream_duplex
                 lc3plus_h3 lc3
+                # HFP codecs — pipewire 1.6 unified codec gating through this
+                # `bluez5.codecs` dict (see bluez5-dbus.c device_supports_codec).
+                # SBC / CVSD / LC3 are hardcoded always-on in that switch, but
+                # mSBC and LC3-SWB must be listed here explicitly or
+                # `spa_bt_get_hfp_codec(id=2)` returns null and HFP fails with
+                # "failed to get HFP codec 2". Pipewire 1.4 didn't have this
+                # filter — bumping to 1.6 silently broke mSBC on every host
+                # with a curated codec list (Apr 2026 regression).
+                msbc cvsd lc3_swb
             ]
         }
       '';

@@ -26,11 +26,17 @@
     "vm.dirty_bytes" = 268435456;
     "vm.compaction_proactiveness" = 0; # Reduce latency spikes during gaming
     "vm.max_map_count" = 2147483642; # Required by many Steam/Proton games
-    "kernel.nmi_watchdog" = 1; # Detect hard lockups (needed for Xe GPU hang recovery)
-    "kernel.softlockup_panic" = 1; # Panic on soft lockup so pstore captures it
-    "kernel.hardlockup_panic" = 1; # Panic on hard lockup (NMI-detected)
-    "kernel.panic_on_oops" = 1; # Promote oops to panic for pstore capture
+    # NMI watchdog disabled. On MSI Claw the perf-PMU counter it consumes was
+    # the *source* of escalating `perf: interrupt took too long` warnings that
+    # preceded every hard freeze. Soft/hard lockup panic paths also never
+    # fired (pstore empty after 4 freezes), proving they can't catch this
+    # hang class. Free the PMU counter instead.
+    "kernel.nmi_watchdog" = 0;
+    "kernel.panic_on_oops" = 1; # Promote oops to panic — cheap, may help
     "kernel.panic" = 10; # Auto-reboot 10s after panic (so freezes self-recover)
+    # Disable io_uring — Lunar Lake freeze reports correlate with io_uring
+    # in 6.15+ kernels. Value 2 = disabled, no per-process override allowed.
+    "kernel.io_uring_disabled" = 2;
     "fs.file-max" = 2097152;
     "net.ipv4.tcp_fin_timeout" = 5; # Quick TCP port reuse for games
     "dev.i915.perf_stream_paranoid" = 0; # GPU perf counter access
@@ -46,6 +52,23 @@
     "mem_sleep_default=s2idle" # Meteor Lake uses S0ix (no S3)
     "usbcore.autosuspend=-1" # Disable USB autosuspend — prevents mice/keyboards from disconnecting when idle
     "split_lock_detect=warn" # Warn instead of panicking on kernel-space split locks
+    # Lunar Lake hard-freeze mitigation. Known unresolved PMC firmware bug on
+    # Core Ultra 200V series (BERT crash records traced to pmc_fw). Reported
+    # across NixOS/Arch/Fedora on ThinkPad X1 Carbon Gen 13, ASUS Zenbook S14,
+    # MSI Claw 8 AI+ — same silent hang signature (no panic, no SysRq).
+    # `max_cstate=1` did NOT help in those reports. `=0` fully disables
+    # intel_idle and falls back to acpi_idle — last cstate workaround before
+    # BIOS update / LTS kernel downgrade.
+    "intel_idle.max_cstate=0"
+    "processor.max_cstate=1"
+    # i915 panel self-refresh off — known Lunar Lake flicker/hang trigger.
+    # Harmless when xe (not i915) drives the GPU; guards against driver swap.
+    "i915.enable_psr=0"
+    # Apply panic policy at boot, before sysctl runs — covers early-boot oops too.
+    "oops=panic"
+    "panic=10"
+    # NMI watchdog off at boot — PMU pressure preceded every hard freeze.
+    "nmi_watchdog=0"
   ];
 
   # ══════════════════════════════════════════════════════════════
@@ -63,6 +86,9 @@
 
   # Preload HID drivers to prevent Steam evdev fallback race (from hid-preload.conf)
   # Load msi-wmi-platform for MSI Claw (from CachyOS chwd MSI Claw profile)
+  # iTCO_wdt removed — tested live, module loads but never binds on MSI Claw
+  # (BIOS NoReboot lock or PCH doesn't expose TCO). systemd.watchdog.* settings
+  # therefore had no /dev/watchdog to tick; also removed.
   boot.kernelModules = [
     "hid_nintendo"
     "hid_playstation"

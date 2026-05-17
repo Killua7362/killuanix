@@ -3,7 +3,7 @@
 # Claude Code can write .excalidraw JSON files that this instance opens.
 {...}: {
   virtualisation.quadlet.containers.excalidraw = {
-    autoStart = true;
+    autoStart = false;
 
     containerConfig = {
       image = "docker.io/excalidraw/excalidraw:latest";

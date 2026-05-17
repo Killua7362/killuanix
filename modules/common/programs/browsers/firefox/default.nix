@@ -172,7 +172,7 @@ in {
               url = "http://localhost:31415";
             }
             {
-              name = "Linkding";
+              name = "Karakeep";
               url = "http://localhost:9090";
             }
           ];
@@ -285,7 +285,11 @@ in {
           single-file
           stylus
           dearrow
-          linkding-extension
+          # Karakeep replaces linkding here. NUR (pkgs.nur.repos.rycee.firefox-addons)
+          # does not currently ship a karakeep extension package — install
+          # manually from https://addons.mozilla.org/en-US/firefox/addon/karakeep/
+          # or add to policies.ExtensionSettings below once you have the
+          # gecko UUID.
         ];
 
         search = {
@@ -380,7 +384,7 @@ in {
           user_pref("userChromeJS.persistent_domcontent_callback", true);
 
           //// start-up homepage — self-hosted dashboard container
-          //// (modules/containers/homepage.nix). browser.startup.page is already
+          //// (modules/containers/glance.nix). browser.startup.page is already
           //// 1 via arkenfox 0102, so the browser opens this on launch.
           user_pref("browser.startup.homepage", "http://localhost:8880");
 

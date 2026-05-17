@@ -1,8 +1,10 @@
 {
   pkgs,
   lib,
+  config,
   ...
 }: let
+  sopsPath = name: config.sops.secrets.${name}.path;
   searxngSettings = pkgs.writeText "settings.yml" (builtins.toJSON {
     use_default_settings = true;
 
@@ -20,12 +22,14 @@
       autocomplete = "google";
       default_lang = "en";
       formats = ["html" "json"];
+      ban_time_on_fail = 5;
+      max_ban_time_on_fail = 120;
     };
 
     server = {
       port = 8080;
       bind_address = "0.0.0.0";
-      secret_key = "ultrasecretkey-change-me";
+      secret_key = "ultrasecretkey";
       limiter = false;
       image_proxy = true;
     };
@@ -52,6 +56,27 @@
         weight = 1.5;
       }
       {
+        name = "startpage";
+        engine = "startpage";
+        shortcut = "sp";
+        disabled = false;
+        weight = 1.5;
+      }
+      {
+        name = "mullvad leta";
+        engine = "mullvad_leta";
+        shortcut = "ml";
+        disabled = false;
+        weight = 1.3;
+      }
+      {
+        name = "mojeek";
+        engine = "mojeek";
+        shortcut = "mj";
+        disabled = false;
+        weight = 1.0;
+      }
+      {
         name = "bing";
         engine = "bing";
         shortcut = "b";
@@ -67,12 +92,6 @@
         name = "brave";
         engine = "brave";
         shortcut = "br";
-        disabled = false;
-      }
-      {
-        name = "qwant";
-        engine = "qwant";
-        shortcut = "qw";
         disabled = false;
       }
       # ── Images ──
@@ -96,10 +115,11 @@
         disabled = false;
       }
       {
-        name = "youtube";
-        engine = "youtube_noapi";
-        shortcut = "yt";
+        name = "invidious";
+        engine = "invidious";
+        shortcut = "iv";
         disabled = false;
+        base_url = "https://invidious.fdn.fr";
       }
       # ── News ──
       {
@@ -120,7 +140,7 @@
         engine = "wikipedia";
         shortcut = "wp";
         disabled = false;
-        weight = 1.2;
+        weight = 1.5;
       }
       {
         name = "wikidata";
@@ -148,18 +168,55 @@
         shortcut = "gs";
         disabled = false;
       }
+      {
+        name = "arxiv";
+        engine = "arxiv";
+        shortcut = "ax";
+        disabled = false;
+      }
       # ── IT / Dev ──
       {
         name = "github";
         engine = "github";
         shortcut = "gh";
         disabled = false;
+        weight = 1.5;
       }
       {
         name = "stackoverflow";
         engine = "stackoverflow";
         shortcut = "so";
         disabled = false;
+        weight = 1.5;
+      }
+      {
+        name = "mdn";
+        engine = "mdn";
+        shortcut = "mdn";
+        disabled = false;
+        weight = 1.3;
+        categories = ["it" "software wikis"];
+      }
+      {
+        name = "readthedocs";
+        engine = "readthedocs";
+        shortcut = "rtd";
+        disabled = false;
+        categories = ["it" "software wikis"];
+      }
+      {
+        name = "pypi";
+        engine = "pypi";
+        shortcut = "pypi";
+        disabled = false;
+        categories = ["it" "packages"];
+      }
+      {
+        name = "npm";
+        engine = "npm";
+        shortcut = "npm";
+        disabled = false;
+        categories = ["it" "packages"];
       }
       {
         name = "arch wiki";
@@ -179,8 +236,12 @@
     ];
 
     outgoing = {
-      request_timeout = 5.0;
+      request_timeout = 8.0;
       max_request_timeout = 15.0;
+      pool_connections = 100;
+      pool_maxsize = 20;
+      enable_http2 = true;
+      keepalive_expiry = 5.0;
       useragent_suffix = "";
     };
   });
@@ -200,6 +261,7 @@ in {
         environments = {
           SEARXNG_BASE_URL = "http://localhost:8888/";
         };
+        environmentFiles = ["/run/searxng/env"];
         labels = [
           "io.containers.autoupdate=registry"
         ];
@@ -212,8 +274,32 @@ in {
 
       unitConfig = {
         Description = "SearXNG - Privacy-respecting metasearch engine";
-        After = ["network-online.target"];
+        After = [
+          "network-online.target"
+          "searxng-env.service"
+        ];
+        Requires = ["searxng-env.service"];
       };
     };
+  };
+
+  # SearXNG's docker entrypoint substitutes the literal `ultrasecretkey`
+  # placeholder in settings.yml with `$SEARXNG_SECRET` at container start.
+  # Stage the sops-decrypted secret into an env file the container reads.
+  systemd.services.searxng-env = {
+    description = "Assemble SearXNG env file from sops secrets";
+    wantedBy = ["multi-user.target"];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      RuntimeDirectory = "searxng";
+      RuntimeDirectoryMode = "0700";
+    };
+    script = ''
+      umask 077
+      {
+        printf 'SEARXNG_SECRET=%s\n' "$(cat ${sopsPath "searxng_secret_key"})"
+      } > /run/searxng/env
+    '';
   };
 }

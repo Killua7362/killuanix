@@ -26,11 +26,16 @@
   # module it was inherited from the system).
   nix.package = pkgs.nix;
 
-  # Lunar Lake BT controller can't open an mSBC SCO transport ("failed to
-  # get HFP codec 2"), which leaves HFP unregistered and breaks the BT mic
-  # in Meet/Discord. With mSBC off, HFP falls back to CVSD (8 kHz) and the
-  # profile activates cleanly. Other hosts keep the default (true).
-  audio.bluetooth.enableMsbc = false;
+  # Re-enabled after diagnosing the real root cause of the prior
+  # "failed to get HFP codec 2" — not a Lunar Lake firmware bug, but a
+  # pipewire 1.4 → 1.6 regression. pipewire 1.6's `device_supports_codec`
+  # hardcodes SBC/CVSD/LC3 as always-on but gates everything else
+  # (including mSBC) behind the `bluez5.codecs` config dict. The shared
+  # `audio/shared.nix` codec list previously omitted `msbc`; it's now
+  # listed there, so `enable-msbc=true` actually takes effect. If HFP
+  # regresses (codec 2 error in `journalctl --user -u wireplumber`),
+  # flip back to false — CVSD narrowband still works as the fallback.
+  audio.bluetooth.enableMsbc = true;
 
   # NixOS-specific overlays (matching chrollo home.nix)
   nixpkgs.overlays = [

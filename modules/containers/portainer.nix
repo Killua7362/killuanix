@@ -1,7 +1,7 @@
 {...}: {
   # ── Portainer CE (rootful, using docker socket) ──
   virtualisation.quadlet.containers.portainer = {
-    autoStart = true;
+    autoStart = false;
 
     containerConfig = {
       image = "docker.io/portainer/portainer-ce:2.21.5";

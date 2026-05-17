@@ -9,7 +9,7 @@
   ];
 
   virtualisation.quadlet.containers.qdrant = {
-    autoStart = true;
+    autoStart = false;
 
     containerConfig = {
       image = "docker.io/qdrant/qdrant:v1.14.0";

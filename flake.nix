@@ -204,8 +204,16 @@
     };
 
     # Handheld / MSI Claw
+    # Pinned to a specific rev (not the floating `release` branch) so that
+    # `nix flake update` does not bump the cachyos kernel. Bumping has two
+    # costs on killua: (1) upstream variant attrs occasionally rename/remove
+    # (e.g. plain `bore` was dropped in favour of variants like
+    # `bore-lto-x86_64-v3`), risking an unbootable config; (2) every kernel
+    # rev change re-derives `virtualbox-modules-<vbox>-<kernel>`, which is
+    # NOT on any public cache and forces a ~3-5 min local build. Bump
+    # explicitly when you want a new kernel by changing the rev here.
     nix-cachyos-kernel = {
-      url = "github:xddxdd/nix-cachyos-kernel/release";
+      url = "github:xddxdd/nix-cachyos-kernel/ae5bc7641fb4178e4d9582ea49cab201f60f7869";
     };
     jovian = {
       url = "github:Jovian-Experiments/Jovian-NixOS";
@@ -295,6 +303,20 @@
         }: {
           nixpkgs.overlays = [
             inputs.nix-cachyos-kernel.overlays.pinned
+            # Skip openldap's flaky test017-syncreplication-refresh on the
+            # i686 build only. cache.nixos.org has the x86_64 openldap
+            # (and its Qt/KDE reverse-deps) — touching `prev.openldap`
+            # cascaded through cyrus-sasl → Qt and rehashed every KDE pkg.
+            # The 32-bit variant pulled in by lutris-fhsenv via
+            # pkgsi686Linux.apr-util is NOT cached (hydra doesn't fully
+            # build 32-bit closures), so it builds locally and trips the
+            # 7-second-sleep replication test under CPU load. Scoping the
+            # override to `pkgsi686Linux` keeps the x86_64 closure untouched.
+            (final: prev: {
+              pkgsi686Linux = prev.pkgsi686Linux.extend (_: pPrev: {
+                openldap = pPrev.openldap.overrideAttrs (_: {doCheck = false;});
+              });
+            })
           ];
         })
       ];

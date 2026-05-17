@@ -15,17 +15,29 @@
     ./gaming
     ./wifi-fix.nix
     ./boot.nix
-    ./bluez5-ldac-pin.nix
+    # ./bluez5-ldac-pin.nix  # disabled — main nixpkgs now ships pipewire 1.6.3 via `nix flake update`; re-enable if LDAC/mSBC regress on a future bump
     inputs.sops-nix.nixosModules.sops
     ../modules/common/sops-system.nix
     ../modules/containers
     ../modules/vms/system.nix
   ];
 
-  # ── CachyOS Deckify Kernel (BORE scheduler, handheld patches, RCU_LAZY) ──
-  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-deckify;
+  # ── CachyOS BORE kernel, LTO + x86_64-v3 microarch ──
+  # MSI Claw 8 AI+ is Intel Lunar Lake (Core Ultra Series 2 / Xe2). Lunar Lake
+  # supports x86_64-v3 baseline (AVX2/BMI/FMA) but NOT AVX512, so -v4/-zen4
+  # variants won't run. LTO + v3 = fastest variant compatible with this SoC.
+  # Deckify (prior choice) was AMD Steam Deck targeted and embedded
+  # amd_iommu=off / amdgpu.* in CONFIG_CMDLINE — wrong hw, sourced the
+  # repeated freezes. Cached on lantian attic — no local compile.
+  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-bore-lto-x86_64-v3;
 
-  # ── Virtualisation: Docker (rootful), Podman/Quadlet, VirtualBox, libvirtd ──
+  # ── Virtualisation: Docker (rootful), Podman/Quadlet, libvirtd (no VirtualBox) ──
+  # VirtualBox disabled here — Oracle DB 19c image runs under QEMU/KVM instead.
+  # Dropping vbox kills the per-rebuild virtualbox-modules-<vbox>-<kernel>
+  # source build (3-5 min, never on any public cache).
+  vms.virtualbox.enable = false;
+
+
   virtualisation.docker = {
     enable = true;
     daemon.settings = {

@@ -10,7 +10,7 @@ creation_rules:
           - *home-laptop
           - *master
           - *office
-  - path_regex: secrets/linkding-bookmarks\.html$
+  - path_regex: secrets/karakeep-bookmarks\.html$
     input_type: binary
     key_groups:
       - age:

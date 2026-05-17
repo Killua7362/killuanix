@@ -23,7 +23,7 @@ Originally a single `claude-kit.nix` file with a ~1200-line `writeShellApplicati
 | `scripts/cmd/clean.sh` | `claude-kit clean [-a]` — prune `*.jsonl` past the 50 most recent per project (plus matching markdown cache). Requires typing `yes` exactly. |
 | `scripts/cmd/plugin.sh` | Pass-through to `claude plugin <install\|uninstall\|enable\|disable\|update\|list>`. |
 | `scripts/cmd/marketplace.sh` | `claude-kit marketplace <list\|add\|remove>` — direct `jq` edits of `~/.claude/settings.json`. |
-| `scripts/cmd/mcp.sh` | Pass-through to `claude mcp …`. |
+| `scripts/cmd/mcp.sh` | Dispatcher: `status\|warm\|forget` manage the local MCP cache (read the Nix-emitted `$XDG_DATA_HOME/claude-kit/all-mcp-servers.json`, warm each wrapper via a JSON-RPC `initialize`, record the warmed nix-store command path under `$XDG_STATE_HOME/mcp-warm/<name>.warmed` to detect `stale` later). Everything else (`list`, `add`, `remove`, `test`, …) passes straight through to `claude mcp …` so the existing Claude Code connect view is preserved. Cache mechanism is at the MCP-protocol layer, so it works uniformly across uvx / npx / uv-run wrappers; uv/npm/uvx download progress streams through the wrapper's stderr to the user TTY. `warm --uncached` skips already-cached entries; `MCP_WARM_TIMEOUT=<sec>` overrides the per-server initialize timeout (default 600). |
 | `scripts/cmd/source.sh` | Infers the originating repo (`ruflo`, `wshobson/<plugin>`, `local`) from a resource's filename prefix. |
 | `scripts/cmd/ruflo.sh` | Pass-through to the `ruflo` CLI. |
 | `scripts/cmd/doctor.sh` | Sanity-checks the install (claude/ruflo on PATH, `~/.claude/{agents,commands,skills}` populated, sources cache linked, lazy dir + upstream catalog). |
@@ -82,6 +82,22 @@ Writes per-project state into `./.claude/{skills,agents,commands,settings.local.
   commands = [];
   plugins  = [ "ruflo-core@ruflo" ];
   mcp      = [ "code-index" ];
+
+  # Subtractive + hardening (all materialize into settings.local.json):
+  excludeMcp       = [ "mermaid" ];          # adds mcp__mermaid__* deny rule
+  excludePlugins   = [ "ruflo-core@ruflo" ]; # enabledPlugins.<slug> = false
+  excludeSkills    = [];                     # advisory at project scope — see below
+  excludeAgents    = [];                     # advisory
+  excludeCommands  = [];                     # advisory
+
+  allowedTools = [ "Bash(rg:*)" ];
+  deniedTools  = [ "Bash(curl:*)" "WebFetch" ];
+
+  hooks = null;                              # null = inherit globals
+  # hooks = { Stop = [{ hooks = [{ type = "command"; command = "…"; }]; }]; };
+
+  restrictToDirs = null;                     # null = no narrowing
+  # restrictToDirs = [ "/home/killua/killuanix/Notes" ];
 }
 ```
 
@@ -91,10 +107,16 @@ Resolution rules:
 - **plugins** — written verbatim into `enabledPlugins.<slug>=true` in `./.claude/settings.local.json` (no catalog lookup).
 - **mcp** — server stanza resolved by `_lazy_resolve_mcp`, which checks two sources in order: (1) `$XDG_DATA_HOME/claude-kit/all-mcp-servers.json` — the full Nix-emitted catalog from `mcp-servers.nix` (includes `optional = true` entries excluded from the global wiring); (2) `~/.claude.json:.mcpServers` — fallback for runtime additions via `claude mcp add`. Resolved stanza copied verbatim into `./.mcp.json`. Names not in either source are skipped with a notice. This means `optional = true` registry entries (currently `claude-flow`, `gitnexus`) only load in projects whose `claude-kit.nix` lists them.
 - **envVars** — emitted by `claude-kit project envrc` as `export VAR=val` lines, with **empty values skipped** (so the host shell value, if any, passes through). Hooked from `.envrc` via `eval "$(claude-kit project envrc)"` before the `sync` call.
+- **excludeMcp** — each entry becomes a `"mcp__<name>__*"` rule appended into `./.claude/settings.local.json`'s `permissions.deny`. Effective for any globally-loaded MCP server (mermaid, filesystem, …) the project wants disabled. *Also* applied at the MCP boundary when **restrictToDirs** is set and the project declares `"filesystem"` in `mcp = [...]`: the filesystem server's `args` get narrowed to `restrictToDirs` so the upstream server itself refuses paths outside.
+- **excludePlugins** — each entry becomes `enabledPlugins."<slug>" = false` in `./.claude/settings.local.json`. Plugins that aren't globally enabled stay alone. Settings precedence means this overrides a `true` in the global `settings.json`.
+- **excludeSkills / excludeAgents / excludeCommands** — accepted in the schema for symmetry with the launcher attrs but **advisory** at the project layer. Claude reads these from `~/.claude/{skills,agents,commands}` (the user's HOME), and Claude Code does not currently expose a strict per-project mask for them. The names are recorded in `./.claude/.flake-managed.json` and surfaced by `claude-kit project status` so the intent is documented; enforcement is the user's responsibility (lift the unwanted resource out of `~/.claude/` globally, or add a corresponding `deniedTools` rule).
+- **allowedTools / deniedTools** — appended (deduped) into `./.claude/settings.local.json` `permissions.allow` / `permissions.deny`. Pattern syntax matches Claude Code's own permission grammar — `"Bash(curl:*)"`, `"Read(/etc/**)"`, `"WebFetch"`, `"mcp__mermaid__*"`.
+- **hooks** — when non-null, written verbatim into `./.claude/settings.local.json` `hooks`. Same shape as `programs.claude-code.settings.hooks`. Claude Code merges project hooks with global hooks at runtime — this is for *additional* hooks scoped to the project. Use `null` to inherit globals only.
+- **restrictToDirs** — when non-null: (a) `settings.local.json.permissions.additionalDirectories` is pinned to this list (Claude's built-in Read/Write/Edit honor it); (b) deny patterns for well-known sensitive paths (`~/.ssh`, `~/.gnupg`, `~/.config/sops`, `~/.config/age`, `/etc/**`, `/var/**`, `/root/**`) are appended to `permissions.deny`; (c) if the project's `mcp = [...]` includes `"filesystem"`, the server's `args` in `./.mcp.json` are rewritten from the global `["/home/killua"]` to this list — the upstream MCP server itself rejects paths outside its roots. The `permissions.deny` layer is advisory (Claude obeys but a determined Bash invocation can escape); the MCP narrowing is the strict half.
 
-State at `./.claude/.flake-managed.json` records what `sync` wrote on the prior run. The next run removes items that were dropped from the schema (additive list diff); items that were hand-added with `lazy add --imperative` are not in this file and are left alone. The bundle path (`.lazy-bundles.json`) is independent — bundles layer on top of `project sync` cleanly.
+State at `./.claude/.flake-managed.json` records what `sync` wrote on the prior run, including the **`settingsLocal`** sub-attrset listing every value we appended into `settings.local.json` (allow patterns, deny patterns, excluded plugins, whether we set `additionalDirectories`/`hooks`). The next run **reverts** exactly those entries before applying the current schema — hand-edits to `settings.local.json` that we didn't author are preserved. The bundle path (`.lazy-bundles.json`) is independent — bundles layer on top of `project sync` cleanly.
 
-Globally-enabled skills/MCP (from `programs.claude-code` and `mcp-servers.nix`) stay loaded; the project file is purely additive.
+Globally-enabled skills/MCP (from `programs.claude-code` and `mcp-servers.nix`) stay loaded by default; the additive lists (`skills`/`agents`/`commands`/`plugins`/`mcp`) layer on top, and the subtractive attrs (`excludeMcp`/`excludePlugins`/etc.) + permissions/hooks opt out of or harden the project's view.
 
 ### CLI mutators auto-route through `claude-kit.nix`
 

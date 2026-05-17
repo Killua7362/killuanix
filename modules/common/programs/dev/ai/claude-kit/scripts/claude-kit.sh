@@ -92,8 +92,13 @@ Marketplaces (edits ~/.claude/settings.json directly)
   marketplace add    <name> <github-owner/repo>
   marketplace remove <name>
 
-MCP servers (pass-through to `claude mcp …`)
-  mcp list
+MCP servers + local cache
+  mcp status [cached|uncached|stale|all]   Cache status per server.
+  mcp warm                Warm every catalog entry (podman-pull-style).
+  mcp warm --uncached     Warm only uncached + stale entries.
+  mcp warm <name> [...]   Warm specific server(s).
+  mcp forget <name>|--all Drop recorded warm state.
+  mcp list                Pass-through to `claude mcp list` (connect view).
   mcp add <name> <command> [args…]
   mcp remove <name>
   mcp test   <name>

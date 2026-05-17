@@ -20,6 +20,7 @@
       "mistral_codestral_api_key" = {};
       "qdrant_api_key" = {};
       "qdrant_cluster_endpoint" = {};
+      "freshrss_admin_api_password" = {};
     };
   };
 }

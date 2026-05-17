@@ -21,6 +21,7 @@ in {
     ../common/programs/theming
     ../common/programs/mail
     ../common/programs/diagrams
+    ../common/programs/rss
   ];
 
   config = {

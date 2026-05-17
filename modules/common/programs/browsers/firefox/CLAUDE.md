@@ -16,7 +16,7 @@ A custom `chrome.manifest` wires natsumi's scripts, CSS, and icons into the fx-a
 Extensions are installed through two mechanisms:
 
 - **`policies.ExtensionSettings`** -- force-installed via Mozilla enterprise policy: Tree Style Tab, uBlock Origin, Bitwarden, Tabliss, uMatrix, LibreRedirect, ClearURLs
-- **`extensions.packages`** (NUR) -- installed into the default profile. Privacy/QoL: uBlock Origin, SponsorBlock, ClearURLs, Old Reddit Redirect, YouTube Redux, Return YouTube Dislikes, Reddit Enhancement Suite, Dark Reader, FastForward, Violentmonkey, Web Clipper Obsidian. Power-user additions: Multi-Account Containers, Temporary Containers, CanvasBlocker, Consent-O-Matic, LibRedirect, Header Editor, User-Agent String Switcher, Hoppscotch, Refined GitHub, SingleFile, Stylus, DeArrow, Linkding Extension (paired with the linkding container at http://localhost:9090 -- needs an API token from Settings → Integrations on first run)
+- **`extensions.packages`** (NUR) -- installed into the default profile. Privacy/QoL: uBlock Origin, SponsorBlock, ClearURLs, Old Reddit Redirect, YouTube Redux, Return YouTube Dislikes, Reddit Enhancement Suite, Dark Reader, FastForward, Violentmonkey, Web Clipper Obsidian. Power-user additions: Multi-Account Containers, Temporary Containers, CanvasBlocker, Consent-O-Matic, LibRedirect, Header Editor, User-Agent String Switcher, Hoppscotch, Refined GitHub, SingleFile, Stylus, DeArrow. The Karakeep browser extension (paired with the karakeep container at http://localhost:9090) is **not** in NUR yet, so it's installed manually from AMO and configured with an API token from Settings → API Keys.
 
 ## Bitwarden Desktop Integration
 

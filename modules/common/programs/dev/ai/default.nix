@@ -4,7 +4,7 @@
     ./claude.nix
     ./claude-resources
     ./claude-kit
-    ./claude-launchers.nix
+    ./claude-launchers
     ./ruflo-cli.nix
     ./claude-flow-cli.nix
     ./ccr.nix
@@ -13,6 +13,8 @@
     ./code-index.nix
     ./gitnexus-cli.nix
     ./jupyter-env-mcp.nix
+    ./kindly-web-search.nix
+    ./freshrss-mcp
     ./den
   ];
 }

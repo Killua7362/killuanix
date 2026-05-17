@@ -91,11 +91,14 @@ services exist and the rest of the runbook applies.
   - Paste an existing private key, generate a fresh ed25519, or skip. **Never overwrites an existing `~/.ssh/id_ed25519`**.
   - Public key is printed at the end — register on GitHub/GitLab/servers.
 
-- [ ] Linkding admin login + API token <!-- id:20-linkding -->
-  - Admin user is auto-created from sops; you log in to grab the token for the browser extension.
+- [ ] Karakeep first-user signup + API token <!-- id:20-karakeep -->
+  - Starts the karakeep + meilisearch containers (autoStart=false), waits for the UI, walks through first-user signup (first account = admin), and prompts for API-token generation for the browser extension.
 
 - [ ] Cronicle: change default admin password <!-- id:21-cronicle -->
   - Default `admin/admin` — change before exposing anywhere.
+
+- [ ] Matrix stack: start, register account, authenticate bridges <!-- id:25-matrix -->
+  - Verifies all 21 matrix sops keys exist, starts synapse + element-web + 4 mautrix bridges (autoStart=false), waits for synapse readiness, prints copy-pasteable register-user command, walks through per-bridge authentication + optional double-puppeting + optional tailscale serve. Idempotent — re-run anytime.
 
 - [ ] Thunderbird account wizard <!-- id:40-thunderbird -->
   - Mail accounts are not declarative; configure once per host.

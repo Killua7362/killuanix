@@ -33,6 +33,8 @@
       sops
       age
       ssh-to-age
+      jq
+      openssl
     ])
     ++ [
       (import ../../packages/claude-monitor/package.nix {
@@ -67,6 +69,7 @@
       # pcmanfm — replaced by nemo (configured in utils/nemo.nix)
       unetbootin
       qbittorrent
+      # rssguard installed by modules/common/programs/rss (config + package travel together)
       hakuneko
       fontpreview
       arandr

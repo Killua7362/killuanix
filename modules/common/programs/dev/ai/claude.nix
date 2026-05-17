@@ -45,9 +45,7 @@
   # Local hand-authored always-on skills live in Notes/claude/skills/ and are
   # wired as out-of-store symlinks under `config.home.file` below (same
   # live-edit pattern as Notes/claude/{global.md,memory,commands}).
-  extraSkills = {
-    er-diagram-and-data-modeling = "${inputs.vibekit}/plugins/architecture-tools/skills/er-diagram-and-data-modeling";
-  };
+  extraSkills = {};
 
   # Wrapper for git-sourced MCP servers. The fetched source lives in the Nix
   # store (read-only), but uv/pipx/npm need a writable project dir to create

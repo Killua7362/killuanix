@@ -218,6 +218,26 @@
             open-code "''$@"
         }
 
+        # Boot three zellij sessions in parallel, attach to killuanix.
+        # bdsi + mod spawn detached via `script` (zellij needs a tty).
+        zboot() {
+          local bg=(
+            "bdsi:$HOME"
+            "mod:$HOME"
+          )
+          local existing
+          existing=$(zellij list-sessions -s 2>/dev/null)
+          for spec in "''${bg[@]}"; do
+            local name="''${spec%%:*}" cwd="''${spec##*:}"
+            if ! grep -qx "$name" <<<"$existing"; then
+              script -qfc "zellij -s '$name' options --default-cwd '$cwd'" /dev/null \
+                </dev/null >/dev/null 2>&1 &!
+            fi
+          done
+          sleep 0.3
+          zellij attach --create killuanix options --default-cwd "$HOME/killuanix"
+        }
+
     '';
     antidote = {
       enable = true;

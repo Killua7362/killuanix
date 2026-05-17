@@ -4,11 +4,20 @@
 #
 # Schema (pure attrset; see modules/.../den/templates/claude-kit.nix):
 #   { envVars = {…}; skills = […]; agents = […]; commands = […];
-#     plugins = […]; mcp = […]; }
+#     plugins = […]; mcp = […];
+#     # exclusion + permissions + hooks + filesystem narrowing — all
+#     # materialize into ./.claude/settings.local.json:
+#     excludeMcp = […]; excludePlugins = […];
+#     excludeSkills = […]; excludeAgents = […]; excludeCommands = […];
+#     allowedTools = […]; deniedTools = […];
+#     hooks = null | { Stop = […]; … };
+#     restrictToDirs = null | [ "/abs/path" … ]; }
 #
 # Wired into direnv from the .envrc den drops on `den new --devshell`.
-# Globally-enabled skills/MCP (in ~/.claude/) stay loaded — the lists
-# below are purely additive.
+# Globally-enabled skills/MCP (in ~/.claude/) stay loaded — the additive
+# lists above (skills/agents/commands/plugins/mcp) layer on top. The
+# exclusion + hardening attrs use settings.local.json's precedence over
+# settings.json to opt OUT of globals or restrict the project's surface.
 
 _project_help() {
   cat <<'EOF'
@@ -91,6 +100,19 @@ _project_sync() {
   commands=$(echo "$json" | jq -c '.commands // []')
   plugins=$( echo "$json" | jq -c '.plugins  // []')
   mcp=$(     echo "$json" | jq -c '.mcp      // []')
+
+  local exclude_mcp exclude_plugins exclude_skills exclude_agents exclude_commands
+  exclude_mcp=$(     echo "$json" | jq -c '.excludeMcp      // []')
+  exclude_plugins=$( echo "$json" | jq -c '.excludePlugins  // []')
+  exclude_skills=$(  echo "$json" | jq -c '.excludeSkills   // []')
+  exclude_agents=$(  echo "$json" | jq -c '.excludeAgents   // []')
+  exclude_commands=$(echo "$json" | jq -c '.excludeCommands // []')
+
+  local allowed_tools denied_tools project_hooks restrict_dirs
+  allowed_tools=$( echo "$json" | jq -c '.allowedTools   // []')
+  denied_tools=$(  echo "$json" | jq -c '.deniedTools    // []')
+  project_hooks=$( echo "$json" | jq -c '.hooks          // null')
+  restrict_dirs=$( echo "$json" | jq -c '.restrictToDirs // null')
 
   _say() { [ "$quiet" = "1" ] || echo "$1"; }
   _do()  { [ "$dryrun" = "1" ] && echo "would: $*" || eval "$*"; }
@@ -200,6 +222,144 @@ _project_sync() {
     fi
   done <<<"$prev_mcp"
 
+  # restrictToDirs — narrow filesystem MCP `args` to match the project's
+  # allowed roots. Only effective if .filesystem ended up in ./.mcp.json
+  # (declared via `mcp = [ "filesystem" ]` in claude-kit.nix). Mirrors the
+  # claude-launchers.nix behaviour so a project can opt into a sandboxed
+  # filesystem MCP scoped to its own tree.
+  if [ "$restrict_dirs" != "null" ] && [ -f "$mcpfile" ] \
+     && jq -e '.mcpServers.filesystem' "$mcpfile" >/dev/null 2>&1; then
+    if [ "$dryrun" = "1" ]; then
+      _say "would narrow filesystem MCP args to restrictToDirs"
+    else
+      local tmp; tmp=$(mktemp)
+      jq --argjson dirs "$restrict_dirs" \
+        '.mcpServers.filesystem.args = $dirs' "$mcpfile" > "$tmp" && mv "$tmp" "$mcpfile"
+      _say "+ mcp/filesystem.args = restrictToDirs"
+    fi
+  fi
+
+  # ---- settings.local.json: excludes / permissions / hooks / restrictToDirs ----
+  #
+  # Strategy: revert everything we wrote on the previous run (recorded under
+  # prev_state.settingsLocal), then apply the current schema. This way
+  # hand-edits to settings.local.json that we didn't author are preserved.
+  if [ "$dryrun" != "1" ]; then
+    local prev_sl; prev_sl=$(echo "$prev_state" | jq -c '.settingsLocal // {}')
+    if [ -f "$sjson" ] && [ "$(echo "$prev_sl" | jq -r 'length')" != "0" ]; then
+      local tmp; tmp=$(mktemp)
+      jq --argjson prev "$prev_sl" '
+        # Strip plugin keys we previously force-disabled.
+        (($prev.excludePlugins // []) | reduce .[] as $p (.; del(.enabledPlugins[$p])))
+        # Strip allowedTools we previously added.
+        | (.permissions.allow //= [])
+        | .permissions.allow = (.permissions.allow - ($prev.permissionsAllow // []))
+        # Strip deniedTools / excludeMcp-derived / restrictToDirs-derived denies.
+        | (.permissions.deny //= [])
+        | .permissions.deny = (.permissions.deny - ($prev.permissionsDeny // []))
+        # Strip additionalDirectories if we set it last run.
+        | if ($prev.additionalDirectoriesSet // false)
+            then del(.permissions.additionalDirectories) else . end
+        # Strip hooks if we wrote them last run.
+        | if ($prev.hooksManaged // false) then del(.hooks) else . end
+        # Compact empty containers we may have introduced.
+        | if (.permissions.allow == [])              then del(.permissions.allow) else . end
+        | if (.permissions.deny  == [])              then del(.permissions.deny)  else . end
+        | if (.permissions      // {}) == {}         then del(.permissions)      else . end
+        | if (.enabledPlugins   // {}) == {}         then del(.enabledPlugins)   else . end
+      ' "$sjson" > "$tmp" && mv "$tmp" "$sjson"
+    fi
+  fi
+
+  # Compute the new managed-deny set: deniedTools ∪ excludeMcp-as-patterns ∪
+  # (if restrictToDirs is set) the sensitive-path baseline.
+  local managed_deny
+  managed_deny=$(jq -n \
+    --argjson d "$denied_tools" \
+    --argjson x "$exclude_mcp" \
+    --argjson r "$restrict_dirs" \
+    --arg home "$HOME" '
+      ($d
+       + ($x | map("mcp__\(.)__*"))
+       + (if $r == null then []
+          else [
+            "Read(/etc/**)",
+            "Read(/var/**)",
+            "Read(/root/**)",
+            "Read(\($home)/.ssh/**)",
+            "Read(\($home)/.gnupg/**)",
+            "Read(\($home)/.config/sops/**)",
+            "Read(\($home)/.config/age/**)"
+          ] end))
+      | unique
+  ')
+  local managed_allow; managed_allow=$(echo "$allowed_tools" | jq 'unique')
+  local managed_excl_plugs; managed_excl_plugs=$(echo "$exclude_plugins" | jq 'unique')
+
+  # Apply current schema into settings.local.json.
+  local has_apply=0
+  if [ "$(echo "$managed_allow" | jq 'length')" != "0" ] \
+     || [ "$(echo "$managed_deny" | jq 'length')" != "0" ] \
+     || [ "$(echo "$managed_excl_plugs" | jq 'length')" != "0" ] \
+     || [ "$restrict_dirs" != "null" ] \
+     || [ "$project_hooks" != "null" ]; then
+    has_apply=1
+  fi
+
+  if [ "$has_apply" = "1" ] && [ "$dryrun" = "1" ]; then
+    [ "$(echo "$managed_excl_plugs" | jq 'length')" != "0" ] \
+      && _say "would disable plugins: $(echo "$managed_excl_plugs" | jq -r 'join(", ")')"
+    [ "$(echo "$managed_allow" | jq 'length')" != "0" ] \
+      && _say "would add ${managed_allow} to permissions.allow"
+    [ "$(echo "$managed_deny"  | jq 'length')" != "0" ] \
+      && _say "would add ${managed_deny} to permissions.deny"
+    [ "$restrict_dirs" != "null" ] \
+      && _say "would set permissions.additionalDirectories = $restrict_dirs"
+    [ "$project_hooks" != "null" ] \
+      && _say "would set hooks = $project_hooks"
+  elif [ "$has_apply" = "1" ]; then
+    [ -f "$sjson" ] || echo '{}' > "$sjson"
+    local tmp; tmp=$(mktemp)
+    jq --argjson allow "$managed_allow" \
+       --argjson deny  "$managed_deny" \
+       --argjson xplugs "$managed_excl_plugs" \
+       --argjson rdirs "$restrict_dirs" \
+       --argjson hooks "$project_hooks" '
+      # Force-disable excluded plugins (last wins over any prior true).
+      ($xplugs | reduce .[] as $p (.; .enabledPlugins[$p] = false))
+      # Append allowedTools / deniedTools (deduped).
+      | (if ($allow | length) > 0
+           then .permissions.allow = ((.permissions.allow // []) + $allow | unique)
+           else . end)
+      | (if ($deny | length) > 0
+           then .permissions.deny  = ((.permissions.deny  // []) + $deny  | unique)
+           else . end)
+      # Pin additionalDirectories when restrictToDirs is set.
+      | (if $rdirs != null
+           then .permissions.additionalDirectories = $rdirs
+           else . end)
+      # Replace hooks block.
+      | (if $hooks != null then .hooks = $hooks else . end)
+    ' "$sjson" > "$tmp" && mv "$tmp" "$sjson"
+
+    [ "$(echo "$managed_excl_plugs" | jq 'length')" != "0" ] && _say "+ excluded plugins (disabled): $(echo "$managed_excl_plugs" | jq -r 'join(", ")')"
+    [ "$(echo "$managed_allow" | jq 'length')" != "0" ] && _say "+ permissions.allow += $(echo "$managed_allow" | jq -r 'join(", ")')"
+    [ "$(echo "$managed_deny"  | jq 'length')" != "0" ] && _say "+ permissions.deny  += $(echo "$managed_deny"  | jq -r 'join(", ")')"
+    [ "$restrict_dirs" != "null" ] && _say "+ permissions.additionalDirectories = $(echo "$restrict_dirs" | jq -r 'join(", ")')"
+    [ "$project_hooks" != "null" ] && _say "+ hooks (project-scoped) installed"
+  fi
+
+  # excludeSkills / excludeAgents / excludeCommands are advisory at the
+  # project layer (Claude reads these from ~/.claude/; there's no strict
+  # project-level mask). We accept them for symmetry with the launcher
+  # schema + record them in state so the show/status output is useful, but
+  # do not materialize them here.
+  if [ "$(echo "$exclude_skills"   | jq 'length')" != "0" ] \
+     || [ "$(echo "$exclude_agents"   | jq 'length')" != "0" ] \
+     || [ "$(echo "$exclude_commands" | jq 'length')" != "0" ]; then
+    _say "  i excludeSkills/Agents/Commands are advisory (see claude-kit.nix comments)"
+  fi
+
   # ---- Write state ----
   if [ "$dryrun" != "1" ]; then
     mkdir -p "$pdir"
@@ -210,7 +370,29 @@ _project_sync() {
       --argjson c "$commands" \
       --argjson p "$plugins" \
       --argjson m "$mcp" \
-      '{skills: $s, agents: $a, commands: $c, plugins: $p, mcp: $m}' > "$tmp"
+      --argjson xs "$exclude_skills" \
+      --argjson xa "$exclude_agents" \
+      --argjson xc "$exclude_commands" \
+      --argjson xp "$managed_excl_plugs" \
+      --argjson xm "$exclude_mcp" \
+      --argjson pa "$managed_allow" \
+      --argjson pd "$managed_deny" \
+      --argjson rd "$restrict_dirs" \
+      --argjson hk "$project_hooks" '
+      {
+        skills: $s, agents: $a, commands: $c, plugins: $p, mcp: $m,
+        excludeSkills: $xs, excludeAgents: $xa, excludeCommands: $xc,
+        excludePlugins: $xp, excludeMcp: $xm,
+        allowedTools: $pa, deniedTools: $pd,
+        restrictToDirs: $rd, hooks: $hk,
+        settingsLocal: {
+          excludePlugins: $xp,
+          permissionsAllow: $pa,
+          permissionsDeny: $pd,
+          additionalDirectoriesSet: ($rd != null),
+          hooksManaged: ($hk != null)
+        }
+      }' > "$tmp"
     mv "$tmp" "$statefile"
   fi
 }
