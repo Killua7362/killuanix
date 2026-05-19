@@ -39,6 +39,20 @@
     };
   };
 
+  # Extensions whose userDisabled flag should be true on first profile init.
+  # Sentinel-gated so subsequent toggles in about:addons stick. After the seed
+  # runs once, Firefox owns extensions.json and we never touch it again.
+  # IDs cross-referenced against ~/.mozilla/firefox/default/extensions.json.
+  initiallyDisabledExtensionIds = [
+    "{74145f27-f039-47ce-a470-a662b129930a}" # ClearURLs
+    "7esoorv3@alefvanoon.anonaddy.me"        # LibRedirect
+    "extension@tabliss.io"                   # Tabliss
+    "treestyletab@piro.sakura.ne.jp"         # Tree Style Tab
+    "uMatrix@raymondhill.net"                # uMatrix
+    "{2d4c0962-e9ff-4cad-8039-9a8b80d9b8b6}" # YouTube Redux
+    "{36d78ab3-8f38-444a-baee-cb4a0cadbf98}" # YouTube Playlist Duration Calculator
+  ];
+
   mergedChrome = pkgs.runCommand "merged-firefox-chrome" {} ''
     mkdir -p $out
 
@@ -74,6 +88,51 @@ in {
     source = mergedChrome;
     recursive = true;
   };
+
+  home.file.".mozilla/firefox/default/stylus-styles.json".source = ./stylus-styles.json;
+
+  # One-shot seed of `userDisabled = true` for the extensions in
+  # `initiallyDisabledExtensionIds`. Gated by a sentinel under the profile
+  # so it only fires the very first time the profile exists; user toggles in
+  # `about:addons` thereafter are never clobbered. No-op (with a warning) if
+  # Firefox is currently running, because Firefox rewrites extensions.json on
+  # exit and would undo the patch.
+  home.activation.firefoxSeedDisabledExtensions = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    PROFILE="$HOME/.mozilla/firefox/default"
+    SENTINEL="$PROFILE/.hm-extensions-disabled-seeded"
+    EXTJSON="$PROFILE/extensions.json"
+
+    if [ -e "$SENTINEL" ]; then
+      exit 0
+    fi
+    if [ ! -f "$EXTJSON" ]; then
+      # Profile not initialized yet — re-run on next switch after first Firefox launch.
+      exit 0
+    fi
+    if ${pkgs.procps}/bin/pgrep -x firefox >/dev/null 2>&1 \
+       || ${pkgs.procps}/bin/pgrep -x firefox-bin >/dev/null 2>&1; then
+      echo "firefoxSeedDisabledExtensions: Firefox is running, skipping (will retry next switch)" >&2
+      exit 0
+    fi
+
+    IDS=${lib.escapeShellArg (builtins.toJSON initiallyDisabledExtensionIds)}
+    TMP="$(${pkgs.coreutils}/bin/mktemp "$PROFILE/.extensions.json.XXXXXX")"
+    if ${pkgs.jq}/bin/jq --argjson ids "$IDS" '
+      .addons |= map(
+        if (.id as $id | $ids | index($id)) then
+          .userDisabled = true | .active = false
+        else . end
+      )
+    ' "$EXTJSON" > "$TMP"; then
+      ${pkgs.coreutils}/bin/mv "$TMP" "$EXTJSON"
+      ${pkgs.coreutils}/bin/touch "$SENTINEL"
+      echo "firefoxSeedDisabledExtensions: seeded userDisabled flags, sentinel written" >&2
+    else
+      ${pkgs.coreutils}/bin/rm -f "$TMP"
+      echo "firefoxSeedDisabledExtensions: jq failed, leaving extensions.json untouched" >&2
+      exit 0
+    fi
+  '';
 
   programs.firefox = {
     enable = true;
@@ -235,6 +294,14 @@ in {
             installation_mode = "normal_installed";
           };
         };
+        # Direct XPI URL (used when AMO `/latest/` redirect is unreliable, e.g. version-pinned themes / addons).
+        extensionUrl = url: uuid: {
+          name = uuid;
+          value = {
+            install_url = url;
+            installation_mode = "normal_installed";
+          };
+        };
       in
         listToAttrs [
           (extension "tree-style-tab" "treestyletab@piro.sakura.ne.jp")
@@ -249,6 +316,18 @@ in {
           # native-messaging host. The native app is provided by
           # pkgs.pywalfox-native (declared in theming/matugen.nix).
           (extension "pywalfox" "pywalfox@frewacom.org")
+          # Addons not in NUR — installed from AMO via policy.
+          (extension "audio-selector" "audioSelector@ctoinside.you")
+          (extension "colorpicker" "jid1-kCS67LPIOiGf2Q@jetpack")
+          (extension "song-id" "song-id@losnappas")
+          (extension "videospeed" "{7be2ba16-0f1e-4d93-9ebc-5164397477a9}")
+          (extension "full_screen" "fullscreen@stefanvd.net")
+          (extension "font-finder" "{a658a273-612e-489e-b4f1-5344e672f4f5}")
+          (extension "youtube-playlist-duration-calc" "{36d78ab3-8f38-444a-baee-cb4a0cadbf98}")
+          # insta-viewer has no stable `/latest/` slug — pin to the version XPI.
+          (extensionUrl
+            "https://addons.mozilla.org/firefox/downloads/file/3988716/insta_viewer-1.0.xpi"
+            "{6e93c3e7-69c3-4ac6-a88d-873148baccdd}")
         ];
       # To add additional extensions, find it on addons.mozilla.org, find
       # the short ID in the url (like https://addons.mozilla.org/en-US/firefox/addon/!SHORT_ID!/)
@@ -285,6 +364,15 @@ in {
           single-file
           stylus
           dearrow
+          firefox-color
+          foxyproxy-standard
+          greasemonkey
+          keepa
+          nighttab
+          onetab
+          react-devtools
+          userchrome-toggle
+          download-with-jdownloader
           # Karakeep replaces linkding here. NUR (pkgs.nur.repos.rycee.firefox-addons)
           # does not currently ship a karakeep extension package — install
           # manually from https://addons.mozilla.org/en-US/firefox/addon/karakeep/

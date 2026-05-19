@@ -1,0 +1,7 @@
+{
+  "runtime.version": "Lua 5.4",
+  "diagnostics.globals": ["hl"],
+  "workspace.library": ["~/.local/share/hypr/stubs"],
+  "workspace.checkThirdParty": false,
+  "telemetry.enable": false
+}

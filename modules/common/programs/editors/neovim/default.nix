@@ -62,6 +62,7 @@ in {
           postgres-language-server
           sqlfluff
           jdt-language-server
+          kdePackages.qtdeclarative
         ];
       };
 

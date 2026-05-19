@@ -1,0 +1,2 @@
+-- Input config placeholder. Ported from input.nix (empty in nix; defaults apply).
+-- Add device-specific tweaks here when needed.

@@ -225,7 +225,19 @@
         fi
       else
         state_dir="$(mktemp -d "''${XDG_RUNTIME_DIR:-/tmp}/claude-session.XXXXXX")"
-        trap 'rm -rf "$state_dir"' EXIT INT TERM HUP
+        # Claude Code refreshes OAuth tokens via atomic write (tmp + rename),
+        # which replaces the symlinked `.credentials.json` with a real file
+        # inside the overlay. Without persisting it back to `~/.claude/`, the
+        # `rm -rf` below wipes the refreshed token and the next launch reads
+        # the stale expired one → forced re-login every session. Copy back on
+        # EXIT before tearing the overlay down; concurrent sessions race
+        # last-writer-wins, fine for refresh tokens (any valid refresh works).
+        trap '
+          if [ -f "$state_dir/.credentials.json" ] && [ ! -L "$state_dir/.credentials.json" ]; then
+            install -m 0600 "$state_dir/.credentials.json" "$HOME/.claude/.credentials.json" || true
+          fi
+          rm -rf "$state_dir"
+        ' EXIT INT TERM HUP
         # Caveman state files that must not be symlinked into the overlay.
         # Each session's `.caveman-statusline-suffix` is *per-session* (the
         # statusline badge tracks the current claude run, not lifetime), so

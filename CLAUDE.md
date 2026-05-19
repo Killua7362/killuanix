@@ -99,6 +99,17 @@ The flake auto-bootstraps most services, but a few one-shot manual steps remain 
 - `overlays/`, `packages/` — custom nixpkgs overlays and standalone derivations consumed via `self.customOverlays` / direct imports
 - `scripts/`, `sdethings/`, `Notes/` — ad-hoc scripts and notes
 
+### Nix runtime
+
+**chrollo** and **killua** run **Determinate Nix** (`inputs.determinate.nixosModules.default` imported via `flake.nix` → `nixosConfigurations.<host>`). It replaces the upstream daemon with the Determinate fork. Key wins active by default:
+
+- `lazy-trees` — skips fetching/realising unused flake inputs at eval time. **Top-level config option**, not an experimental feature — `nix show-config | grep lazy-trees` reports `true` on a fresh Determinate install. Do NOT add it to `experimental-features` (warns "unknown experimental feature").
+- Parallel daemon marshalling — internal, no knob to flip.
+
+Because both are on automatically, `nix.settings.experimental-features` stays at `"nix-command flakes"` and `scripts/nix_switch` only injects `eval-cache = true` via `NIX_CONFIG` (defensive — already default since Nix 2.4). The script's runtime detection (`nix --version` matching `*Determinate*` / `*Lix*`) is used solely to log which speedups are live.
+
+`nh` (nix-helper) is wired into `commonPackages` and used by `nix_switch` for `nh os switch` / `nh home switch` — gives a colored closure diff before activation. Falls back to raw `nix build` / `nixos-rebuild` automatically when `nh` is absent (e.g. first run after a fresh install).
+
 ### Secrets
 
 Managed with **sops-nix** + **age** encryption. Keys defined in `.sops.yaml`; encrypted secrets live in `secrets/personal.yaml`. The age key file is expected at `~/.config/sops/age/keys.txt`.

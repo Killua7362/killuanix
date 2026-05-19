@@ -15,6 +15,7 @@
 
       # Development tools
       git
+      nh # nix-helper: faster rebuilds + closure diff (wired into scripts/nix_switch)
       nix-search-cli
       nixpkgs-fmt
       direnv

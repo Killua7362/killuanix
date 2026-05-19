@@ -1,36 +1,84 @@
 # Hyprland Module
 
-Hyprland window manager configuration, split into focused submodules. The primary modifier key is `SUPER`. Package is sourced in Configuration.nix for NixOS and home.nix for ArchLinux + Home Manager setup with xwayland enabled and systemd integration disabled in favor of UWSM.
+Hyprland 0.55+ native-Lua configuration. The user-side config (keybinds, rules, env, layout, gestures, leader submap, startup execs) lives as plain `.lua` files under `lua/`. Lock screen, idle daemon, and clipboard watchers stay as nix modules because they configure separate binaries (`hyprlock`, `hypridle`, systemd user services), not Hyprland itself. DMS (DankMaterialShell) is unrelated — see `dms/CLAUDE.md`.
+
+## Why Lua, not nix-attrset → hyprland.conf?
+
+- **LSP / autocomplete.** Hyprland ships EmmyLua stubs at `${hyprland}/share/hypr/stubs/hl.meta.lua`. With a `.luarc.json` next to `hyprland.lua`, `lua-language-server` knows every `hl.config` key, `hl.dsp.*` dispatcher signature, rule field, etc. Nix attrsets are opaque strings.
+- **Live editing.** `xdg.configFile."hypr/hyprland.lua"` is a `mkOutOfStoreSymlink` pointing at this directory's `lua/hyprland.lua`. Edits in the repo apply via Hyprland's autoreload — no `nix_switch` round-trip.
+- **Real code paths.** Keybinds that previously needed an inline `pkgs.writeShellScript` (column-resize state, leader submap rendering) now run as upvalue-state Lua functions inside Hyprland itself.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `default.nix` | Entry point. Enables Hyprland, sources external `workspaces.conf`, and imports all submodules. Monitor config is delegated to per-host `services.kanshi` (see `killua/kanshi.nix`, `chrollo/home-manager/kanshi.nix`). |
-| `env.nix` | Environment variables: fcitx input method, Wayland/XDG session identifiers, Qt theming (gtk3), accessibility flags, terminal (`ghostty`). |
-| `general.nix` | General settings: scrolling layout, border colors, gaps (5 in / 10 out), tearing allowed, snap enabled. |
-| `layout.nix` | Layout engines: dwindle (preserve split), scrolling (`explicit_column_widths = "1.0, 0.5"`, `column_width = 1.0` default spawn, `fullscreen_on_one_column = true`), master, decoration (rounding 8, blur, shadows), cursor, and bind scroll settings. |
-| `keybinds.nix` | All keybindings across `bind`, `bindd`, `bindle`, `bindel`, `bindl`, `bindld`, `bindm`, and `binde` categories. Covers window management, workspace switching (Super+1-0), focus/move, media keys, volume, brightness, screenshots (Print -> slurp + grim + satty), terminal launch (Super+Return -> ghostty), and quickshell integration. |
-| `leader.nix` | Zellij-style submap launcher. Submaps declared as nix attrset keyed by name; each entry has `triggerKey`, `icon` (Material Symbols), `name`, `key` (activator label), and `slots` (per-key `cmd`). Generates: hyprland submap+binds, and `~/.config/leader-hud/submaps.json` consumed by the LeaderHud DMS bar widget. Submap enter writes its name to `~/.cache/leader-hud/state`; every exit path writes empty so the widget shows/hides reactively. Default submap `leader` (Super+Space): `f` nemo, `b` firefox, `t` ghostty, `e` zeditor, `m` thunderbird, `o` obsidian; `Esc`/`Return` cancels. Add submaps by extending the `submaps` attrset. Declared via `extraConfig` because the home-manager hyprland module can't express submap-scoped binds structurally. |
-| `windowrules.nix` | Window rules (float/pin/size for blueman, PiP, file dialogs, pavucontrol, etc.), workspace rules, and extensive layer rules for quickshell namespaces, vicinae, and notification blur. |
-| `execs.nix` | `exec-once` programs launched via UWSM: dms, hyprpolkitagent, nm-applet, blueman-applet, sunshine. Also sets dbus activation environment. |
-| `clipboard.nix` | Systemd user services `cliphist-text` and `cliphist-image` that run `wl-paste --watch` piped through cliphist. Uses `Restart=always` + `KillMode=mixed` so children are reaped on restart; avoids the child pile-up that occurs with long-lived `exec-once` watchers. |
-| `input.nix` | Currently empty (placeholder). |
-| `gestures.nix` | Touchpad gestures: workspace swipe config and multi-finger gestures (3-finger swipe move, 4-finger horizontal workspace switch, 4-finger pinch float, 4-finger up/down for quickshell overview). |
-| `misc.nix` | Miscellaneous: animations enabled but all durations set to 0, `misc.vfr`/`misc.vrr` enabled, DPMS on mouse/key, swallow regex (disabled via `enable_swallow = false`), session lock restore + xray, background color, Hyprland logo/splash disabled, `force_default_wallpaper = -1`, `focus_on_activate`, scroller plugin `column_widths = "onehalf one"`, xwayland forced zero scaling. |
-| `hypridle.nix` | Idle daemon: screen off after 5400s (90 min), DPMS restore on resume. Lock command uses `hyprlock` with duplicate prevention. |
-| `hyprlock.nix` | Lock screen: blurred background image, centered clock and date labels, input field at bottom. Font: Rubik / Rubik Extrabold. |
-| `dms/` | Modular DankMaterialShell config. `default.nix` owns module-level options (`enable`, commented `systemd.*`/`enable*`/`quickshell.package`/`dgop.package`/`clipboardSettings`/`session` references), the plugin schema example, the `leaderHud` plugin wiring, and the `xdg.configFile.…force = lib.mkForce true` escape hatch. The remaining files each contribute a topic-scoped slice of `programs.dank-material-shell.settings` (theme, bar, control-center, dock, launcher, greeter, notifications, lock-power, theming-templates, fonts-sounds, display, misc) — Nix module merging assembles them into the JSON written to `~/.config/DankMaterialShell/settings.json`. See [`dms/CLAUDE.md`](dms/CLAUDE.md) for the topic→file routing table and a built-in drift-check command. |
+| `default.nix` | Wiring only. Disables the home-manager Hyprland module (so it doesn't write `hyprland.conf`), symlinks the lua stubs to `~/.local/share/hypr/stubs`, writes the `.luarc.json` next to `hyprland.lua`, sources hm-session-vars.sh into `~/.config/uwsm/env`, writes the static LeaderHud metadata JSON, and installs the `hypr-toggle-col-width` shell helper. |
+| `lua/hyprland.lua` | Entry point loaded by Hyprland. Extends `package.path` then `require()`s the sibling modules in order (env → general → misc → layout → input → gestures → rules → execs → leader → keybinds.register). |
+| `lua/.luarc.json` | LSP config so opening the lua tree directly in Neovim/Zed picks up the stubs. The same JSON is also dropped at `~/.config/hypr/.luarc.json` from nix for buffers opened via the symlink. |
+| `lua/env.lua` | `hl.config{ env = { … } }`. Fcitx + Wayland/XDG session ids + Qt theming + accessibility flags. |
+| `lua/general.lua` | `hl.config{ general = { … } }`. Scrolling layout, border colors, gaps, snap, tearing. |
+| `lua/misc.lua` | `hl.config{ misc, xwayland, plugin, animations }` + `hl.animation` calls to disable every leaf. |
+| `lua/layout.lua` | `hl.config{ dwindle, decoration, binds, cursor, master, scrolling }`. |
+| `lua/input.lua` | Empty placeholder. Add device-specific tweaks here. |
+| `lua/gestures.lua` | Touchpad gestures + multi-finger swipe/pinch dispatchers. |
+| `lua/rules.lua` | `hl.window_rule` / `hl.layer_rule` / `hl.workspace_rule` calls. PiP, file dialogs, blueman, Zotero, Kodi, JetBrains Xwayland popups, quickshell namespace blur/animation. |
+| `lua/keybinds.lua` | Flat data table `M.binds` of every keybind + `M.register()` walker. Action helpers (`A.focus_dir`, `A.swap_dir`, `A.move_ws`, `A.layout`, …) build dispatchers lazily so the module loads without `hl` defined. Flag mapping in the header comment. |
+| `lua/leader.lua` | `hl.define_submap("leader", …)` + the trigger bind. Writes `~/.cache/leader-hud/state` on enter/exit for the LeaderHud DMS bar plugin. Add more submaps by extending the `submaps` table. |
+| `lua/execs.lua` | `hl.on("hyprland.start", …)` with `uwsm app --` wrappers (dms, hyprpolkitagent, nm-applet, blueman-applet, sunshine). |
+| `clipboard.nix` | Systemd user services `cliphist-text` / `cliphist-image` running `wl-paste --watch`. `Restart=always` + `KillMode=mixed` so children are reaped on restart. |
+| `hypridle.nix` | Idle daemon: screen off after 5400s; `hyprctl dispatch dpms on/off` on transitions. |
+| `hyprlock.nix` | Lock screen: blurred Sung Jinwoo wallpaper, centered Rubik clock/date, bottom input field. |
+| `dms/` | Modular DankMaterialShell config (Wayland shell, unrelated to hyprlang). See [`dms/CLAUDE.md`](dms/CLAUDE.md). |
 
-## Notable Details
+## Reload model
 
-- **Layout engine**: `scrolling` (set in `general.nix`), with dwindle and master available as fallbacks in `layout.nix`.
-- **Key modifier**: `$mod = SUPER`.
-- **Terminal**: `Super+Return` opens ghostty.
-- **Lock**: `Super+L` and `Super+Alt+L` trigger lock via dms.
-- **Leader key**: `Super+Space` enters submap `leader`. Active submap surfaces as an icon-pill in the DMS bar (left of `systemTray`) via the LeaderHud plugin in `../dms-plugins/leader-hud/`. Submap list (with icons) edited in `leader.nix`.
-- **Screenshots**: `Print` key launches slurp region select piped through grim into satty.
-- **Media controls**: hardware keys and `Super+Shift` combos for playerctl play/pause/next/prev.
-- **Quickshell integration**: multiple `global` dispatches for sidebar, overview, emoji picker, cheatsheet, media controls, session menu, bar, and wallpaper selector.
-- **Monitor config**: managed declaratively per host via `services.kanshi` (see `killua/kanshi.nix`, `chrollo/home-manager/kanshi.nix`). Kanshi watches hot-plug events and switches output profiles (docked / undocked) via `wlr-output-management`. Hyprland no longer declares monitors itself, and `monitors.conf` is no longer sourced.
-- **Workspace config**: sourced from external `~/.config/hypr/workspaces.conf` (not managed here).
+Hyprland watches `~/.config/hypr/hyprland.lua` (the symlink target). Saving any `.lua` file under `lua/` triggers autoreload — no nixos-rebuild, no home-manager activation. Trigger one manually with `hyprctl reload`.
+
+Changes that DO require `home-manager switch` (because they cross the nix boundary):
+- Adding/removing a `.lua` file (the entry point's `require()` calls live in the file, so a rebuild isn't strictly needed unless the new file should be required — same applies in reverse).
+- Editing `default.nix` (stubs symlink target, .luarc.json contents, leader-hud metadata, shell helper script body).
+- Editing `clipboard.nix` / `hypridle.nix` / `hyprlock.nix` (these are still nix modules).
+
+## LSP autocomplete
+
+Stubs live at `~/.local/share/hypr/stubs/hl.meta.lua` after a rebuild — a symlink into the active hyprland package's `share/hypr/stubs`. Two `.luarc.json` files reference that path:
+
+- `lua/.luarc.json` (in-repo, committed) — picked up when editing the lua tree directly from `~/killuanix`.
+- `~/.config/hypr/.luarc.json` (HM-written) — picked up when editing via the symlinked entry point.
+
+`lua-language-server` walks upward from the buffer file looking for `.luarc.json`, so both editors agree on the library path.
+
+In Neovim/Zed, opening `lua/keybinds.lua` and typing `hl.dsp.` should now offer `focus`, `window.kill`, `workspace.toggle_special`, `exec_cmd`, etc.
+
+## Bind flag mapping (old → new)
+
+Old keybinds.nix had one list per hyprlang variant. In `lua/keybinds.lua` every entry is a single record with optional booleans; `M.register()` translates them to `hl.bind` options.
+
+| Old hyprlang | New record fields | `hl.bind` flags |
+|---|---|---|
+| `bind`   | (none) | `{}` |
+| `bindd`  | `desc = "…"` | `{ description }` |
+| `bindl`  | `locked = true` | `{ locked }` |
+| `bindel` | `repeating = true` | `{ repeating }` |
+| `bindle` | `repeating = true, locked = true` | `{ repeating, locked }` |
+| `bindld` | `locked = true, desc = "…"` | `{ locked, description }` |
+| `bindm`  | `drag = true` (mouse drag) | `{ drag }` |
+| `binde`  | `repeating = true` | `{ repeating }` |
+
+## Leader submap
+
+Adding a new submap: extend the `submaps` list in `lua/leader.lua` (set `name`, `trigger`, `slots`) and add a matching entry to `leaderHudMetadata` in `default.nix` (icon + display name + activator key) so the bar plugin renders a pill for it.
+
+The HUD plugin reads:
+- `~/.cache/leader-hud/state` — written by `lua/leader.lua` on submap enter (`echo NAME > state`) / exit (`echo '' > state`).
+- `~/.config/leader-hud/submaps.json` — written by `default.nix` from `leaderHudMetadata`.
+
+## Per-host overrides (not wired yet)
+
+`lua/hyprland.lua` already calls `try_require("device-keybinds")` so per-host extras can be added later by dropping a `device-keybinds.lua` somewhere on `package.path` (currently only the `lua/` dir is on the path; extend `LUA_DIR` to add a host directory).
+
+## What's left in pure nix
+
+- **Monitors** — `services.kanshi` per host (`killua/kanshi.nix`, `chrollo/home-manager/kanshi.nix`).
+- **System-level Hyprland** — `programs.hyprland.enable = true` (UWSM, portals, session target) lives in the NixOS host configs, not here.
+- **Workspaces** — `~/.config/hypr/workspaces.conf` is empty on every host; if you need workspace pinning add a `hl.workspace_rule` to `lua/rules.lua`.

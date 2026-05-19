@@ -162,7 +162,7 @@
   # };
   programs.dank-material-shell.plugins.leaderHud = {
     enable = true;
-    src = ../../dms-plugins/leader-hud;
+    src = ../../qml/leader-hud;
   };
 
   # Upstream community plugins from AvengeMedia/dms-plugins.

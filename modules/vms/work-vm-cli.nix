@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  ansibleDir = "${builtins.toString ./.}/ansible";
+  ansibleDir = ./ansible;
 
   work-vm = pkgs.writeShellScriptBin "work-vm" ''
     set -euo pipefail

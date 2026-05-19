@@ -250,6 +250,12 @@
     flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
   in {
     settings = {
+      # Determinate Nix's nixosModule (imported in flake.nix) layers on
+      # `lazy-trees` + `parallel-marshal` itself when its daemon is active.
+      # We do NOT add them to this list because the nix.conf derivation is
+      # validated by the *build-time* nix (still upstream until the first
+      # Determinate-enabled generation lands), which rejects unknown flags
+      # and aborts the build.
       experimental-features = "nix-command flakes";
       flake-registry = "";
       nix-path = config.nix.nixPath;

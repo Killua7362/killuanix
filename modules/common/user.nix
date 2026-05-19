@@ -27,6 +27,12 @@
       XCURSOR_THEME = "Adwaita";
       XCURSOR_SIZE = "24";
       LESSOPEN = "|lesspipe.sh %s";
+      # nh-helper: lets bare `nh os switch` / `nh home switch` / `nh search`
+      # find the flake without needing -- / --flake / cwd. scripts/nix_switch
+      # passes the path explicitly so it doesn't depend on this. `$HOME` is
+      # expanded by the shell at session init, so this works on both linux
+      # (/home/killua) and mac (/Users/killua).
+      NH_FLAKE = "$HOME/killuanix";
     };
 
     sshKeys = [

@@ -1,0 +1,19 @@
+[
+  {
+    "enabled": true,
+    "updateUrl": null,
+    "md5Url": null,
+    "url": null,
+    "originalMd5": null,
+    "installDate": 1747526400000,
+    "name": "Global Dark — Invert",
+    "sections": [
+      {
+        "code": "html {\n  filter: invert(1) hue-rotate(180deg) !important;\n  background: #fff !important;\n}\nimg, picture, video, iframe, canvas, svg, embed, object, [style*=\"background-image\"] {\n  filter: invert(1) hue-rotate(180deg) !important;\n}\n",
+        "urlPrefixes": ["http://", "https://"]
+      }
+    ],
+    "_id": "killuanix-global-dark-invert",
+    "_rev": 1
+  }
+]

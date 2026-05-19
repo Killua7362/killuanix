@@ -138,6 +138,14 @@
 
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    # Determinate Nix — replaces upstream nix daemon on chrollo + killua.
+    # Ships lazy-trees (skips fetching unused flake inputs) and parallel
+    # marshalling (faster daemon round-trips on big closures). Module is
+    # imported in nixosConfigurations.chrollo / killua below; experimental
+    # features enabled in each host's `nix.settings.experimental-features`.
+    # NOT applied to archnix (system-manager) or macnix.
+    determinate.url = "github:DeterminateSystems/determinate";
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
     claude-code.url = "github:sadjow/claude-code-nix";
 
@@ -286,6 +294,7 @@
         modules = [
           ./chrollo/configuration.nix
           inputs.quadlet-nix.nixosModules.quadlet
+          inputs.determinate.nixosModules.default
         ];
       };
     };
@@ -296,6 +305,7 @@
         ./killua/configuration.nix
         inputs.quadlet-nix.nixosModules.quadlet
         inputs.jovian.nixosModules.jovian
+        inputs.determinate.nixosModules.default
         ({
           inputs,
           pkgs,
@@ -380,5 +390,10 @@
         ];
       };
     };
+
+    # Alias so `nh home switch -c <host>` and `home-manager switch --flake .#<host>`
+    # (both look up `homeConfigurations.<name>`) resolve to the same configs as
+    # the canonical `homeManagerConfigurations` attrset above.
+    homeConfigurations = self.homeManagerConfigurations;
   };
 }
