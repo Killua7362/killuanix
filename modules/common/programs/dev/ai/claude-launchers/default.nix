@@ -268,9 +268,9 @@
         if [ "$inherit_global" = true ]; then
           global_names=$(jq '[to_entries[] | select(.value.optional != true) | .key]' "$catalog")
         fi
-        mcp_names_json=$(jq --argjson g "$global_names" \
-                            --argjson l '${mcpJson}' \
-                            --argjson x '${excludeMcpJson}' \
+        mcp_names_json=$(jq -n --argjson g "$global_names" \
+                               --argjson l '${mcpJson}' \
+                               --argjson x '${excludeMcpJson}' \
           '($g + $l) | unique | map(select(. as $n | $x | index($n) | not))')
         mcp_names=$(jq -r '.[]' <<< "$mcp_names_json")
 
