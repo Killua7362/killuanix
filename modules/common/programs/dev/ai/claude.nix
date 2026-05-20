@@ -38,14 +38,29 @@
   # value = nix-store path. These are nix-managed (read-only) and require
   # `scripts/nix_switch` to update.
   #
-  # Upstream bundles (anthropics/skills, ruflo, wshobson) live in the lazy
-  # catalog (Notes/claude/lazy/upstream/) — opt in per-project via
-  # `claude-kit lazy add skill <name>`.
+  # Upstream bundles (anthropics/skills, ruflo, wshobson) live in per-source
+  # lazy sub-catalogs (Notes/claude/lazy/{anthropics-skills,ruflo,wshobson}/)
+  # — opt in per-project via `claude-kit lazy add skill <name>`.
   #
   # Local hand-authored always-on skills live in Notes/claude/skills/ and are
   # wired as out-of-store symlinks under `config.home.file` below (same
   # live-edit pattern as Notes/claude/{global.md,memory,commands}).
-  extraSkills = {};
+  extraSkills = {
+    # garrytan/gstack — `office-hours` requested globally. office-hours's
+    # SKILL.md body references `~/.claude/skills/gstack/bin/...` and other
+    # sibling sub-skills under `~/.claude/skills/gstack/<name>/`, so the
+    # umbrella tree must be present alongside. Without it the preamble
+    # falls back to defaults but loses telemetry, config, learnings,
+    # update-check, upgrade-flow, and any cross-skill jumps.
+    gstack = "${inputs.gstack}";
+    office-hours = "${inputs.gstack}/office-hours";
+
+    # mattpocock/skills — `grill-me` (interview-style code review) +
+    # `handoff` (session-handoff doc generator). Self-contained, no
+    # external path refs.
+    grill-me = "${inputs.mattpocock-skills}/skills/productivity/grill-me";
+    handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";
+  };
 
   # Wrapper for git-sourced MCP servers. The fetched source lives in the Nix
   # store (read-only), but uv/pipx/npm need a writable project dir to create
@@ -342,6 +357,18 @@ in {
     description = "Pre-resolved MCP server stanzas defined outside mcp-servers.nix.";
   };
 
+  # Per-event Claude Code hook entries contributed by sibling modules. Each
+  # event key (PreToolUse, PostToolUse, Stop, …) maps to a list of
+  # `{ matcher?, hooks }` blocks. The `listOf` element type means multiple
+  # files can each define `local.extraHooks.<Event> = [ … ]` and the module
+  # system concatenates the lists — no clobbering. Aggregated below into
+  # `programs.claude-code.settings.hooks`.
+  options.local.extraHooks = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.listOf lib.types.attrs);
+    default = {};
+    description = "Claude Code hook entries contributed by sibling modules, keyed by event name.";
+  };
+
   config = {
     programs.claude-code = {
       enable = true;
@@ -405,101 +432,10 @@ in {
           refreshInterval = 10;
         };
 
-        # Auto-refresh caveman lifetime savings suffix after every assistant
-        # turn. caveman-stats.js parses the live session jsonl, appends a
-        # snapshot to ~/.claude/.caveman-history.jsonl, and rewrites
-        # ~/.claude/.caveman-statusline-suffix — the pre-rendered string the
-        # statusline reads (see caveman-statusline.sh). Without this hook the
-        # suffix only updates when /caveman-stats is invoked by hand, so a
-        # fresh shell never shows the badge until the user types the command.
-        # `node` resolves from PATH (provided by nodejs_20 in
-        # ruflo-cli.nix/claude-flow-cli.nix). Output silenced; only side-effect
-        # we want is the suffix file write.
-        hooks.Stop = [
-          {
-            hooks = [
-              {
-                type = "command";
-                # Per-session caveman savings badge.
-                #
-                # Reads the hook stdin payload (Claude Code passes
-                # `{transcript_path, session_id, …}` to Stop hooks), parses
-                # *only that session's jsonl* to sum output tokens, looks
-                # up the live mode from the overlay's .caveman-active, and
-                # writes a per-overlay
-                # `$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix` of the
-                # form `⛏ Nk`. Intentionally bypasses the upstream
-                # `caveman-stats.js`, which aggregates lifetime totals
-                # across every session's history snapshot and would render
-                # the same number in every concurrent session's badge.
-                #
-                # Lifetime / 5h block aggregation lives separately in the
-                # `caveman stats` shell wrapper (scripts/caveman) which
-                # reads jsonls directly from ~/.claude/projects/.
-                #
-                # Savings ratio comes from caveman's `full`-mode benchmark
-                # (~65% mean per-task token reduction; the only mode with
-                # benchmark data). Other modes render an empty suffix.
-                command = ''
-                  node -e '
-                  const fs = require("fs");
-                  const path = require("path");
-                  const os = require("os");
-                  const COMPRESSION = { full: 0.65 };
-
-                  let input = "";
-                  process.stdin.on("data", d => input += d);
-                  process.stdin.on("end", () => {
-                    let payload = {};
-                    try { payload = JSON.parse(input); } catch {}
-                    const transcript = payload.transcript_path;
-                    const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
-                    const suffixPath = path.join(claudeDir, ".caveman-statusline-suffix");
-
-                    let mode = null;
-                    try {
-                      mode = fs.readFileSync(path.join(claudeDir, ".caveman-active"), "utf8")
-                        .trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
-                    } catch {}
-                    const ratio = COMPRESSION[mode];
-
-                    function safeWrite(s) {
-                      try {
-                        try { if (fs.lstatSync(suffixPath).isSymbolicLink()) return; } catch (e) { if (e.code !== "ENOENT") return; }
-                        fs.writeFileSync(suffixPath, s, { mode: 0o600 });
-                      } catch {}
-                    }
-
-                    if (!ratio || !transcript || !fs.existsSync(transcript)) {
-                      safeWrite("");
-                      return;
-                    }
-
-                    let outTokens = 0;
-                    try {
-                      for (const line of fs.readFileSync(transcript, "utf8").split("\n")) {
-                        if (!line.trim()) continue;
-                        try {
-                          const e = JSON.parse(line);
-                          if (e.type !== "assistant" || !e.message || !e.message.usage) continue;
-                          outTokens += e.message.usage.output_tokens || 0;
-                        } catch {}
-                      }
-                    } catch {}
-
-                    const saved = Math.round(outTokens / (1 - ratio)) - outTokens;
-                    const humanize = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M"
-                                      : n >= 1e3 ? (n / 1e3).toFixed(1) + "k"
-                                      : String(n);
-                    safeWrite(saved > 0 ? "⛏ " + humanize(saved) : "");
-                  });
-                  ' 2>/dev/null || true
-                '';
-                timeout = 5;
-              }
-            ];
-          }
-        ];
+        # (Stop hook for the per-session caveman savings badge has been
+        # relocated to `local.extraHooks.Stop` below, so that claudio +
+        # claude-hooks can co-contribute hook entries for the same events
+        # without clobbering one another.)
 
         # Declaratively register the ruflo marketplace. Equivalent to running
         # `/plugin marketplace add ruvnet/ruflo` once, but reproducible across
@@ -544,6 +480,93 @@ in {
         };
       };
     };
+
+    # Aggregate every sibling module's `local.extraHooks` contribution into
+    # the real `programs.claude-code.settings.hooks` attr. The `listOf` element
+    # type on the option means duplicate event keys from different files (e.g.
+    # claudio + claude-hooks both defining `PreToolUse`) are list-concatenated
+    # by the module system — no clobbering. This is the only writer to
+    # `settings.hooks`; everything else feeds the side-channel.
+    programs.claude-code.settings.hooks = config.local.extraHooks;
+
+    # Caveman per-session savings badge — relocated from the inline `settings`
+    # literal above into the shared `local.extraHooks` side-channel so other
+    # modules (claudio, claude-hooks) can co-register Stop entries without
+    # overwriting this one. Reads the Stop hook stdin payload (Claude Code
+    # passes `{transcript_path, session_id, …}`), parses *only that session's*
+    # jsonl to sum output tokens, looks up the live mode from the overlay's
+    # `.caveman-active`, and writes `$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix`
+    # of the form `⛏ Nk`. Bypasses upstream `caveman-stats.js` (which would
+    # render the same lifetime total in every concurrent session). Lifetime /
+    # 5h-block aggregation lives separately in `scripts/caveman`. `node`
+    # resolves from PATH (provided by nodejs_20 in ruflo-cli.nix /
+    # claude-flow-cli.nix). Savings ratio: caveman `full`-mode benchmark
+    # (~65% mean per-task token reduction; only mode with benchmark data).
+    local.extraHooks.Stop = [
+      {
+        hooks = [
+          {
+            type = "command";
+            command = ''
+              node -e '
+              const fs = require("fs");
+              const path = require("path");
+              const os = require("os");
+              const COMPRESSION = { full: 0.65 };
+
+              let input = "";
+              process.stdin.on("data", d => input += d);
+              process.stdin.on("end", () => {
+                let payload = {};
+                try { payload = JSON.parse(input); } catch {}
+                const transcript = payload.transcript_path;
+                const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
+                const suffixPath = path.join(claudeDir, ".caveman-statusline-suffix");
+
+                let mode = null;
+                try {
+                  mode = fs.readFileSync(path.join(claudeDir, ".caveman-active"), "utf8")
+                    .trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+                } catch {}
+                const ratio = COMPRESSION[mode];
+
+                function safeWrite(s) {
+                  try {
+                    try { if (fs.lstatSync(suffixPath).isSymbolicLink()) return; } catch (e) { if (e.code !== "ENOENT") return; }
+                    fs.writeFileSync(suffixPath, s, { mode: 0o600 });
+                  } catch {}
+                }
+
+                if (!ratio || !transcript || !fs.existsSync(transcript)) {
+                  safeWrite("");
+                  return;
+                }
+
+                let outTokens = 0;
+                try {
+                  for (const line of fs.readFileSync(transcript, "utf8").split("\n")) {
+                    if (!line.trim()) continue;
+                    try {
+                      const e = JSON.parse(line);
+                      if (e.type !== "assistant" || !e.message || !e.message.usage) continue;
+                      outTokens += e.message.usage.output_tokens || 0;
+                    } catch {}
+                  }
+                } catch {}
+
+                const saved = Math.round(outTokens / (1 - ratio)) - outTokens;
+                const humanize = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M"
+                                  : n >= 1e3 ? (n / 1e3).toFixed(1) + "k"
+                                  : String(n);
+                safeWrite(saved > 0 ? "⛏ " + humanize(saved) : "");
+              });
+              ' 2>/dev/null || true
+            '';
+            timeout = 5;
+          }
+        ];
+      }
+    ];
 
     # Full MCP registry catalog (including `optional = true` entries excluded
     # from the global wiring above). Read by `claude-kit project sync` to

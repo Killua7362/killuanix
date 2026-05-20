@@ -17,8 +17,10 @@ cmd_doctor() {
   check "~/.claude/commands populated"   "[ -n \"\$(ls -A \"$CLAUDE_DIR/commands\" 2>/dev/null)\" ]"
   # shellcheck disable=SC2088
   check "~/.claude/skills populated"     "[ -n \"\$(ls -A \"$CLAUDE_DIR/skills\" 2>/dev/null)\" ]"
-  check "sources cache linked"           "[ -e \"$SOURCES_DIR/agents.link\" ] && [ -e \"$SOURCES_DIR/commands.link\" ] && [ -e \"$SOURCES_DIR/skills.link\" ]"
+  check "sources cache linked"           "[ -e \"$SOURCES_DIR/ruflo-catalog.link\" ] && [ -e \"$SOURCES_DIR/wshobson-catalog.link\" ] && [ -e \"$SOURCES_DIR/anthropics-skills-catalog.link\" ]"
   check "lazy dir present"               "[ -d \"$LAZY_DIR\" ]"
-  check "lazy upstream catalog"          "[ -f \"$LAZY_DIR/upstream/catalog.json\" ]"
+  check "lazy ruflo catalog"             "[ -f \"$LAZY_DIR/ruflo/catalog.json\" ]"
+  check "lazy wshobson catalog"          "[ -f \"$LAZY_DIR/wshobson/catalog.json\" ]"
+  check "lazy anthropics-skills catalog" "[ -f \"$LAZY_DIR/anthropics-skills/catalog.json\" ]"
   [ "$ok" = 1 ]
 }

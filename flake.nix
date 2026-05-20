@@ -211,6 +211,24 @@
       flake = false;
     };
 
+    # garrytan/gstack — opinionated Claude Code skill bundle (46 sub-skills +
+    # bin/lib/scripts/docs). Wired in via claude-resources/ as a monolithic
+    # single-skill catalog (skills/gstack/ ships the whole tree); opt-in per
+    # project via `claude-kit lazy add skill gstack`.
+    gstack = {
+      url = "github:garrytan/gstack/b03cd1ae2dbe0c3a7fa770a52aeabb3b0c4f8c53";
+      flake = false;
+    };
+
+    # mattpocock/skills — cherry-pick `grill-me` + `handoff` into the
+    # always-on set via `extraSkills` in claude.nix. Skills are
+    # self-contained (single SKILL.md each, no cross-skill path refs), so
+    # standalone install is safe — no umbrella needed.
+    mattpocock-skills = {
+      url = "github:mattpocock/skills/b8be62ffacb0118fa3eaa29a0923c87c8c11985c";
+      flake = false;
+    };
+
     # Handheld / MSI Claw
     # Pinned to a specific rev (not the floating `release` branch) so that
     # `nix flake update` does not bump the cachyos kernel. Bumping has two

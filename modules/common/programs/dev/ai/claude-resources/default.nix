@@ -1,32 +1,21 @@
-# External Claude Code bundles — ruflo + wshobson/agents flattened into
-# ~/.claude/{agents,commands,skills}/, plus an auto-generated catalog.json
-# under Notes/claude/lazy/upstream/ that lists every flattened resource for
-# per-project opt-in via `claude-kit lazy`.
+# External Claude Code resource bundles — one lazy sub-catalog per upstream
+# source under Notes/claude/lazy/<source>/, opted into per-project via
+# `claude-kit lazy`. Sources currently wired: ruflo, wshobson/agents,
+# anthropics/skills. Adding a new source = drop in a new `mkCatalog` block
+# below + a symlink line in the activation script.
 #
-# The bash bodies live as plain `.sh` files under ./build/ so a shell LSP
-# can navigate them. Nix-injected store paths are passed via env vars on
-# each runCommand invocation — see ./CLAUDE.md.
+# The bash bodies live as plain `.sh` files under ./build/ so a shell LSP can
+# navigate them. Nix-injected store paths are passed via env vars on each
+# runCommand invocation — see ./CLAUDE.md.
 #
-# Naming scheme (keeps Claude Code's flat standalone namespace collision-free):
-#   ruflo:                 ruflo--<subpath-with-slashes-as-dashes>.md
-#   wshobson/agents:       wshobson--<plugin>--<basename>.md
-#   skills (directories):  ruflo--<name>/  and  wshobson--<plugin>--<name>/
-#   anthropics-skills:     <upstream-name>/  (no prefix; upstream tree is flat)
+# Naming inside each catalog (collision-free per source):
+#   ruflo:               <subpath-with-slashes-as-dashes>
+#   wshobson/agents:     <plugin>--<basename>
+#   skills (directories):  ruflo: <name>;  wshobson: <plugin>--<name>
+#   anthropics-skills:   <upstream-name>  (upstream tree is already flat)
 #
-# The three flat directories are built as pure derivations, then wired into
-# Home Manager:
-#   - agents + commands:  home.file with `recursive = true` (per-file symlinks,
-#                         so user-created files in ~/.claude/{agents,commands}/
-#                         aren't clobbered).
-#   - skills:             fed into `programs.claude-code.skills` — the upstream
-#                         claude-code-nix module handles ~/.claude/skills/.
-#
-# The upstream catalog (`Notes/claude/lazy/upstream/catalog.json`) is a single
-# JSON file with `{name, path}` arrays per resource type. Paths are absolute
-# nix-store paths so `claude-kit lazy add` can symlink them into a project
-# without copying. Catalog includes anthropics-skills entries too.
-#
-# See ../CLAUDE.md → "External Claude Code bundles" for update workflow.
+# Bundles live next to the catalog they belong to. Only ruflo currently ships
+# one (the 8-plugin stack); it lands at Notes/claude/lazy/ruflo/bundles/ruflo.json.
 {
   inputs,
   lib,
@@ -36,68 +25,118 @@
   ruflo = inputs.ruflo;
   wshobson = inputs.wshobson-agents;
   anthropicsSkills = inputs.anthropics-skills;
+  gstack = inputs.gstack;
 
-  # Flatten ruflo .claude/<kind>/**/*.md  and  wshobson plugins/*/<kind>/*.md
-  # into a single directory of uniquely-named markdown files.
-  mkFlatMarkdown = kind:
-    pkgs.runCommand "claude-${kind}-flat" {
-      KIND = kind;
-      RUFLO = ruflo;
-      WSHOBSON = wshobson;
-    } (builtins.readFile ./build/flat-markdown.sh);
+  # Flat-markdown builders (one derivation per source × kind). Names inside
+  # each derivation's $out are catalog-scoped — no outer prefix.
+  mkFlatMarkdown = source: kind: srcAttr:
+    pkgs.runCommand "claude-${source}-${kind}-flat" ({KIND = kind;} // srcAttr)
+    (builtins.readFile (./build + "/flat-${source}-markdown.sh"));
 
-  # Build a directory containing one subdirectory per skill, each preserving
-  # its SKILL.md + any referenced assets. We then enumerate subdirs for the
-  # `skills` attrset.
-  skillsDir = pkgs.runCommand "claude-skills-flat" {
-    RUFLO = ruflo;
-    WSHOBSON = wshobson;
-  } (builtins.readFile ./build/flat-skills.sh);
+  rufloAgents = mkFlatMarkdown "ruflo" "agents" {RUFLO = ruflo;};
+  rufloCommands = mkFlatMarkdown "ruflo" "commands" {RUFLO = ruflo;};
+  wshobsonAgents = mkFlatMarkdown "wshobson" "agents" {WSHOBSON = wshobson;};
+  wshobsonCommands = mkFlatMarkdown "wshobson" "commands" {WSHOBSON = wshobson;};
 
-  agentsDir = mkFlatMarkdown "agents";
-  commandsDir = mkFlatMarkdown "commands";
+  rufloSkills =
+    pkgs.runCommand "claude-ruflo-skills-flat" {RUFLO = ruflo;}
+    (builtins.readFile ./build/flat-ruflo-skills.sh);
+  wshobsonSkills =
+    pkgs.runCommand "claude-wshobson-skills-flat" {WSHOBSON = wshobson;}
+    (builtins.readFile ./build/flat-wshobson-skills.sh);
 
-  # Auto-generated catalog.json for the upstream sub-catalog. Lists every
-  # resource flattened above plus anthropics-skills. Paths are absolute
-  # nix-store paths; claude-kit lazy add symlinks straight to them.
-  upstreamCatalog = pkgs.runCommand "claude-upstream-catalog" {
-    nativeBuildInputs = [pkgs.jq];
-    SKILLS_DIR = skillsDir;
-    AGENTS_DIR = agentsDir;
-    COMMANDS_DIR = commandsDir;
-    ANTHROPICS_SKILLS = anthropicsSkills;
-  } (builtins.readFile ./build/upstream-catalog.sh);
+  # Per-source catalog.json. Any of the three resource dirs may be omitted —
+  # the missing kind surfaces as an empty array. Paths in the emitted JSON are
+  # absolute nix-store paths so `claude-kit lazy add` symlinks straight to them.
+  mkCatalog = catName: {
+    skillsDir ? "",
+    agentsDir ? "",
+    commandsDir ? "",
+  }:
+    pkgs.runCommand "claude-${catName}-catalog" {
+      nativeBuildInputs = [pkgs.jq];
+      NAME = catName;
+      SKILLS_DIR = skillsDir;
+      AGENTS_DIR = agentsDir;
+      COMMANDS_DIR = commandsDir;
+    } (builtins.readFile ./build/catalog.sh);
 
-  # Auto-generated bundles for the upstream catalog. A bundle is a named
-  # group of plugins / MCP servers / catalog items that `claude-kit lazy
-  # bundle add <name>` activates per-project in one shot.
-  upstreamBundles = pkgs.runCommand "claude-upstream-bundles" {
-    nativeBuildInputs = [pkgs.jq];
-  } (builtins.readFile ./build/upstream-bundles.sh);
+  rufloCatalog = mkCatalog "ruflo" {
+    skillsDir = rufloSkills;
+    agentsDir = rufloAgents;
+    commandsDir = rufloCommands;
+  };
+  wshobsonCatalog = mkCatalog "wshobson" {
+    skillsDir = wshobsonSkills;
+    agentsDir = wshobsonAgents;
+    commandsDir = wshobsonCommands;
+  };
+  anthropicsSkillsCatalog = mkCatalog "anthropics-skills" {
+    skillsDir = "${anthropicsSkills}/skills";
+  };
+
+  # gstack is upstream-shaped as one monolithic tree (root SKILL.md + 45
+  # sub-skill dirs alongside bin/lib/scripts/docs that the sub-skills
+  # reference via `~/.claude/skills/gstack/bin/...`). Wrap the whole input
+  # under skills/gstack/ so a single `lazy add skill gstack` lands the
+  # entire tree intact and the internal path refs resolve.
+  gstackSkills =
+    pkgs.runCommand "claude-gstack-skills-flat" {GSTACK = gstack;} ''
+      mkdir -p "$out/gstack"
+      cp -aL "$GSTACK"/. "$out/gstack/"
+    '';
+  gstackCatalog = mkCatalog "gstack" {
+    skillsDir = gstackSkills;
+  };
+
+  # Bundles live under their owning catalog. Only ruflo ships one today.
+  rufloBundles =
+    pkgs.runCommand "claude-ruflo-bundles" {
+      nativeBuildInputs = [pkgs.jq];
+    }
+    (builtins.readFile ./build/ruflo-bundles.sh);
 in {
-  # Upstream bundles are NO LONGER auto-installed into ~/.claude/. They live
-  # in the lazy catalog (`Notes/claude/lazy/upstream/catalog.json`) and are
-  # opted into per-project via `claude-kit lazy add`. The flat dirs are still
-  # built (used by the catalog and the cache symlinks below); they're just
-  # not wired into Claude Code's global startup.
+  # Upstream resources are NOT auto-installed into ~/.claude/. They live in
+  # the lazy catalogs and are opted into per-project via `claude-kit lazy`.
 
-  # Expose the built trees via HM-visible paths so claude-kit can walk them
-  # without globbing the Nix store. Read-only symlinks; safe to inspect.
-  home.file.".cache/claude-kit/sources/agents.link".source = agentsDir;
-  home.file.".cache/claude-kit/sources/commands.link".source = commandsDir;
-  home.file.".cache/claude-kit/sources/skills.link".source = skillsDir;
-  home.file.".cache/claude-kit/sources/upstream-catalog.link".source = upstreamCatalog;
-  home.file.".cache/claude-kit/sources/upstream-bundles.link".source = upstreamBundles;
+  # Expose every built tree via HM-visible cache paths so claude-kit can walk
+  # them without globbing the Nix store. Read-only symlinks; safe to inspect.
+  home.file.".cache/claude-kit/sources/ruflo-agents.link".source = rufloAgents;
+  home.file.".cache/claude-kit/sources/ruflo-commands.link".source = rufloCommands;
+  home.file.".cache/claude-kit/sources/ruflo-skills.link".source = rufloSkills;
+  home.file.".cache/claude-kit/sources/wshobson-agents.link".source = wshobsonAgents;
+  home.file.".cache/claude-kit/sources/wshobson-commands.link".source = wshobsonCommands;
+  home.file.".cache/claude-kit/sources/wshobson-skills.link".source = wshobsonSkills;
+  home.file.".cache/claude-kit/sources/ruflo-catalog.link".source = rufloCatalog;
+  home.file.".cache/claude-kit/sources/wshobson-catalog.link".source = wshobsonCatalog;
+  home.file.".cache/claude-kit/sources/anthropics-skills-catalog.link".source = anthropicsSkillsCatalog;
+  home.file.".cache/claude-kit/sources/gstack-skills.link".source = gstackSkills;
+  home.file.".cache/claude-kit/sources/gstack-catalog.link".source = gstackCatalog;
+  home.file.".cache/claude-kit/sources/ruflo-bundles.link".source = rufloBundles;
 
-  # Symlink the upstream catalog.json + bundles/ into the Notes vault so
-  # they live next to user-curated catalogs and `claude-kit lazy ls` finds
-  # them via the same auto-discovery mechanism. The Notes path is outside
-  # HM's $HOME tree management (it's a real git repo), so we use an
-  # activation script with `ln -sfn` rather than `home.file`.
+  # Symlink each per-source catalog into the Notes vault so `claude-kit lazy
+  # ls` auto-discovers them. Activation script also nukes the legacy
+  # `upstream/` directory if a previous generation left it behind.
   home.activation.lazyUpstreamCatalogSymlink = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    _lazy_upstream="$HOME/killuanix/Notes/claude/lazy/upstream"
-    mkdir -p "$_lazy_upstream"
-    ln -sfn "${upstreamCatalog}/catalog.json" "$_lazy_upstream/catalog.json"
-    ln -sfn "${upstreamBundles}" "$_lazy_upstream/bundles"
+    _lazy="$HOME/killuanix/Notes/claude/lazy"
+
+    # Legacy single `upstream/` catalog — remove if present.
+    if [ -e "$_lazy/upstream" ] || [ -L "$_lazy/upstream" ]; then
+      rm -rf "$_lazy/upstream"
+    fi
+
+    # Previous hand-cloned gstack catalog at $_lazy/gstack/ — replace with
+    # the nix-managed symlink layout.
+    if [ -e "$_lazy/gstack" ] && [ ! -L "$_lazy/gstack" ]; then
+      rm -rf "$_lazy/gstack"
+    fi
+
+    mkdir -p "$_lazy/ruflo" "$_lazy/wshobson" "$_lazy/anthropics-skills" "$_lazy/gstack"
+
+    ln -sfn "${rufloCatalog}/catalog.json"           "$_lazy/ruflo/catalog.json"
+    ln -sfn "${rufloBundles}"                        "$_lazy/ruflo/bundles"
+    ln -sfn "${wshobsonCatalog}/catalog.json"        "$_lazy/wshobson/catalog.json"
+    ln -sfn "${anthropicsSkillsCatalog}/catalog.json" "$_lazy/anthropics-skills/catalog.json"
+    ln -sfn "${gstackCatalog}/catalog.json"          "$_lazy/gstack/catalog.json"
   '';
 }

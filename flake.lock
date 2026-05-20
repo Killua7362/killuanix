@@ -979,6 +979,23 @@
         "type": "github"
       }
     },
+    "gstack": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779291689,
+        "narHash": "sha256-gfH4su2nFgFBTfU/WjWgjwTHcwtOYun29NbSHAYziMY=",
+        "owner": "garrytan",
+        "repo": "gstack",
+        "rev": "b03cd1ae2dbe0c3a7fa770a52aeabb3b0c4f8c53",
+        "type": "github"
+      },
+      "original": {
+        "owner": "garrytan",
+        "repo": "gstack",
+        "rev": "b03cd1ae2dbe0c3a7fa770a52aeabb3b0c4f8c53",
+        "type": "github"
+      }
+    },
     "haumea": {
       "inputs": {
         "nixpkgs": [
@@ -1472,6 +1489,23 @@
       "original": {
         "owner": "nix-community",
         "repo": "lib-aggregate",
+        "type": "github"
+      }
+    },
+    "mattpocock-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779266813,
+        "narHash": "sha256-Qwuu27f95xgAJ4hdv/4TNahHhprCMIxl1H9f9ymEsno=",
+        "owner": "mattpocock",
+        "repo": "skills",
+        "rev": "b8be62ffacb0118fa3eaa29a0923c87c8c11985c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mattpocock",
+        "repo": "skills",
+        "rev": "b8be62ffacb0118fa3eaa29a0923c87c8c11985c",
         "type": "github"
       }
     },
@@ -2646,11 +2680,13 @@
         "flake-utils": "flake-utils_4",
         "ghgrab": "ghgrab",
         "globalprotect-openconnect": "globalprotect-openconnect",
+        "gstack": "gstack",
         "home-manager": "home-manager",
         "homemanager": "homemanager",
         "hyprland": "hyprland",
         "hyprland-plugins": "hyprland-plugins",
         "jovian": "jovian_2",
+        "mattpocock-skills": "mattpocock-skills",
         "mcp-servers-nix": "mcp-servers-nix",
         "mk-darwin-system": "mk-darwin-system",
         "neovim-nightly-overlay": "neovim-nightly-overlay",

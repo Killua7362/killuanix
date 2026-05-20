@@ -1,6 +1,6 @@
 # claude-launchers
 
-Sister wrappers around `claude` that boot Claude Code with curated extra resources layered on top of the global config — and **isolated** from project-level Claude config in cwd ancestors. Plain `claude` keeps the global skill set + sees project `.claude/`/`.mcp.json`/`CLAUDE.md`; each launcher (`claude-algo`, `claude-news`, …) adds curated extras and blocks the project-level discovery walk entirely.
+Sister wrappers around `claude` that boot Claude Code with curated extra resources layered on top of the global config — and **isolated** from project-level Claude config in cwd ancestors. Plain `claude` keeps the global skill set + sees project `.claude/`/`.mcp.json`/`CLAUDE.md`; each launcher (`claude-algo`, `claude-news`, `claude-discover`, …) adds curated extras and blocks the project-level discovery walk entirely.
 
 ## Files
 
@@ -9,6 +9,7 @@ Sister wrappers around `claude` that boot Claude Code with curated extra resourc
 | `default.nix` | HM module. Defines `mkClaudeLauncher` (the function that builds a `writeShellApplication` for a launcher) and auto-discovers every sibling `*.nix` (except itself) as a launcher definition. To add a launcher, drop a new file in this dir — no edit here. Exports `notesCmd` (resolves a name to `Notes/claude/lazy/personal/commands/<name>.md`) for launcher files to use. |
 | `claude-algo.nix` | `claude-algo` — adds the `algo-sensei` skill (`inputs.algo-sensei`) on top of the global config. `inheritGlobal = true`, everything else inherited. Reference launcher file showing every supported attr with comments. |
 | `claude-news.nix` | `claude-news` — sandbox launcher scoped to FreshRSS news reading + Q&A. `inheritGlobal = false`, lean MCP set (`freshrss`/`fetch`/`basic-memory`), `restrictToDirs = [Notes]`. Reference for how to build a fully-isolated launcher. |
+| `claude-discover.nix` | `claude-discover` — registry-discovery launcher for finding MCPs / skills / plugins / subagents matching a use-case across multiple online registries (official MCP registry, Glama, PulseMCP, anthropics/skills, wshobson/agents, davila7/claude-code-templates, ruvnet/ruflo, anthropics/claude-plugins-official, VoltAgent/awesome-claude-code-subagents). `inheritGlobal = false`, MCP set `[ "kindly-web-search" "fetch" "basic-memory" ]`, `effort = "high"`. Loads the `discover-resource` skill from `Notes/claude/lazy/personal/skills/` and ships `/find <use-case>` as the entrypoint. |
 | `CLAUDE.md` | This file. |
 
 ## Mechanism
@@ -89,6 +90,7 @@ The auto-discover loop in `default.nix` (`builtins.readDir ./.`) picks up the fi
 
 - **`claude-algo`** — adds `inputs.algo-sensei` (karanb192/algo-sensei). `inheritGlobal = true`. Reference for the "extra resources on top of global" launcher pattern.
 - **`claude-news`** — `inheritGlobal = false`, MCP set `[ "freshrss" "fetch" "basic-memory" ]`, three slash commands from `Notes/claude/lazy/personal/commands/`: `/digest [N]` (categorized summary of unread items), `/ask-news <question>` (search FreshRSS → fetch hits → synthesize with citations), `/starred [N]` (reading-list view). `restrictToDirs = [ "${config.home.homeDirectory}/killuanix/Notes" ]` pins the session to the Notes vault. The FreshRSS server itself is `optional = true` in `freshrss-mcp/default.nix`, so plain `claude` outside this launcher does not load it.
+- **`claude-discover`** — `inheritGlobal = false`, MCP set `[ "kindly-web-search" "fetch" "basic-memory" ]`, `effort = "high"`. Slash command `/find <use-case>` invokes the `discover-resource` skill (lives at `Notes/claude/lazy/personal/skills/discover-resource/`). Skill walks: (Step 0) check local catalog at `$XDG_DATA_HOME/claude-kit/all-mcp-servers.json` + `Notes/claude/lazy/*/catalog.json`; (Step 2) query the official MCP registry, Glama, PulseMCP, anthropics/skills, anthropics/claude-plugins-official, wshobson/agents, davila7/claude-code-templates, ruvnet/ruflo, VoltAgent/awesome-claude-code-subagents in parallel via `mcp__fetch__fetch` / `gh api`; (Step 3) disambiguate similarly-named hits by fetching READMEs; (Step 4) print one concrete install snippet per recommendation (mostly `claude-kit lazy add …` or a nix stanza for the registry). `restrictToDirs` covers Notes + `~/.local/share/claude-kit` + `~/.cache/claude-kit` so the local-catalog read in Step 0 has no prompts. Scrape-only registries (MCP.so, Smithery, claudemarketplaces.com, buildwithclaude.com, SkillsMP, awesome-* markdown indexes) are deferred — add them by extending the skill's "Step 2 — per-type query plan" section.
 
 ## Integration
 

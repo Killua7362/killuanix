@@ -2,6 +2,8 @@
   imports = [
     ./opencode.nix
     ./claude.nix
+    ./claude-hooks.nix
+    ./claudio.nix
     ./claude-resources
     ./claude-kit
     ./claude-launchers

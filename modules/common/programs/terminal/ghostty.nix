@@ -58,7 +58,10 @@ in {
         "ctrl+plus=increase_font_size:1"
         "ctrl+minus=decrease_font_size:1"
         "ctrl+0=reset_font_size"
-        # Pass zellij mode-switch and action keys through to the terminal.
+        # Ctrl-Backspace → ^W (word delete in zsh/fish/readline).
+        # Ghostty default sends ^H which most shells treat as plain backspace.
+        "ctrl+backspace=text:\\x17"
+        # Pass tmux mode-switch and action keys through to the terminal.
         "ctrl+a=unbind"
         "ctrl+g=unbind"
         "ctrl+h=unbind"
@@ -69,8 +72,15 @@ in {
         "ctrl+s=unbind"
         "ctrl+t=unbind"
         "ctrl+w=unbind"
-        "ctrl+tab=unbind"
-        "ctrl+shift+tab=unbind"
+        # Ctrl-Tab / Ctrl-Shift-Tab → emit Alt-./Alt-, so tmux's existing
+        # `bind -n M-.` / `bind -n M-,` (next/previous-window) fire.
+        # CSI u (\e[9;5u / \e[9;6u) was attempted but tmux 3.6a normalizes
+        # the decoded key (Tab=^I collides with Ctrl modifier) and forwards
+        # legacy \e[Z to the pane without matching any C-Tab/C-S-Tab/User
+        # bind. Alt-comma/period are legacy escape sequences and travel
+        # through tmux unchanged.
+        "ctrl+tab=text:\\x1b."
+        "ctrl+shift+tab=text:\\x1b,"
       ];
     };
   };

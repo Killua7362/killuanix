@@ -81,8 +81,9 @@ _lazy_project_dir() { echo "$PWD/.claude"; }
 
 _lazy_bundle_files() {
   # Echo `<catalog> <name>` for every bundle JSON in the lazy dir.
-  # `find -L` follows symlinks because upstream/bundles is a symlink to
-  # a nix-store derivation produced by claude-resources.nix.
+  # `find -L` follows symlinks because each upstream sub-catalog's bundles/
+  # dir (e.g. ruflo/bundles/) is a symlink into a nix-store derivation
+  # produced by claude-resources/.
   [ -d "$LAZY_DIR" ] || return 0
   find -L "$LAZY_DIR" -mindepth 3 -maxdepth 3 -path '*/bundles/*.json' 2>/dev/null \
     | sed -e "s|^$LAZY_DIR/||" -e 's|/bundles/| |' -e 's|\.json$||' \

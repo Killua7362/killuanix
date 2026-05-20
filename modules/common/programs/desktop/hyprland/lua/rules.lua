@@ -26,6 +26,20 @@ hl.window_rule({ match = { class = "firefox-nightly", title = "Picture-in-Pictur
 hl.window_rule({ match = { class = "firefox-nightly", title = "Picture-in-Picture" }, size = "525 300" })
 hl.window_rule({ match = { class = "firefox-nightly", title = "Picture-in-Picture" }, move = "1380 80" })
 
+-- Chrome PiP (Meet, YouTube, etc.) — PiP titles lack " - Google Chrome" suffix.
+-- RE2 has no lookarounds; use Hyprland's `negative:` match prefix to scope.
+hl.window_rule({ match = { class = "google-chrome", title = "negative:.*Google Chrome$" }, float = 1 })
+hl.window_rule({ match = { class = "google-chrome", title = "negative:.*Google Chrome$" }, pin = 1 })
+hl.window_rule({ match = { class = "google-chrome", title = "negative:.*Google Chrome$" }, size = "480 270" })
+hl.window_rule({ match = { class = "google-chrome", title = "negative:.*Google Chrome$" }, move = "1420 790" })
+hl.window_rule({ match = { class = "google-chrome", title = "negative:.*Google Chrome$" }, border_size = 0 })
+hl.window_rule({ match = { class = "google-chrome", title = "negative:.*Google Chrome$" }, no_shadow = true })
+
+-- Browser screen-share source picker (Firefox + Chrome/Chromium)
+hl.window_rule({ match = { title = "^Select what to share.*$" }, float = 1 })
+hl.window_rule({ match = { title = "^Select what to share.*$" }, center = 1 })
+hl.window_rule({ match = { title = "^Select what to share.*$" }, size = "600 500" })
+
 -- Satty (screenshot annotation)
 hl.window_rule({ match = { title = "satty" }, float = 1 })
 hl.window_rule({ match = { title = "satty" }, center = 1 })
