@@ -45,9 +45,12 @@ local function set_has(set, k)
   return false
 end
 
+-- hl.bind expects "MOD+MOD+KEY" — never the legacy "MOD, KEY" hyprlang form.
+local normalize = require("keybinds").normalize
+
 for _, sub in ipairs(submaps) do
   -- Trigger bind: write state then enter submap.
-  hl.bind(sub.trigger, function()
+  hl.bind(normalize(sub.trigger), function()
     enter(sub.name)
     hl.dispatch(hl.dsp.submap(sub.name))
   end)
@@ -57,7 +60,7 @@ for _, sub in ipairs(submaps) do
     local slot_keys = {}
     for _, slot in ipairs(sub.slots) do
       table.insert(slot_keys, string.lower(slot.key))
-      hl.bind(", " .. slot.key, function()
+      hl.bind(slot.key, function()
         clear_state()
         hl.exec_cmd(slot.cmd)
         hl.dispatch(hl.dsp.submap("reset"))
@@ -67,7 +70,7 @@ for _, sub in ipairs(submaps) do
     -- No-op swallow for every unbound key.
     for _, k in ipairs(swallow_keys) do
       if not set_has(slot_keys, k) then
-        hl.bind(", " .. k, hl.dsp.exec_cmd("true"))
+        hl.bind(k, hl.dsp.exec_cmd("true"))
       end
     end
 
@@ -76,7 +79,7 @@ for _, sub in ipairs(submaps) do
       clear_state()
       hl.dispatch(hl.dsp.submap("reset"))
     end
-    hl.bind(", Escape", cancel)
-    hl.bind(", Return", cancel)
+    hl.bind("Escape", cancel)
+    hl.bind("Return", cancel)
   end)
 end

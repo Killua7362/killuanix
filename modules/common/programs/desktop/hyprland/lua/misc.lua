@@ -25,12 +25,11 @@ hl.config({
   animations = {
     enabled = true,
   },
-  plugin = {
-    scroller = {
-      column_widths = "onehalf one",
-    },
-  },
 })
+
+-- plugin.scroller.column_widths only valid if scroller plugin is loaded.
+-- Skipped — explicit_column_widths in layout.lua covers this for built-in
+-- scrolling layout.
 
 -- All animations disabled (speed 0 equivalent in 0.55+: enabled=false).
 hl.animation({ leaf = "windows",      enabled = false })

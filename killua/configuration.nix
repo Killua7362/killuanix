@@ -18,6 +18,7 @@
     # ./bluez5-ldac-pin.nix  # disabled — main nixpkgs now ships pipewire 1.6.3 via `nix flake update`; re-enable if LDAC/mSBC regress on a future bump
     inputs.sops-nix.nixosModules.sops
     ../modules/common/sops-system.nix
+    ../modules/common/programs/boeingvpn-ui/nixos.nix
     ../modules/containers
     ../modules/vms/system.nix
   ];
@@ -36,7 +37,6 @@
   # Dropping vbox kills the per-rebuild virtualbox-modules-<vbox>-<kernel>
   # source build (3-5 min, never on any public cache).
   vms.virtualbox.enable = false;
-
 
   virtualisation.docker = {
     enable = true;
@@ -247,7 +247,7 @@
   # ── Nix settings ──
   nixpkgs.config.allowUnfree = true;
   nix = let
-    flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    flakeInputs = lib.filterAttrs (n: v: lib.isType "flake" v && n != "self") inputs;
   in {
     settings = {
       # Determinate Nix's nixosModule (imported in flake.nix) layers on

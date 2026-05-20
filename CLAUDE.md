@@ -72,6 +72,7 @@ The flake auto-bootstraps most services, but a few one-shot manual steps remain 
 - **`modules/cross-platform/default.nix`** — the main Home Manager entrypoint imported by every platform; assembles packages, sops, programs, theming, and platform-conditional logic (`stdenv.isLinux` / `isDarwin`)
 - **`modules/common/programs/`** — individual program configs organized by category, each with its own `CLAUDE.md`:
   - [`audio/CLAUDE.md`](modules/common/programs/audio/CLAUDE.md) — PipeWire/WirePlumber tuning, Bluetooth audio, Spotify (spicetify-nix)
+  - [`boeingvpn-ui/CLAUDE.md`](modules/common/programs/boeingvpn-ui/CLAUDE.md) — Browser-driven Boeing VPN: tiny Python daemon on 127.0.0.1:7777 fronting openconnect+ocproxy, fake-Windows page with draggable window. NixOS half drops a Chrome `ManagedBookmarks` policy on chrollo+killua.
   - [`browsers/CLAUDE.md`](modules/common/programs/browsers/CLAUDE.md) — Firefox (Arkenfox + Natsumi), Qutebrowser → [`firefox/CLAUDE.md`](modules/common/programs/browsers/firefox/CLAUDE.md)
   - [`desktop/CLAUDE.md`](modules/common/programs/desktop/CLAUDE.md) — Hyprland, Satty, desktop entries → [`hyprland/CLAUDE.md`](modules/common/programs/desktop/hyprland/CLAUDE.md)
   - [`dev/CLAUDE.md`](modules/common/programs/dev/CLAUDE.md) — Git, Lazygit → [`ai/CLAUDE.md`](modules/common/programs/dev/ai/CLAUDE.md) (Claude Code + bundled skills, OpenCode, ccmanager, ccr, ruflo, claude-flow, claude-kit, code-index, jupyter-env MCP)

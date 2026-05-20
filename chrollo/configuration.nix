@@ -14,6 +14,7 @@ in {
     ./hardware-configuration.nix
     inputs.sops-nix.nixosModules.sops
     ../modules/common/sops-system.nix
+    ../modules/common/programs/boeingvpn-ui/nixos.nix
     ../modules/containers
     ../modules/vms/system.nix
   ];
@@ -249,7 +250,7 @@ in {
   };
 
   nix = let
-    flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    flakeInputs = lib.filterAttrs (n: v: lib.isType "flake" v && n != "self") inputs;
   in {
     settings = {
       # Determinate Nix's nixosModule (imported in flake.nix) layers on

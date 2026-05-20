@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Boeing VPN</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="desktop">
+      <div id="vpn-window" class="window">
+        <div class="titlebar" id="titlebar">
+          <span class="title">Boeing VPN</span>
+        </div>
+        <div class="body">
+          <div class="status">
+            <span id="status-dot" class="dot dot-grey"></span>
+            <span id="status-label">Disconnected</span>
+          </div>
+          <div class="buttons">
+            <button id="btn-connect">Connect</button>
+            <button id="btn-disconnect" disabled>Disconnect</button>
+            <button id="btn-reconnect" disabled>Reconnect</button>
+          </div>
+          <div class="entry">
+            <input
+              id="secret"
+              type="password"
+              placeholder="PIN + token"
+              autocomplete="off"
+              spellcheck="false"
+              disabled
+            />
+            <button id="btn-submit" disabled aria-label="Submit">&#9654;</button>
+          </div>
+          <div id="error-line" class="error-line"></div>
+        </div>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

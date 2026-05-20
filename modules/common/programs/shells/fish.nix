@@ -115,9 +115,6 @@
 
       bind ctrl-c __fish_cancel_commandline
 
-      set -x ZELLIJ_AUTO_EXIT false
-      set -x ZELLIJ_AUTO_ATTACH false
-
     '';
   };
 }

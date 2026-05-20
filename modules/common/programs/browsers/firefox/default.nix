@@ -97,40 +97,40 @@ in {
   # `about:addons` thereafter are never clobbered. No-op (with a warning) if
   # Firefox is currently running, because Firefox rewrites extensions.json on
   # exit and would undo the patch.
+  # NOTE: HM inline activation entries are concatenated into the top-level
+  # activate script under `set -eu`. A bare `exit 0` from here aborts the
+  # WHOLE activation, skipping every later entry (linkGeneration, the unit
+  # symlink step, etc). Use guard branches that fall through to the next
+  # `_iNote` block instead of early-exiting.
   home.activation.firefoxSeedDisabledExtensions = lib.hm.dag.entryAfter ["writeBoundary"] ''
     PROFILE="$HOME/.mozilla/firefox/default"
     SENTINEL="$PROFILE/.hm-extensions-disabled-seeded"
     EXTJSON="$PROFILE/extensions.json"
 
     if [ -e "$SENTINEL" ]; then
-      exit 0
-    fi
-    if [ ! -f "$EXTJSON" ]; then
-      # Profile not initialized yet — re-run on next switch after first Firefox launch.
-      exit 0
-    fi
-    if ${pkgs.procps}/bin/pgrep -x firefox >/dev/null 2>&1 \
-       || ${pkgs.procps}/bin/pgrep -x firefox-bin >/dev/null 2>&1; then
+      :
+    elif [ ! -f "$EXTJSON" ]; then
+      : # Profile not initialized yet — re-run on next switch after first Firefox launch.
+    elif ${pkgs.procps}/bin/pgrep -x firefox >/dev/null 2>&1 \
+         || ${pkgs.procps}/bin/pgrep -x firefox-bin >/dev/null 2>&1; then
       echo "firefoxSeedDisabledExtensions: Firefox is running, skipping (will retry next switch)" >&2
-      exit 0
-    fi
-
-    IDS=${lib.escapeShellArg (builtins.toJSON initiallyDisabledExtensionIds)}
-    TMP="$(${pkgs.coreutils}/bin/mktemp "$PROFILE/.extensions.json.XXXXXX")"
-    if ${pkgs.jq}/bin/jq --argjson ids "$IDS" '
-      .addons |= map(
-        if (.id as $id | $ids | index($id)) then
-          .userDisabled = true | .active = false
-        else . end
-      )
-    ' "$EXTJSON" > "$TMP"; then
-      ${pkgs.coreutils}/bin/mv "$TMP" "$EXTJSON"
-      ${pkgs.coreutils}/bin/touch "$SENTINEL"
-      echo "firefoxSeedDisabledExtensions: seeded userDisabled flags, sentinel written" >&2
     else
-      ${pkgs.coreutils}/bin/rm -f "$TMP"
-      echo "firefoxSeedDisabledExtensions: jq failed, leaving extensions.json untouched" >&2
-      exit 0
+      IDS=${lib.escapeShellArg (builtins.toJSON initiallyDisabledExtensionIds)}
+      TMP="$(${pkgs.coreutils}/bin/mktemp "$PROFILE/.extensions.json.XXXXXX")"
+      if ${pkgs.jq}/bin/jq --argjson ids "$IDS" '
+        .addons |= map(
+          if (.id as $id | $ids | index($id)) then
+            .userDisabled = true | .active = false
+          else . end
+        )
+      ' "$EXTJSON" > "$TMP"; then
+        ${pkgs.coreutils}/bin/mv "$TMP" "$EXTJSON"
+        ${pkgs.coreutils}/bin/touch "$SENTINEL"
+        echo "firefoxSeedDisabledExtensions: seeded userDisabled flags, sentinel written" >&2
+      else
+        ${pkgs.coreutils}/bin/rm -f "$TMP"
+        echo "firefoxSeedDisabledExtensions: jq failed, leaving extensions.json untouched" >&2
+      fi
     fi
   '';
 

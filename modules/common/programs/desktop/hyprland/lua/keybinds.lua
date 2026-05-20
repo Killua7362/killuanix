@@ -59,6 +59,16 @@ A.bring_to_top       = function() return hctl("bringactivetotop") end
 A.hyprctl_kill       = function() return A.exec("uwsm-app -- hyprctl kill") end
 A.fullscreen_state   = function(args) return hctl("fullscreenstate " .. args) end
 
+-- Scroller column-width toggle. Upvalue replaces the old state file in
+-- $XDG_RUNTIME_DIR. Alternates direction each press.
+local colwidth_dir = "+"
+A.toggle_col_width = function()
+  return { fn = function()
+    colwidth_dir = (colwidth_dir == "+") and "-" or "+"
+    hl.dispatch(hl.dsp.layout("colresize " .. colwidth_dir .. "conf"))
+  end }
+end
+
 M.binds = {
   -- ============================================================
   -- bindd (described binds → flags.description)
@@ -105,7 +115,7 @@ M.binds = {
   { keys = "Super+Shift+Alt, Q",            action = A.hyprctl_kill() },
   { keys = "Super+Alt, Space",              action = A.toggle_float() },
   { keys = "Super+Shift, F",                action = A.fullscreen() },         -- fullscreen, 0 = real
-  { keys = "Super, F",                      action = A.fullscreen("maximize") }, -- fullscreen, 1 = maximize
+  { keys = "Super, F",                      action = A.fullscreen("maximized") }, -- fullscreen, 1 = maximized
   { keys = "Super+Alt, F",                  action = A.fullscreen_state("0 3") },
   { keys = "Super, P",                      action = A.pin() },
   { keys = "Super , T",                     action = A.toggle_float() },
@@ -127,12 +137,11 @@ M.binds = {
   { keys = "Ctrl+Super, S",                  action = A.toggle_special() },
 
   -- ============================================================
-  -- Alt-Tab cycling
+  -- Alt-Tab cycling — native dispatchers. bring_to_top dropped: cycle_next
+  -- already raises the new active window.
   -- ============================================================
-  { keys = "Alt, Tab",         action = A.cycle_next() },
-  { keys = "Alt, Tab",         action = A.bring_to_top() },
-  { keys = "ALT Shift, Tab",   action = A.cycle_prev() },
-  { keys = "ALT Shift, Tab",   action = A.bring_to_top() },
+  { keys = "Alt, Tab",       action = hl.dsp.window.cycle_next() },
+  { keys = "ALT Shift, Tab", action = hl.dsp.window.cycle_next({ prev = true }) },
 
   -- ============================================================
   -- Workspace focus (1-10)
@@ -193,9 +202,7 @@ M.binds = {
   { keys = "Super SHIFT, N",  action = A.layout("swapcol l") },
   { keys = "Super SHIFT, O",  action = A.layout("swapcol r") },
   { keys = "Super SHIFT, E",  action = A.layout("colresize -conf") },
-  -- Column-width toggler (state file in $XDG_RUNTIME_DIR). Kept as a shell
-  -- helper for now; see scripts.nix-replacement note in CLAUDE.md if porting.
-  { keys = "Super SHIFT, I",  action = A.exec("hypr-toggle-col-width") },
+  { keys = "Super SHIFT, I",  action = A.toggle_col_width() },
 
   -- ============================================================
   -- Move-to-workspace by number (Super+Shift+1..0)
@@ -262,6 +269,29 @@ M.binds = {
   { keys = "Super, mouse:273", drag = true, action = A.mresize() },
 }
 
+-- Convert legacy hyprlang "MODS, KEY" syntax to hl.bind's "MOD+MOD+KEY".
+-- Examples:
+--   "Super, 4"          → "SUPER+4"
+--   "Super+Shift, Left" → "SUPER+SHIFT+Left"
+--   "Super Shift, N"    → "SUPER+SHIFT+N"
+--   ", Print"           → "Print"
+--   "Ctrl+Alt, Delete"  → "CTRL+ALT+Delete"
+local function normalize(keys)
+  local comma = keys:find(",")
+  if not comma then return keys end
+  local mods = keys:sub(1, comma - 1)
+  local key  = keys:sub(comma + 1):gsub("^%s+", ""):gsub("%s+$", "")
+  -- Split mods on `+` or whitespace, drop empties, uppercase.
+  local parts = {}
+  for part in mods:gmatch("[^+%s]+") do
+    table.insert(parts, part:upper())
+  end
+  if #parts == 0 then return key end
+  table.insert(parts, key)
+  return table.concat(parts, "+")
+end
+M.normalize = normalize
+
 -- Walk M.binds and call hl.bind with the right flags.
 function M.register()
   for _, b in ipairs(M.binds) do
@@ -271,7 +301,9 @@ function M.register()
     if b.locked then flags.locked = true end
     if b.drag then flags.drag = true end
     if b.click then flags.click = true end
-    hl.bind(b.keys, b.action, flags)
+    local target = b.action
+    if type(target) == "table" and target.fn then target = target.fn end
+    hl.bind(normalize(b.keys), target, flags)
   end
 end
 

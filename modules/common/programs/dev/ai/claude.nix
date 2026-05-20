@@ -212,7 +212,7 @@
   # covers both code paths so the launchers don't need parallel logic.
   overlayClaude = pkgs.writeShellApplication {
     name = "claude";
-    runtimeInputs = [pkgs.coreutils pkgs.findutils];
+    runtimeInputs = [pkgs.coreutils pkgs.findutils pkgs.inotify-tools];
     text = ''
       src="$HOME/.claude"
 
@@ -227,12 +227,36 @@
         state_dir="$(mktemp -d "''${XDG_RUNTIME_DIR:-/tmp}/claude-session.XXXXXX")"
         # Claude Code refreshes OAuth tokens via atomic write (tmp + rename),
         # which replaces the symlinked `.credentials.json` with a real file
-        # inside the overlay. Without persisting it back to `~/.claude/`, the
-        # `rm -rf` below wipes the refreshed token and the next launch reads
-        # the stale expired one → forced re-login every session. Copy back on
-        # EXIT before tearing the overlay down; concurrent sessions race
-        # last-writer-wins, fine for refresh tokens (any valid refresh works).
+        # inside the overlay. Two persistence layers:
+        #   1. Live inotify mirror — `inotifywait -m` on the overlay catches
+        #      every MOVED_TO/CLOSE_WRITE on `.credentials.json` and copies
+        #      back to `$HOME/.claude/.credentials.json` immediately. Without
+        #      this, in-session refresh leaves the canonical path stale and
+        #      any subprocess (hook, MCP server, helper) that reads the
+        #      canonical path direct (not via $CLAUDE_CONFIG_DIR) hits a 401
+        #      → mid-session re-login prompt.
+        #   2. EXIT-trap copy-back — defensive; covers the race where the
+        #      session ends before inotify drains its event queue.
+        # Concurrent sessions race last-writer-wins, fine for refresh tokens
+        # (any valid refresh works).
+        (
+          inotifywait -m -q \
+            -e close_write -e moved_to \
+            --format '%f' "$state_dir" 2>/dev/null \
+          | while IFS= read -r fname; do
+              [ "$fname" = .credentials.json ] || continue
+              [ -f "$state_dir/.credentials.json" ] || continue
+              [ -L "$state_dir/.credentials.json" ] && continue
+              install -m 0600 "$state_dir/.credentials.json" \
+                "$HOME/.claude/.credentials.json" 2>/dev/null || true
+            done
+        ) &
+        creds_watcher_pid=$!
         trap '
+          if [ -n "''${creds_watcher_pid:-}" ]; then
+            kill "$creds_watcher_pid" 2>/dev/null || true
+            wait "$creds_watcher_pid" 2>/dev/null || true
+          fi
           if [ -f "$state_dir/.credentials.json" ] && [ ! -L "$state_dir/.credentials.json" ]; then
             install -m 0600 "$state_dir/.credentials.json" "$HOME/.claude/.credentials.json" || true
           fi

@@ -80,9 +80,6 @@
       FZF_CTRL_T_OPTS = "";
       FZF_COMPLETION_OPTS = "--height=60% --border --margin=1 --padding=1";
       FZF_TMUX = "1";
-
-      ZELLIJ_AUTO_EXIT = "false";
-      ZELLIJ_AUTO_ATTACH = "false";
     };
 
     initContent = lib.mkAfter ''
@@ -158,7 +155,7 @@
         chrome-socks() {
           google-chrome \
             --proxy-server="socks5://127.0.0.1:1080" \
-            --proxy-bypass-list="<-loopback>" \
+            --proxy-bypass-list="127.0.0.1" \
             --user-data-dir="$HOME/.config/teams-vpn-chrome" \
             --no-first-run \
             --ignore-certificate-errors

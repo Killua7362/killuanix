@@ -10,7 +10,7 @@
     exec = "${pkgs.writeShellScript "google-chrome-sock" ''
       exec ${pkgs.google-chrome}/bin/google-chrome-stable \
         --proxy-server="socks5://127.0.0.1:1080" \
-        --proxy-bypass-list="<-loopback>" \
+        --proxy-bypass-list="127.0.0.1" \
         --user-data-dir="$HOME/.config/teams-vpn-chrome" \
         --no-first-run \
         --ignore-certificate-errors \

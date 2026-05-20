@@ -22,6 +22,7 @@ in {
     ../common/programs/mail
     ../common/programs/diagrams
     ../common/programs/rss
+    ../common/programs/boeingvpn-ui
   ];
 
   config = {

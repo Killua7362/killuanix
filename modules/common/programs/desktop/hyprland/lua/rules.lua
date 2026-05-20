@@ -5,7 +5,7 @@
 -- Workspace rules
 -- ============================================================================
 
-hl.workspace_rule({ workspace = "special:special", gapsout = 30 })
+hl.workspace_rule({ workspace = "special:special", gaps_out = 30 })
 
 -- ============================================================================
 -- Window rules
@@ -120,8 +120,9 @@ hl.window_rule({ match = { class = "^(kodi).*" }, no_shadow = 1 })
 hl.window_rule({ match = { class = "^(kodi).*" }, fullscreen = 1 })
 hl.window_rule({ match = { class = "^(kodi).*" }, xray = 0 })
 
--- No shadow on tiled windows
-hl.window_rule({ match = { floating = "no" }, no_shadow = 1 })
+-- No shadow on tiled windows — `match.floating` not supported in 0.55 lua
+-- window rules. Dropped; revisit with a different match (e.g. per-class)
+-- if shadow on tiled windows becomes noticeable.
 
 -- JetBrains (IntelliJ/WebStorm/etc) on Xwayland: win<N> popups misbehave.
 hl.window_rule({ match = { class = "^(jetbrains-.*)$", title = "^(win.*)$" }, no_focus = 1 })

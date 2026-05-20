@@ -67,7 +67,7 @@ Old keybinds.nix had one list per hyprlang variant. In `lua/keybinds.lua` every 
 
 ## Leader submap
 
-Adding a new submap: extend the `submaps` list in `lua/leader.lua` (set `name`, `trigger`, `slots`) and add a matching entry to `leaderHudMetadata` in `default.nix` (icon + display name + activator key) so the bar plugin renders a pill for it.
+Adding a new submap: extend the `submaps` list in `lua/leader.lua` (set `name`, `trigger`, `slots`) and add a matching entry to `leaderHudMetadata` in `default.nix` (icon + display name + activator key + `slots = [{key,label}…]` for the cheatsheet overlay). Slot keys must stay in sync between the lua list (where they're bound) and the nix metadata (where they're displayed).
 
 The HUD plugin reads:
 - `~/.cache/leader-hud/state` — written by `lua/leader.lua` on submap enter (`echo NAME > state`) / exit (`echo '' > state`).

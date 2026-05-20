@@ -14,6 +14,32 @@
       icon = "keyboard_command_key";
       name = "leader";
       key = "Space";
+      slots = [
+        {
+          key = "F";
+          label = "Nemo";
+        }
+        {
+          key = "B";
+          label = "Firefox";
+        }
+        {
+          key = "T";
+          label = "Ghostty";
+        }
+        {
+          key = "E";
+          label = "Zed";
+        }
+        {
+          key = "M";
+          label = "Thunderbird";
+        }
+        {
+          key = "O";
+          label = "Obsidian";
+        }
+      ];
     };
   };
 in {

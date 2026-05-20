@@ -12,11 +12,8 @@
 #      `bun build --compile`, then runs it. Version bumps land in a new cache
 #      sub-dir so old binaries naturally get GC'd by manual
 #      `rm -rf $XDG_CACHE_HOME/claude-powerline/`. After the binary runs, the
-#      shim appends one U+2800 BRAILLE PATTERN BLANK line to stdout so Claude
-#      Code's `.trim()` filter on status-line rows lets a trailing empty-
-#      looking row through — that gives one row of vertical breathing room
-#      between the bar and the "bypass permissions on …" mode indicator,
-#      matching the gap above the bar.
+#      shim emits a single status row (bar segments + optional caveman
+#      badge). Vertical spacing is left to Claude Code's own padding.
 #   2. Declarative `~/.config/claude-powerline/config.json` rendered as a raw
 #      JSON template string (NOT `builtins.toJSON` of an attrset). Reason:
 #      claude-powerline renders segments in the JSON insertion order of
@@ -96,9 +93,7 @@
 
       # Run the compiled binary, capture stdout, drop every trailing
       # whitespace-only line, emit the bar with exactly one trailing
-      # newline. No extra braille row — Claude Code's own padding around
-      # the mode indicator handles vertical spacing; an extra spacer
-      # stacked with that pad over-spaces the gap below.
+      # newline.
       set +e
       output=$(printf '%s' "$patched" | "$bin" "$@")
       status=$?
