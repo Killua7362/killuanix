@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Refresh az login through SOCKS so Conditional Access sees a Boeing IP.
+# Use when bastion-ssh/bastion-sql fails with AADSTS53003.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+# shellcheck source=lib-common.sh
+source "$SCRIPT_DIR/lib-common.sh"
+
+load_config
+
+TENANT="${TENANT:-6362b077-fb81-4d5b-adf3-129cdb1b56cf}"
+SOCKS_HOST="${SOCKS_HOST:-127.0.0.1}"
+SOCKS_PORT="${SOCKS_PORT:-1080}"
+
+unset HTTPS_PROXY HTTP_PROXY https_proxy http_proxy ALL_PROXY all_proxy
+
+if ! command -v proxychains4 >/dev/null 2>&1; then
+  echo "bastion-login: proxychains4 not installed (sudo apt install proxychains4)" >&2
+  exit 1
+fi
+
+if ! (exec 3<>/dev/tcp/"$SOCKS_HOST"/"$SOCKS_PORT") 2>/dev/null; then
+  echo "bastion-login: SOCKS listener not up on ${SOCKS_HOST}:${SOCKS_PORT}." >&2
+  echo "Start your SOCKS proxy (ocproxy / boeingvpn-ui) first." >&2
+  exit 1
+fi
+exec 3<&- 3>&-
+
+PROXYCHAINS_CONF="$(write_proxychains_conf)"
+PROXY=(proxychains4 -q -f "$PROXYCHAINS_CONF")
+
+echo "[1/2] az logout (clearing stale token)" >&2
+"${PROXY[@]}" az logout || true
+
+echo "[2/2] az login --use-device-code --tenant ${TENANT}" >&2
+echo "      Copy the URL+code, paste into a browser routed through the SOCKS tunnel." >&2
+exec "${PROXY[@]}" az login \
+  --use-device-code \
+  --tenant "$TENANT" \
+  --scope "https://management.core.windows.net//.default"

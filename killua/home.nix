@@ -10,6 +10,8 @@
   imports = [
     ../modules/cross-platform
     ../modules/common/programs/notes
+    ../modules/common/programs/chat
+    ../modules/common/programs/cloud/azure-bastion
     ../modules/vms
     ./kanshi.nix
     inputs.sops-nix.homeManagerModules.sops

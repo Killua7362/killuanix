@@ -1,0 +1,29 @@
+# Bastion config — copy to ~/.config/bastion/config and fill in.
+# All values are plain text. Keep file mode 600.
+
+# DigitalAviations username (used for `dev` SSH).
+BASTION_USERNAME=
+
+# Azure subscription UUIDs.
+DEV_SUBSCRIPTION_ID=
+PROD_SUBSCRIPTION_ID=
+BASTION_SUBSCRIPTION_ID=
+
+# Oracle DB target (dev VNet). Reachable from any stage's app-01 jump VM.
+ORACLE_HOST=10.55.46.132
+ORACLE_PORT=1521
+ORACLE_USERNAME=
+# Optional: path to a file containing Oracle password (used for clipboard copy).
+# Leave empty to skip clipboard copy.
+ORACLE_PASSWORD_FILE=
+
+# SOCKS5 proxy for Conditional Access / Boeing-IP routing.
+# Default ON in lib-common.sh (BASTION_SSH_VIA_SOCKS=1, HTTPS_PROXY +
+# HTTP_PROXY = socks5h://127.0.0.1:1080). To bypass SOCKS for one call:
+#   BASTION_SSH_VIA_SOCKS= bastion-ssh dev
+# To change the target listener, override here:
+SOCKS_HOST=127.0.0.1
+SOCKS_PORT=1080
+
+# Azure AD tenant (for bastion-login device-code flow).
+TENANT=6362b077-fb81-4d5b-adf3-129cdb1b56cf

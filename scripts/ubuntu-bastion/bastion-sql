@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# Ubuntu-portable bastion-sql. Forward dev Oracle DB to localhost via
+# Azure Bastion + a stage app-01 VM jump.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+# shellcheck source=lib-common.sh
+source "$SCRIPT_DIR/lib-common.sh"
+
+load_config
+require_var BASTION_USERNAME
+require_var DEV_SUBSCRIPTION_ID
+require_var BASTION_SUBSCRIPTION_ID
+require_var ORACLE_HOST
+require_var ORACLE_PORT
+require_var ORACLE_USERNAME
+
+DEV_SUB="$DEV_SUBSCRIPTION_ID"
+BASTION_SUB="$BASTION_SUBSCRIPTION_ID"
+DA_USERNAME="$BASTION_USERNAME"
+ORACLE_USER="$ORACLE_USERNAME"
+ORACLE_PASS_FILE="${ORACLE_PASSWORD_FILE:-}"
+
+BASTION_DEV="/subscriptions/${BASTION_SUB}/resourceGroups/daa-azure-bastion-non-prod-eastus-rg/providers/Microsoft.Network/bastionHosts/daa-azure-bastion-non-prod-eastus"
+
+env_name="${1:-dev}"
+if [[ "$env_name" != "dev" ]]; then
+  echo "bastion-sql currently only supports 'dev'." >&2
+  exit 1
+fi
+target_sub="$DEV_SUB"
+target_bastion="$BASTION_DEV"
+
+jump_stage="${BASTION_SQL_JUMP_STAGE:-1}"
+if ! [[ "$jump_stage" =~ ^[1-6]$ ]]; then
+  echo "BASTION_SQL_JUMP_STAGE must be 1-6 (got: $jump_stage)" >&2
+  exit 1
+fi
+stage_pad=$(printf "%02d" "$jump_stage")
+if [ "$jump_stage" -eq 1 ]; then
+  jump_rg="bdsi-stageapplication-eastus-rg"
+else
+  jump_rg="bdsi-stageapplication${stage_pad}-eastus-rg"
+fi
+jump_vm_name="bdsi-stage${stage_pad}-app-01-vm"
+jump_vm_id="/subscriptions/${DEV_SUB}/resourceGroups/${jump_rg}/providers/Microsoft.Compute/virtualMachines/${jump_vm_name}"
+
+read -rp "Local Oracle port [${ORACLE_PORT}]: " local_port
+local_port="${local_port:-$ORACLE_PORT}"
+
+local_ssh_port=$((20000 + RANDOM % 10000))
+
+setup_az_run
+
+copy_password() {
+  if [[ -z "$ORACLE_PASS_FILE" || ! -r "$ORACLE_PASS_FILE" ]]; then return 1; fi
+  if command -v wl-copy >/dev/null 2>&1 && [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+    wl-copy < "$ORACLE_PASS_FILE"; return 0
+  fi
+  if command -v xclip >/dev/null 2>&1 && [[ -n "${DISPLAY:-}" ]]; then
+    xclip -selection clipboard < "$ORACLE_PASS_FILE"; return 0
+  fi
+  if command -v xsel >/dev/null 2>&1 && [[ -n "${DISPLAY:-}" ]]; then
+    xsel --clipboard --input < "$ORACLE_PASS_FILE"; return 0
+  fi
+  return 1
+}
+
+echo "[1/3] az account set --subscription ${target_sub}" >&2
+"${AZ_RUN[@]}" account set --subscription "$target_sub" "${AZ_FLAGS[@]}"
+
+echo "[2/3] Opening bastion tunnel to ${jump_vm_name} (ssh) on local :${local_ssh_port}" >&2
+"${AZ_RUN[@]}" network bastion tunnel \
+  --ids "$target_bastion" \
+  --target-resource-id "$jump_vm_id" \
+  --resource-port 22 \
+  --port "$local_ssh_port" \
+  "${AZ_FLAGS[@]}" &
+TUNNEL_PID=$!
+
+cleanup() {
+  echo "Tearing down bastion tunnel (pid $TUNNEL_PID)" >&2
+  kill "$TUNNEL_PID" 2>/dev/null || true
+  wait "$TUNNEL_PID" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+ready=0
+for _ in $(seq 1 60); do
+  if (exec 3<>/dev/tcp/127.0.0.1/"$local_ssh_port") 2>/dev/null; then
+    exec 3<&-
+    exec 3>&-
+    ready=1
+    break
+  fi
+  sleep 1
+done
+if [[ "$ready" -ne 1 ]]; then
+  echo "Bastion tunnel never came up on 127.0.0.1:${local_ssh_port}" >&2
+  exit 1
+fi
+
+clipboard_status="not copied (set ORACLE_PASSWORD_FILE + install wl-copy/xclip)"
+if copy_password; then
+  clipboard_status="copied to clipboard"
+fi
+
+cat >&2 <<EOF
+
+[3/3] Bastion tunnel ready. Opening ssh -L into ${jump_vm_name}.
+      Enter your DA password (${DA_USERNAME}) when prompted.
+
+SQL Developer connection:
+  Hostname     127.0.0.1
+  Port         ${local_port}
+  Service name beastg<N>   (set in SQL Developer to switch stages)
+  Username     ${ORACLE_USER}
+  Password     <${clipboard_status}>
+
+Tunnel is stage-agnostic — change Service name in the client, tunnel stays up.
+
+EOF
+
+SSH_LOG=ERROR
+SSH_VERBOSE=()
+if [[ -n "${BASTION_SQL_DEBUG:-}${BASTION_SSH_DEBUG:-}" ]]; then
+  SSH_LOG=DEBUG
+  SSH_VERBOSE=(-vvv)
+fi
+
+port_in_use() {
+  (exec 3<>/dev/tcp/127.0.0.1/"$1") 2>/dev/null && exec 3<&- 3>&-
+}
+if port_in_use "$local_port"; then
+  echo "Port ${local_port} already in use locally. Pick a different Local Oracle port." >&2
+  exit 1
+fi
+
+exec ssh \
+  "${SSH_VERBOSE[@]}" \
+  -F /dev/null \
+  -L "${local_port}:${ORACLE_HOST}:${ORACLE_PORT}" \
+  -N \
+  -p "$local_ssh_port" \
+  -o StrictHostKeyChecking=no \
+  -o UserKnownHostsFile=/dev/null \
+  -o LogLevel="$SSH_LOG" \
+  -o ExitOnForwardFailure=yes \
+  -o ServerAliveInterval=15 \
+  -o ServerAliveCountMax=3 \
+  -o ConnectTimeout=30 \
+  "${DA_USERNAME}@127.0.0.1"

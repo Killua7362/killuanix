@@ -21,6 +21,14 @@
       "qdrant_api_key" = {};
       "qdrant_cluster_endpoint" = {};
       "freshrss_admin_api_password" = {};
+      "azure/bastion_username" = {};
+      "azure/dev_subscription_id" = {};
+      "azure/prod_subscription_id" = {};
+      "azure/bastion_subscription_id" = {};
+      "azure/oracle_host" = {};
+      "azure/oracle_port" = {};
+      "azure/oracle_username" = {};
+      "azure/oracle_password" = {};
     };
   };
 }

@@ -53,6 +53,7 @@ Sets up nixCatsUtils, bootstraps lazy.nvim (with Nix path resolution), imports L
 |---|---|---|
 | `aider.lua` | nvim-aider | AI coding assistant terminal integration (currently disabled) |
 | `bufferline.lua` | bufferline.nvim | Tab/buffer bar with LSP diagnostics, Colemak-remapped cycle keys (S-N/S-O) |
+| `claudecode.lua` | claudecode.nvim | Pure-lua reimplementation of the Claude Code IDE extension. Spawns a local WebSocket MCP server and writes `~/.claude/ide/<port>.lock` so the `claude` CLI auto-attaches (same `/ide` flow as VS Code). Surfaces live selection, open buffers, diagnostics, at-mentions, and an in-editor diff-review for proposed edits. Terminal provider is `snacks` with a 35% right split — claudecode.nvim drives the embedded terminal itself; no tmux integration. Keymaps under `<leader>a*`: `ac` toggle terminal, `af` focus, `aR` resume, `aC` continue, `am` select model, `ab` add buffer, `as` send selection / tree-add file, `aA`/`aD` accept/deny diff |
 | `codecompanion.lua` | codecompanion.nvim | LLM chat/inline assistant with multiple adapters (DeepSeek variants, Qwen, Kimi, GLM) via Chutes API; includes history extension, markview rendering, and img-clip |
 | `conform.lua` | conform.nvim | Formatter configuration: stylua (Lua), fish_indent, shfmt (shell), sqlfluff (SQL/PostgreSQL) |
 | `dap.lua` | nvim-dap | Debug Adapter Protocol with nixCats-aware adapter setup for Python (debugpy), C/C++/Rust (lldb/codelldb), Go (delve), JS/TS (node), Bash (bashdb), Lua; uses nvim-dap-view for UI |
@@ -82,6 +83,6 @@ Sets up nixCatsUtils, bootstraps lazy.nvim (with Nix path resolution), imports L
 - **Leader key:** Space (LazyVim default)
 - **Colemak layout:** Extensive remappings in `keymaps.lua` -- NEIO replaces HJKL for navigation, `u` is insert, `y`/`Y` is open line, `h`/`H` is next/prev search, `k` is undo, `l` is yank. Window navigation uses `<C-w>n/e/i/o`. These remappings are consistently applied across snacks picker, zellij-nav, bufferline, and sidekick.
 - **Colorscheme:** VS Code Dark (transparent background)
-- **AI integrations:** CodeCompanion (primary, with multiple LLM adapters via Chutes API), OpenCode (via sidekick.nvim/zellij), Aider (disabled), MCPHub (disabled)
+- **AI integrations:** CodeCompanion (primary, with multiple LLM adapters via Chutes API), Claude Code (via claudecode.nvim — MCP WebSocket bridge, `<leader>a*`), OpenCode (via sidekick.nvim/zellij), Aider (disabled), MCPHub (disabled)
 - **DAP adapters:** All debug adapter paths are injected from Nix via `nixCats("extra.*")` and `nixCats("debugAdapters.*")` -- no Mason on NixOS
 - **Formatting:** `<leader>cf` triggers conform.nvim with async + LSP fallback; autoformat is off by default

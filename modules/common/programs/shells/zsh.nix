@@ -153,6 +153,10 @@
         }
 
         chrome-socks() {
+          # boeingvpn-ui SOCKS via --proxy-server (socks5h equivalent —
+          # proxy-side DNS, needed for split-horizon Boeing endpoints).
+          # For 10.55.* dev VNet URLs, use `avd-chrome` instead (separate
+          # profile + SOCKS via bastion-sql's ssh -D :11180).
           google-chrome \
             --proxy-server="socks5://127.0.0.1:1080" \
             --proxy-bypass-list="127.0.0.1" \

@@ -29,7 +29,7 @@ A.global   = function(n) return hl.dsp.global(n) end
 
 A.focus_dir   = function(d) return hl.dsp.focus({ direction = d }) end
 A.swap_dir    = function(d) return hl.dsp.window.swap({ direction = d }) end
-A.kill        = function()  return hl.dsp.window.kill() end
+A.kill        = function()  return hl.dsp.window.close() end
 A.toggle_float = function() return hl.dsp.window.float() end
 A.pin         = function()  return hl.dsp.window.pin() end
 A.drag        = function()  return hl.dsp.window.drag() end

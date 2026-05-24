@@ -103,6 +103,7 @@ in {
           nvim-dap-virtual-text
           diffview-nvim
           git-worktree-nvim
+          claudecode-nvim
 
           # sometimes you have to fix some names
           {
