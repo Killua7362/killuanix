@@ -36,6 +36,8 @@
       ssh-to-age
       jq
       openssl
+      zip
+      unzip
     ])
     ++ [
       (import ../../packages/claude-monitor/package.nix {

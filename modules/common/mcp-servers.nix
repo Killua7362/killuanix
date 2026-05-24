@@ -92,23 +92,38 @@
     package = "@modelcontextprotocol/server-sequential-thinking";
   };
 
+  # jwingnut/mcp-libre — UNO-aware LibreOffice MCP. Two pieces:
+  #   1. An .oxt extension installed into LibreOffice itself (HTTP server on
+  #      :8765, started via Tools > MCP Server > Start MCP Server). Built and
+  #      installed manually — not packaged by this entry. Source lives under
+  #      `plugin/` in the upstream repo; build with `plugin/build.sh`, install
+  #      with `unopkg add ./build/libreoffice-mcp-extension-*.oxt`.
+  #   2. The stdio FastMCP bridge at `libreoffice_mcp_server.py` (repo root) —
+  #      what this entry wires up. Talks to the extension over localhost HTTP
+  #      and exposes tools to Claude Code via stdio.
+  #
+  # Operates on the *live* document model via UNO (multi-doc, real-time), not
+  # on file paths. LibreOffice must be running with the extension's MCP server
+  # started before claude can query.
+  #
+  # Previous wiring was patrup/mcp-libre (file-based, unmaintained, needed a
+  # local patch). Dropped along with patches/mcp-libre-calc-and-write.patch.
   libreoffice = {
     gitSource = {
-      owner = "patrup";
+      owner = "jwingnut";
       repo = "mcp-libre";
-      rev = "edc5123dcd740049c54de9bc9abf8d69b2f1293f";
-      hash = "sha256-J0oXBvn5Bejnn6p6cc4He6lfk+aFnuMSgxJBGhcS6EE=";
+      rev = "69ef5e55bf0258af03f6aed6667c81fc133643c3";
+      hash = "sha256-8W7cOZ6YpyHg2U6uJ/wAnqVG7PAEo8hKxKmju55akWk=";
     };
     runtime = "uv-run";
-    entrypoint = "src/main.py";
-    # Upstream is unmaintained at this rev. Local fixes:
-    #   - create_document(doc_type="calc") now produces a real empty file
-    #     (previously wrote 0-byte via touch()).
-    #   - New write_spreadsheet_data tool for populating .xlsx / .ods cells.
-    patches = [./programs/dev/ai/patches/mcp-libre-calc-and-write.patch];
-    # Per-project — heavy LibreOffice runtime (uv venv + chromium-class binary
-    # pulls), only useful when the project actively edits .odt/.ods/.docx. Opt
-    # in via `claude-kit.nix:mcp = [ "libreoffice" ];`.
+    entrypoint = "libreoffice_mcp_server.py";
+    # Upstream's `pyproject.toml` forgets to declare `fastmcp` — the bridge
+    # script imports it but uv resolves only `mcp[cli]` / `httpx` / `pydantic`,
+    # so the server fails to start with `ImportError: No module named 'fastmcp'`.
+    patches = [./programs/dev/ai/patches/mcp-libre-add-fastmcp-dep.patch];
+    # Per-project — needs LibreOffice running + .oxt extension installed +
+    # in-app MCP server started. Opt in via
+    # `claude-kit.nix:mcp = [ "libreoffice" ];`.
     optional = true;
   };
 

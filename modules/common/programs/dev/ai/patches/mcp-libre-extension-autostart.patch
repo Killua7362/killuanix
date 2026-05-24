@@ -1,0 +1,38 @@
+--- a/plugin/pythonpath/registration.py
++++ b/plugin/pythonpath/registration.py
+@@ -11,6 +11,20 @@
+ import traceback
+ import sys
+ import os
++
++# Workaround for Python 3.13 + LibreOffice's UNO `__import__` hook:
++# `mimetypes.py` does `from _winapi import _mimetypes_read_windows_registry`
++# in a try/except ImportError block. On Linux Python that normally fails with
++# ImportError, but LO's uno.py turns missing modules into UNO class lookups
++# that raise SystemError instead — bypassing mimetypes' try/except and
++# blowing up anything that imports `http.server` (which we need for the MCP
++# HTTP server). Pre-registering a dummy `_winapi` module short-circuits the
++# import so mimetypes' `from _winapi import <attr>` hits AttributeError-as-
++# ImportError naturally.
++if sys.platform != "win32":
++    import types as _types
++    sys.modules.setdefault("_winapi", _types.ModuleType("_winapi"))
++
+ from com.sun.star.lang import XServiceInfo
+ from com.sun.star.frame import XDispatchProvider, XDispatch
+ from com.sun.star.lang import XInitialization
+@@ -155,3 +169,14 @@
+     IMPLEMENTATION_NAME,
+     SERVICE_NAMES
+ )
++
++
++# Auto-start MCP HTTP server on extension load.
++# Workaround: LO's framework returns its built-in `ServiceHandler` stub for
++# `service:org.mcp.libreoffice.MCPExtension*` URLs instead of routing to this
++# extension's `MCPProtocolHandler`, so menu/toolbar clicks never reach
++# `dispatch` and the server never starts. The auto-start fires when this
++# module is first imported (which happens early — LO probes menubar/toolbar
++# dispatchers at startup). `_start_server` is idempotent via `_lock` +
++# `_server_started`, so repeated imports are safe.
++threading.Thread(target=_start_server, daemon=True).start()

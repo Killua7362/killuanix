@@ -16,6 +16,7 @@
     ./gitnexus-cli.nix
     ./jupyter-env-mcp.nix
     ./kindly-web-search.nix
+    ./libreoffice-mcp-launcher.nix
     ./oracle-sqlcl-mcp.nix
     ./freshrss-mcp
     ./den
