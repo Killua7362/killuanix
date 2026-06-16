@@ -58,10 +58,11 @@ in {
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Pin the kernel to the rev that produced the currently-activated
-  # /nix/store/...-linux-6.12.67 derivation, so the cached virtualbox
-  # kernel modules (virtualbox-modules-7.2.4-6.12.67) keep applying
-  # without a rebuild against a newer kernel.
+  # Kernel pinned to the rev that originally matched the cached
+  # virtualbox-modules-7.2.4-6.12.67. VBox itself is gone now
+  # (vms.virtualbox.enable = false below; Oracle 19c moved to KVM),
+  # so this pin is no longer load-bearing — keeping it deliberate to
+  # avoid a same-PR kernel bump; unpin later if/when we want to update.
   boot.kernelPackages =
     (import inputs.nixpkgs-kernel {
       inherit (pkgs.stdenv.hostPlatform) system;
@@ -164,6 +165,54 @@ in {
   services.xserver.xkb = {
     layout = "us";
     variant = "";
+  };
+
+  # Per-device keyboard remapping at the evdev layer (works in TTY + Wayland,
+  # before the compositor's xkb runs). Only the internal laptop keyboard is
+  # grabbed (the i8042 AT/PS2 board, vendor:product 0001:0001 — verify on this
+  # host with `sudo keyd monitor` and adjust the id if it differs). External
+  # USB keyboards are NOT listed, so keyd passes them through untouched: they
+  # stay plain QWERTY and the QMK board handles Colemak in firmware.
+  #
+  # On the internal keyboard:
+  #   - QWERTY -> Colemak remap (the letter/punct lines below).
+  #   - capslock: tap = Escape, hold = the `hyper` layer (Ctrl+Alt+Super).
+  #   - the Escape key sends CapsLock (the swap partner).
+  services.keyd = {
+    enable = true;
+    keyboards.internal = {
+      ids = ["0001:0001"];
+      settings = {
+        main = {
+          capslock = "overload(hyper, esc)";
+          esc = "capslock";
+
+          # Colemak (physical QWERTY position -> Colemak output)
+          e = "f";
+          r = "p";
+          t = "g";
+          y = "j";
+          u = "l";
+          i = "u";
+          o = "y";
+          p = ";";
+          s = "r";
+          d = "s";
+          f = "t";
+          g = "d";
+          j = "n";
+          k = "e";
+          l = "i";
+          ";" = "o";
+          n = "k";
+        };
+
+        # Modifier layer activated while capslock is held: acts as
+        # Control+Alt+Meta(Super). Empty body — the `:C-A-M` suffix is the
+        # definition.
+        "hyper:C-A-M" = {};
+      };
+    };
   };
 
   services.printing.enable = true;
@@ -342,10 +391,17 @@ in {
     nerd-fonts.hack
   ];
 
-  boot.blacklistedKernelModules = ["kvm_intel" "kvm"];
+  # Oracle DB 19c moved off VirtualBox onto QEMU/KVM (see modules/vms/oracle-19c-vm.nix),
+  # so we drop VBox here and let kvm_intel load. Also skips the per-rebuild
+  # virtualbox-modules-<vbox>-<kernel> source build.
+  vms.virtualbox.enable = false;
 
   services.dbus.packages = [pkgs.blueman pkgs.openvpn3];
   services.udev.packages = [pkgs.vial];
+
+  # Removable media auto-mount + Nemo device sidebar
+  services.udisks2.enable = true;
+  services.gvfs.enable = true;
   programs.hyprland = {
     enable = true;
     package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;

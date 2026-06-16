@@ -281,6 +281,21 @@ in {
 
       AUTH="Authorization: Bearer $API_KEY"
 
+      # Probe auth before doing any work. If the key in sops is stale/wrong
+      # the API replies 401 — log + exit 0 so a missing rotation doesn't
+      # fail the whole nixos-rebuild. Rotate via Karakeep UI → Settings →
+      # API Keys, then `sops secrets/personal.yaml`.
+      auth_code=$(curl -s -o /dev/null -w '%{http_code}' -H "$AUTH" "$BASE/api/v1/lists")
+      if [ "$auth_code" = "401" ] || [ "$auth_code" = "403" ]; then
+        echo "karakeep API rejected the key (HTTP $auth_code) — skipping import"
+        echo "  regenerate karakeep_admin_api_key in the UI, then update sops."
+        exit 0
+      fi
+      if [ "$auth_code" != "200" ]; then
+        echo "unexpected HTTP $auth_code from /api/v1/lists — aborting"
+        exit 1
+      fi
+
       # Ensure the destination list exists.
       LIST_NAME="Imported from sops"
       LIST_ID=$(curl -sf -H "$AUTH" "$BASE/api/v1/lists" 2>/dev/null \

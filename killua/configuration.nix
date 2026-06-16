@@ -153,6 +153,10 @@
   services.blueman.enable = true;
   services.udev.packages = [pkgs.vial];
 
+  # Removable media auto-mount + Nemo device sidebar
+  services.udisks2.enable = true;
+  services.gvfs.enable = true;
+
   # Intel Lunar Lake BT controller drops the ACL link when HFP/SCO initializes,
   # symptom: "Unable to get Hands-Free Voice gateway SDP record: Host is down"
   # in bluetoothd logs + the bluez_card vanishing from pactl. Disabling USB

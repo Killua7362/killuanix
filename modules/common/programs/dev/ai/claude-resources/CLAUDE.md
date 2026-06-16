@@ -1,6 +1,6 @@
 # claude-resources
 
-Builds **one lazy sub-catalog per upstream source** under `Notes/claude/lazy/<source>/`. Sources currently wired: `ruflo`, `wshobson` (= `inputs.wshobson-agents`), `anthropics-skills`, `gstack` (= `inputs.gstack`, garrytan/gstack). Each sub-catalog ships its own `catalog.json` so `claude-kit lazy …` can opt resources in per-project.
+Builds **one lazy sub-catalog per upstream source** under `Notes/claude/lazy/<source>/`. Sources currently wired: `ruflo`, `wshobson` (= `inputs.wshobson-agents`), `anthropics-skills`, `gstack` (= `inputs.gstack`, garrytan/gstack), `glebis-claude-skills` (= `inputs.glebis-claude-skills`, 60+ flat skill dirs). Each sub-catalog ships its own `catalog.json` so `claude-kit lazy …` can opt resources in per-project.
 
 Was originally a single merged `upstream/` catalog — split so adding a new flake input means a new sibling folder rather than another row mixed into one tree.
 
@@ -58,6 +58,7 @@ Now that each source has its own catalog, the outer `ruflo--` / `wshobson--` pre
 | `wshobson` | `<plugin>--<basename>` (was `wshobson--<plugin>--<…>`) |
 | `anthropics-skills` | upstream name unchanged (already flat) |
 | `gstack` | single `gstack` skill entry — the whole upstream tree is wrapped under `skills/gstack/` because sub-skills reference `~/.claude/skills/gstack/bin/...` paths internally |
+| `glebis-claude-skills` | upstream name unchanged (skills live as flat dirs at repo root; the `.claude-plugin/` marketplace manifest dir is filtered out by the per-source flat builder) |
 
 ## Integration
 

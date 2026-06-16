@@ -55,6 +55,10 @@
     portalPackage = null;
   };
 
+  # chrollo only hosts the Oracle 19c VM; skip the work-ubuntu Hubstaff VM
+  # (avoids the ~3 GB Ubuntu ISO fetch + autoinstall ISO repack).
+  vms.workUbuntu.enable = false;
+
   # NixOS-specific systemd configuration
   systemd.user.startServices = "sd-switch";
 

@@ -47,7 +47,7 @@ _prod_vm_id() {
 
 env_name="${1:-}"
 if [ -z "$env_name" ]; then
-  echo "Usage: bastion-ssh <dev|prod>" >&2
+  echo "Usage: bastion-ssh <dev|prod|migrate>" >&2
   exit 1
 fi
 
@@ -116,18 +116,26 @@ case "$env_name" in
     echo "Connecting to prod - ${vm_name} as ${username}..."
     ;;
 
+  migrate)
+    # Migration VM — flat resource, no stage pattern. Dev subscription +
+    # non-prod bastion, DA username (same as dev).
+    vm_id="/subscriptions/${DEV_SUB}/resourceGroups/bdce-migrationvm-dev-eastus-rg/providers/Microsoft.Compute/virtualMachines/bdce-migrationvm-dev-eastus-vm"
+    username="$DEV_USERNAME"
+    echo "Connecting to migrate - bdce-migrationvm as ${username}..."
+    ;;
+
   *)
-    echo "Invalid environment. Use 'dev' or 'prod'." >&2
+    echo "Invalid environment. Use 'dev', 'prod', or 'migrate'." >&2
     exit 1
     ;;
 esac
 
-if [ "$env_name" = "dev" ]; then
-  target_sub="$DEV_SUB"
-  target_bastion="$BASTION_DEV"
-else
+if [ "$env_name" = "prod" ]; then
   target_sub="$PROD_SUB"
   target_bastion="$BASTION_PROD"
+else
+  target_sub="$DEV_SUB"
+  target_bastion="$BASTION_DEV"
 fi
 
 AZ_FLAGS=()

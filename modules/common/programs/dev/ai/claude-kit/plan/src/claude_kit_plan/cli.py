@@ -6,7 +6,7 @@ Usage:
   claude-kit plan --output path/to/plan.md "<prompt>"
   claude-kit plan --no-stage1 --model claude-sonnet-4-6 --effort medium "<prompt>"
 
-Stage 1 asks Claude (Opus 4.7 + high) to recommend a model + effort + plan
+Stage 1 asks Claude (Opus 4.8 + high) to recommend a model + effort + plan
 mode for the given prompt. Stage 2 launches Claude with those settings in
 plan mode to draft a plan markdown file. The result is written with a
 YAML frontmatter (metadata for the user; Claude is told to ignore it).

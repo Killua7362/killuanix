@@ -229,6 +229,15 @@
       flake = false;
     };
 
+    # glebis/claude-skills — 60+ flat skill dirs at repo root (agency,
+    # research, telegram, etc.) + a `.claude-plugin/marketplace.json`.
+    # Wired in via claude-resources/ as a per-source catalog; opt-in per
+    # project via `claude-kit lazy add skill <name>`.
+    glebis-claude-skills = {
+      url = "github:glebis/claude-skills";
+      flake = false;
+    };
+
     # Handheld / MSI Claw
     # Pinned to a specific rev (not the floating `release` branch) so that
     # `nix flake update` does not bump the cachyos kernel. Bumping has two

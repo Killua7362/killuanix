@@ -138,7 +138,7 @@ require("nixCatsUtils.lazyCat").setup(nixCats.pawsible({ "allPlugins", "start", 
 			-- so we just disable install and do it via nix.
 			ensure_installed = require("nixCatsUtils").lazyAdd(
 				{ "bash", "c", "diff", "html", "lua", "luadoc", "markdown", "vim", "vimdoc" },
-				false
+				{}
 			),
 			auto_install = require("nixCatsUtils").lazyAdd(true, false),
 		},

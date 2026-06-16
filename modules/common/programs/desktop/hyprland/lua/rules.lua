@@ -7,6 +7,19 @@
 
 hl.workspace_rule({ workspace = "special:special", gaps_out = 30 })
 
+-- Per-host workspace → monitor pinning. Shared file, so gate by /etc/hostname.
+local function read_hostname()
+  local f = io.open("/etc/hostname", "r")
+  if not f then return nil end
+  local h = f:read("*l")
+  f:close()
+  return h
+end
+
+if read_hostname() == "chrollo" then
+  hl.workspace_rule({ workspace = "1", monitor = "HDMI-A-1", default = true })
+end
+
 -- ============================================================================
 -- Window rules
 -- ============================================================================

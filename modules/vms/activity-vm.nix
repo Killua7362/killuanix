@@ -1,4 +1,7 @@
-# Work Ubuntu VM — auto-provisioned with Ubuntu 24.04 Server + cloud-init
+# Work Ubuntu VM — auto-provisioned with Ubuntu 24.04 Server + cloud-init.
+# Gated by `vms.workUbuntu.enable` (default true). Disable on hosts that
+# don't need the Hubstaff/work VM (e.g. chrollo, which only runs the
+# Oracle 19c DB VM) to skip the 3+ GB Ubuntu ISO fetch + repack.
 {
   pkgs,
   config,
@@ -6,6 +9,7 @@
   inputs,
   ...
 }: let
+  cfg = config.vms.workUbuntu;
   vmName = "work-ubuntu";
   diskPath = "${config.home.homeDirectory}/VMs/${vmName}.qcow2";
   sharedDir = "${config.home.homeDirectory}/Documents/shared";
@@ -17,12 +21,12 @@
 
   # Ubuntu 24.04.2 Server ISO — repacked to add 'autoinstall' kernel param (skips confirmation prompt)
   ubuntuIsoOriginal = pkgs.fetchurl {
-    url = "https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-live-server-amd64.iso";
-    sha256 = "sha256-1tqww6ZXmIUBtL128Sl8BT33EOBuDDrs5g3q0k8nC00=";
+    url = "https://releases.ubuntu.com/24.04.4/ubuntu-24.04.4-live-server-amd64.iso";
+    sha256 = "sha256-6QfZLu7J32QWOn5FTLyNd1Xo3cftQvmdvIDEDxoThDM=";
   };
 
   ubuntuIso =
-    pkgs.runCommand "ubuntu-24.04.2-autoinstall.iso" {
+    pkgs.runCommand "ubuntu-24.04.4-autoinstall.iso" {
       nativeBuildInputs = [pkgs.xorriso];
     } ''
       # Extract grub.cfg, patch it, and repack in-place
@@ -195,30 +199,31 @@
     </domain>
   '';
 in {
-  home.activation.defineWorkVm = lib.hm.dag.entryAfter ["writeBoundary"] ''
+  options.vms.workUbuntu.enable = lib.mkEnableOption "the work-ubuntu Hubstaff VM (libvirt domain + Ubuntu ISO build)" // {default = true;};
+
+  config.home.activation.defineWorkVm = lib.mkIf cfg.enable (lib.hm.dag.entryAfter ["writeBoundary"] ''
     # Skip silently on hosts where KVM is unavailable (e.g. chrollo blacklists
     # kvm_intel/kvm). The domain XML uses <domain type='kvm'>, so libvirt
     # would otherwise emit "Emulator … does not support virt type 'kvm'".
-    if [ ! -e /dev/kvm ]; then
-      exit 0
-    fi
+    # NOTE: must NOT use `exit` here — HM concatenates all activation snippets
+    # into one script, so `exit` aborts the whole activation (including
+    # linkGeneration). Gate the work with a positive guard instead.
+    if [ -e /dev/kvm ]; then
+      mkdir -p "$HOME/VMs"
+      mkdir -p "${sharedDir}"
 
-    # Ensure directories exist
-    mkdir -p "$HOME/VMs"
-    mkdir -p "${sharedDir}"
+      if [ ! -f "${diskPath}" ]; then
+        ${pkgs.qemu}/bin/qemu-img create -f qcow2 "${diskPath}" 40G
+      fi
 
-    # Create disk if not exists
-    if [ ! -f "${diskPath}" ]; then
-      ${pkgs.qemu}/bin/qemu-img create -f qcow2 "${diskPath}" 40G
+      # Only redefine when the XML store path changed — avoids noise on every switch.
+      # stdout is redirected too (virsh prints status lines there, not stderr).
+      _xml_marker="$HOME/.vm-${vmName}-xml"
+      if [ "$(cat "$_xml_marker" 2>/dev/null)" != "${domainXml}" ]; then
+        ${pkgs.libvirt}/bin/virsh -c qemu:///system undefine ${vmName} &>/dev/null || true
+        ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} &>/dev/null || true
+        echo "${domainXml}" > "$_xml_marker"
+      fi
     fi
-
-    # Only redefine when the XML store path changed — avoids noise on every switch.
-    # stdout is redirected too (virsh prints status lines there, not stderr).
-    _xml_marker="$HOME/.vm-${vmName}-xml"
-    if [ "$(cat "$_xml_marker" 2>/dev/null)" != "${domainXml}" ]; then
-      ${pkgs.libvirt}/bin/virsh -c qemu:///system undefine ${vmName} &>/dev/null || true
-      ${pkgs.libvirt}/bin/virsh -c qemu:///system define ${domainXml} &>/dev/null || true
-      echo "${domainXml}" > "$_xml_marker"
-    fi
-  '';
+  '');
 }

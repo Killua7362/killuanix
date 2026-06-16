@@ -71,6 +71,16 @@
     with pkgs; [
       # pcmanfm — replaced by nemo (configured in utils/nemo.nix)
       unetbootin
+      ventoy-full
+      (writeShellApplication {
+        name = "ventoy-gui";
+        runtimeInputs = [ventoy-full];
+        text = ''
+          # Launch Ventoy local web UI (needs root for raw disk access).
+          # Browser opens automatically at http://127.0.0.1:24680.
+          exec sudo -E env PATH="$PATH" ventoy-web "$@"
+        '';
+      })
       qbittorrent
       # rssguard installed by modules/common/programs/rss (config + package travel together)
       hakuneko

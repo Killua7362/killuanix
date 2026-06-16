@@ -8,20 +8,7 @@ return {
 	},
 	config = function()
 		---@type opencode.Opts
-		vim.g.opencode_opts = {
-			-- Your configuration, if any — see `lua/opencode/config.lua`, or "goto definition".
-			provider = {
-				toggle = function(self)
-					require("sidekick.cli").toggle({ name = "opencode", focus = true })
-				end,
-				start = function(self)
-					require("sidekick.cli").show({ name = "opencode", focus = true })
-				end,
-				stop = function(self)
-					require("sidekick.cli").close()
-				end,
-			},
-		}
+		vim.g.opencode_opts = {}
 
 		-- Required for `opts.events.reload`.
 		vim.o.autoread = true

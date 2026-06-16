@@ -7,7 +7,7 @@ Home Manager module that installs `azure-cli` with the `ssh` extension and a `ba
 | File | Purpose |
 |---|---|
 | `default.nix` | Builds `azure-cli.withExtensions [ssh bastion]` + two `pkgs.runCommand` wrappers (`bastion-ssh`, `bastion-sql`), proxychains-ng + SOCKS config, all gated by `pkgs.stdenv.isLinux`. Also installs `pkgs.sqlcl` (Oracle SQLcl CLI — `sql` on PATH) for saving SQLcl connections that the `oracle-sqlcl` MCP server (`../../dev/ai/oracle-sqlcl-mcp.nix`) reads from `~/.dbtools/connections.json`. Sets `home.sessionVariables.BASTION_SSH_VIA_SOCKS = "1"`. |
-| `bastion-ssh.sh` | VM SSH wrapper. Reads DA username + 3 subscription UUIDs from sops files (substituted via `pkgs.replaceVars`). Sources its connect logic from the upstream DA `bastion-ssh.sh` runbook. |
+| `bastion-ssh.sh` | VM SSH wrapper. Reads DA username + 3 subscription UUIDs from sops files (substituted via `pkgs.replaceVars`). Sources its connect logic from the upstream DA `bastion-ssh.sh` runbook. Three env args: `dev` (stage 1-6 + role table), `prod` (service-account VM table), `migrate` (single flat VM `bdce-migrationvm-dev-eastus-vm` in `bdce-migrationvm-dev-eastus-rg`, dev sub/bastion + DA username). Sub/bastion selection: `prod` → prod, everything else → dev. |
 | `bastion-sql.sh` | Oracle DB tunnel wrapper. Forwards `10.55.46.132:1521` (dev) to a local port via `az network bastion tunnel --target-ip-address`. Stage switching is via Oracle SERVICE_NAME (`beastg1..beastg6`) in the client, not via tunnel. |
 
 ## Sops secrets

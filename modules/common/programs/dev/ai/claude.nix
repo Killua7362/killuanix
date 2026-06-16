@@ -46,20 +46,25 @@
   # wired as out-of-store symlinks under `config.home.file` below (same
   # live-edit pattern as Notes/claude/{global.md,memory,commands}).
   extraSkills = {
-    # garrytan/gstack — `office-hours` requested globally. office-hours's
-    # SKILL.md body references `~/.claude/skills/gstack/bin/...` and other
-    # sibling sub-skills under `~/.claude/skills/gstack/<name>/`, so the
-    # umbrella tree must be present alongside. Without it the preamble
+    # garrytan/gstack — `office-hours` + `plan-eng-review` requested
+    # globally. Their SKILL.md bodies reference `~/.claude/skills/gstack/bin/...`
+    # and other sibling sub-skills under `~/.claude/skills/gstack/<name>/`, so
+    # the umbrella tree must be present alongside. Without it the preamble
     # falls back to defaults but loses telemetry, config, learnings,
     # update-check, upgrade-flow, and any cross-skill jumps.
     gstack = "${inputs.gstack}";
     office-hours = "${inputs.gstack}/office-hours";
+    plan-eng-review = "${inputs.gstack}/plan-eng-review";
 
     # mattpocock/skills — `grill-me` (interview-style code review) +
     # `handoff` (session-handoff doc generator). Self-contained, no
     # external path refs.
     grill-me = "${inputs.mattpocock-skills}/skills/productivity/grill-me";
     handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";
+
+    # glebis/claude-skills — `balanced` (cognitive-balance response-style
+    # skill). Self-contained single SKILL.md, no cross-skill refs.
+    balanced = "${inputs.glebis-claude-skills}/balanced";
   };
 
   # Wrapper for git-sourced MCP servers. The fetched source lives in the Nix
@@ -398,7 +403,7 @@ in {
       # you want stricter behavior. `skip*PermissionPrompt` suppress the
       # first-run opt-in dialogs for auto and bypass modes.
       settings = {
-        model = "claude-opus-4-7";
+        model = "claude-opus-4-8";
         effortLevel = "high";
         skipAutoPermissionPrompt = true;
         skipDangerousModePermissionPrompt = true;

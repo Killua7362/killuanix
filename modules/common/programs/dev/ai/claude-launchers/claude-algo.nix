@@ -116,7 +116,7 @@
   # Caveat: in-session `/model` switches still leak to ~/.claude.json
   # (shared file); the startup pin is enforced, runtime sovereignty isn't.
   model = null;
-  # model = "claude-opus-4-7";
+  # model = "claude-opus-4-8";
 
   # When non-null, jq-pinned into settings.json on every launch.
   # "low" | "medium" | "high" | "xhigh" | "auto" ("max" is transient-only).

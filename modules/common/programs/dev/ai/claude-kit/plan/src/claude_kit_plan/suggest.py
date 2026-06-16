@@ -1,9 +1,9 @@
-"""Stage 1 — ask Claude (Opus 4.7 + high) for a model+effort recommendation.
+"""Stage 1 — ask Claude (Opus 4.8 + high) for a model+effort recommendation.
 
 Reads `prompts/suggestion.md` from package data, sends the user's original
 prompt as a `/suggestion "..."` message, parses the structured reply.
 
-If parsing fails, falls back to (claude-opus-4-7, xhigh, plan-mode Yes) and
+If parsing fails, falls back to (claude-opus-4-8, xhigh, plan-mode Yes) and
 flags the suggestion as `parse_failed`.
 """
 
@@ -53,10 +53,10 @@ def _parse(text: str) -> Suggestion:
 
     if not (model_m and effort_m and planmode_m):
         return Suggestion(
-            model="claude-opus-4-7",
+            model="claude-opus-4-8",
             effort="xhigh",
             plan_mode="Yes",
-            why="(stage 1 output unparseable; falling back to opus-4.7 + xhigh + plan)",
+            why="(stage 1 output unparseable; falling back to opus-4.8 + xhigh + plan)",
             raw_response=text,
             parse_failed=True,
         )
@@ -97,7 +97,7 @@ async def suggest(user_prompt: str) -> Suggestion:
     """Run stage 1. Always returns a Suggestion; check .parse_failed / .needs_more_info."""
     result = await run_query(
         prompt=f'/suggestion "{user_prompt}"',
-        model="claude-opus-4-7",
+        model="claude-opus-4-8",
         effort="high",
         system_prompt=SUGGESTION_PROMPT,
         permission_mode="default",

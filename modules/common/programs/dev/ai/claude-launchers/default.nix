@@ -45,7 +45,7 @@
     commands ? {},
     plugins ? [],
     mcp ? [],
-    model ? null, # e.g. "claude-opus-4-7", "claude-sonnet-4-6"
+    model ? null, # e.g. "claude-opus-4-8", "claude-sonnet-4-6"
     effort ? null, # e.g. "low" | "medium" | "high" | "xhigh" | "auto"
     inheritGlobal ? true,
     excludeSkills ? [],

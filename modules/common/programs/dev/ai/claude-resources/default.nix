@@ -26,6 +26,7 @@
   wshobson = inputs.wshobson-agents;
   anthropicsSkills = inputs.anthropics-skills;
   gstack = inputs.gstack;
+  glebisClaudeSkills = inputs.glebis-claude-skills;
 
   # Flat-markdown builders (one derivation per source × kind). Names inside
   # each derivation's $out are catalog-scoped — no outer prefix.
@@ -89,6 +90,30 @@
     skillsDir = gstackSkills;
   };
 
+  # glebis/claude-skills is upstream-shaped as 60+ flat skill dirs at repo
+  # root (plus `.claude-plugin/marketplace.json` + `BUNDLES.md` + a few
+  # other top-level files). catalog.sh's glob skips dotfiles, so the
+  # store path can be pointed at directly — but we copy into a clean
+  # `$out/` first so the few non-skill top-level files (README.md,
+  # BUNDLES.md, secrets.enc.yaml, .gitignore) don't leak into the
+  # skills list once the catalog walks `*/`.
+  glebisClaudeSkillsTree =
+    pkgs.runCommand "claude-glebis-skills-flat" {GLEBIS = glebisClaudeSkills;} ''
+      mkdir -p "$out"
+      for sub in "$GLEBIS"/*/; do
+        [ -d "$sub" ] || continue
+        name=$(basename "$sub")
+        # Skip the marketplace manifest dir; everything else is a skill.
+        case "$name" in
+          .claude-plugin) continue ;;
+        esac
+        cp -aL "$sub" "$out/$name"
+      done
+    '';
+  glebisClaudeSkillsCatalog = mkCatalog "glebis-claude-skills" {
+    skillsDir = glebisClaudeSkillsTree;
+  };
+
   # Bundles live under their owning catalog. Only ruflo ships one today.
   rufloBundles =
     pkgs.runCommand "claude-ruflo-bundles" {
@@ -112,6 +137,8 @@ in {
   home.file.".cache/claude-kit/sources/anthropics-skills-catalog.link".source = anthropicsSkillsCatalog;
   home.file.".cache/claude-kit/sources/gstack-skills.link".source = gstackSkills;
   home.file.".cache/claude-kit/sources/gstack-catalog.link".source = gstackCatalog;
+  home.file.".cache/claude-kit/sources/glebis-claude-skills.link".source = glebisClaudeSkillsTree;
+  home.file.".cache/claude-kit/sources/glebis-claude-skills-catalog.link".source = glebisClaudeSkillsCatalog;
   home.file.".cache/claude-kit/sources/ruflo-bundles.link".source = rufloBundles;
 
   # Symlink each per-source catalog into the Notes vault so `claude-kit lazy
@@ -131,12 +158,13 @@ in {
       rm -rf "$_lazy/gstack"
     fi
 
-    mkdir -p "$_lazy/ruflo" "$_lazy/wshobson" "$_lazy/anthropics-skills" "$_lazy/gstack"
+    mkdir -p "$_lazy/ruflo" "$_lazy/wshobson" "$_lazy/anthropics-skills" "$_lazy/gstack" "$_lazy/glebis-claude-skills"
 
-    ln -sfn "${rufloCatalog}/catalog.json"           "$_lazy/ruflo/catalog.json"
-    ln -sfn "${rufloBundles}"                        "$_lazy/ruflo/bundles"
-    ln -sfn "${wshobsonCatalog}/catalog.json"        "$_lazy/wshobson/catalog.json"
-    ln -sfn "${anthropicsSkillsCatalog}/catalog.json" "$_lazy/anthropics-skills/catalog.json"
-    ln -sfn "${gstackCatalog}/catalog.json"          "$_lazy/gstack/catalog.json"
+    ln -sfn "${rufloCatalog}/catalog.json"                 "$_lazy/ruflo/catalog.json"
+    ln -sfn "${rufloBundles}"                              "$_lazy/ruflo/bundles"
+    ln -sfn "${wshobsonCatalog}/catalog.json"              "$_lazy/wshobson/catalog.json"
+    ln -sfn "${anthropicsSkillsCatalog}/catalog.json"      "$_lazy/anthropics-skills/catalog.json"
+    ln -sfn "${gstackCatalog}/catalog.json"                "$_lazy/gstack/catalog.json"
+    ln -sfn "${glebisClaudeSkillsCatalog}/catalog.json"    "$_lazy/glebis-claude-skills/catalog.json"
   '';
 }
