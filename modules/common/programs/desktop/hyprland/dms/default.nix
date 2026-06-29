@@ -165,33 +165,18 @@
     src = ../../qml/leader-hud;
   };
 
-  # Upstream community plugins from AvengeMedia/dms-plugins.
-  # Pinned to the rev recorded in the old DotFiles submodule (5f36976).
-  programs.dank-material-shell.plugins.dankActions = let
-    dmsPluginsRepo = pkgs.fetchFromGitHub {
-      owner = "AvengeMedia";
-      repo = "dms-plugins";
-      rev = "5f36976676ece21d0c838c0639f193ecc77ea3f2";
-      sha256 = "03bv6kq1iwrps8wv7qzssldjailyyrikdrmhbw0wg7amlvqg3na4";
-    };
-  in {
+  # Upstream community/first-party plugins now come from the dms-plugin-registry
+  # homeModule (flake input `dms-plugin-registry`), which registers every plugin
+  # in the registry disabled-by-default and supplies `src` (daily-updated pin in
+  # our flake.lock). We just flip `.enable` and add `settings`. No manual
+  # fetchFromGitHub rev/sha to bump anymore — `nix flake update dms-plugin-registry`
+  # bumps all of them at once. (leaderHud above stays local — not in the registry.)
+  programs.dank-material-shell.plugins.dankActions = {
     enable = true;
-    src = "${dmsPluginsRepo}/DankActions";
     settings = {
+      # uwsm widget removed — its uuctl action now lives on the Super+U keybind
+      # (hyprland/lua/keybinds.lua). Only the on-screen-keyboard toggle remains.
       variants = [
-        {
-          icon = "terminal";
-          displayText = "uwsm";
-          displayCommand = "systemctl --user show --type=service,scope,socket,target --all --no-pager --property=Id,UnitFileState | grep -B1 'UnitFileState=transient' | grep '^Id='  | wc -l";
-          clickCommand = "uuctl";
-          middleClickCommand = "";
-          rightClickCommand = "";
-          updateInterval = 5;
-          showIcon = true;
-          showText = true;
-          id = "variant_uwsm";
-          name = "uwsm";
-        }
         {
           icon = "⌨️";
           displayText = "";
@@ -209,25 +194,20 @@
     };
   };
 
-  programs.dank-material-shell.plugins.dankHooks = {
-    enable = true;
-    src = "${pkgs.fetchFromGitHub {
-      owner = "AvengeMedia";
-      repo = "dms-plugins";
-      rev = "5f36976676ece21d0c838c0639f193ecc77ea3f2";
-      sha256 = "03bv6kq1iwrps8wv7qzssldjailyyrikdrmhbw0wg7amlvqg3na4";
-    }}/DankHooks";
-  };
+  programs.dank-material-shell.plugins.dankHooks.enable = true;
 
-  programs.dank-material-shell.plugins.dankPomodoroTimer = {
-    enable = true;
-    src = "${pkgs.fetchFromGitHub {
-      owner = "AvengeMedia";
-      repo = "dms-plugins";
-      rev = "5f36976676ece21d0c838c0639f193ecc77ea3f2";
-      sha256 = "03bv6kq1iwrps8wv7qzssldjailyyrikdrmhbw0wg7amlvqg3na4";
-    }}/DankPomodoroTimer";
-  };
+  programs.dank-material-shell.plugins.dankPomodoroTimer.enable = true;
+
+  # Remaining AvengeMedia/dms-plugins first-party plugins (all 12 enabled).
+  programs.dank-material-shell.plugins.dankBatteryAlerts.enable = true;
+  programs.dank-material-shell.plugins.dankClight.enable = true;
+  programs.dank-material-shell.plugins.dankDesktopWeather.enable = true;
+  programs.dank-material-shell.plugins.dankGifSearch.enable = true;
+  programs.dank-material-shell.plugins.dankHyprlandWindows.enable = true;
+  programs.dank-material-shell.plugins.dankKDEConnect.enable = true;
+  programs.dank-material-shell.plugins.dankLauncherKeys.enable = true;
+  programs.dank-material-shell.plugins.dankNotepadModule.enable = true;
+  programs.dank-material-shell.plugins.dankStickerSearch.enable = true;
 
   # Both files are rewritten by DMS at runtime, so HM would otherwise refuse to
   # overwrite them on activation. plugin_settings.json is owned by the upstream
@@ -241,8 +221,7 @@
   # store generations (~/.config/DankMaterialShell/plugins/<id>/Foo.qml),
   # so a content change can be masked by a stale .qmlc. Bust on every
   # activation — cheap, idempotent.
-  home.activation.dmsQmlcacheBust =
-    lib.hm.dag.entryAfter ["writeBoundary"] ''
-      rm -rf "$HOME/.cache/quickshell/qmlcache"
-    '';
+  home.activation.dmsQmlcacheBust = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    rm -rf "$HOME/.cache/quickshell/qmlcache"
+  '';
 }

@@ -32,7 +32,7 @@ Defined in both shells:
 
 Zsh-only:
 
-- `boeingvpn` -- connects via `openconnect` with SOCKS proxy (`ocproxy`).
+- `boeingvpn [userid] [gateway-host]` -- connects via `openconnect` with SOCKS proxy (`ocproxy`). `--user` defaults to the `boeing/vpn_userid` sops secret (read at runtime from its decrypted path); pass `$1` to override. Gateway auto-picked by probing all GP gateways for lowest **median** TCP-connect RTT (TLS skipped — Boeing gateways require unsafe legacy renegotiation); override with `$2` or `$BOEINGVPN_GATEWAY`. Probe tunables: `BOEINGVPN_SAMPLES` (default 3), `BOEINGVPN_DEADLINE` (default 15s hard wall-clock cap — stops probing and uses best-so-far), `BOEINGVPN_CONNECT_TIMEOUT` (default 2s/connect). A down gateway is dropped after 2 leading failures (not 1 — the cold DNS sample can exceed the timeout on a healthy gateway). Standalone ranking tool: `scripts/gp-fastest-gateway.sh` (`SAMPLES`/`DEADLINE`/`CONNECT_TIMEOUT` env knobs).
 - `chrome-socks` -- launches Chrome through the SOCKS proxy.
 - `opencode` -- runs opencode in a rootless podman container with bind mounts.
 - `ta`/`td` -- tmux attach/kill wrappers (needed as functions for argument passing).

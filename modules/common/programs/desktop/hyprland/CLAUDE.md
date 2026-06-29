@@ -24,7 +24,7 @@ Hyprland 0.55+ native-Lua configuration. The user-side config (keybinds, rules, 
 | `lua/rules.lua` | `hl.window_rule` / `hl.layer_rule` / `hl.workspace_rule` calls. PiP, file dialogs, blueman, Zotero, Kodi, JetBrains Xwayland popups, quickshell namespace blur/animation. |
 | `lua/keybinds.lua` | Flat data table `M.binds` of every keybind + `M.register()` walker. Action helpers (`A.focus_dir`, `A.swap_dir`, `A.move_ws`, `A.layout`, …) build dispatchers lazily so the module loads without `hl` defined. Flag mapping in the header comment. |
 | `lua/leader.lua` | `hl.define_submap("leader", …)` + the trigger bind. Writes `~/.cache/leader-hud/state` on enter/exit for the LeaderHud DMS bar plugin. Add more submaps by extending the `submaps` table. |
-| `lua/execs.lua` | `hl.on("hyprland.start", …)` with `uwsm app --` wrappers (dms, hyprpolkitagent, nm-applet, blueman-applet, sunshine). |
+| `lua/execs.lua` | `hl.on("hyprland.start", …)` with `uwsm app --` wrappers (dms, hyprpolkitagent, nm-applet, blueman-applet). Sunshine autostart is disabled (start manually). |
 | `clipboard.nix` | Systemd user services `cliphist-text` / `cliphist-image` running `wl-paste --watch`. `Restart=always` + `KillMode=mixed` so children are reaped on restart. |
 | `hypridle.nix` | Idle daemon: screen off after 5400s; `hyprctl dispatch dpms on/off` on transitions. |
 | `hyprlock.nix` | Lock screen: blurred Sung Jinwoo wallpaper, centered Rubik clock/date, bottom input field. |

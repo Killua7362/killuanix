@@ -74,16 +74,50 @@
   # tooltips / dialogs aligned with the palette.
   join = lib.concatStringsSep ", ";
   activeColors = join [
-    p.fg p.surface p.surface_high p.surface_high p.surface_low p.surface
-    p.fg p.selection_strong p.fg p.bg p.bg p.color8
-    p.color4 p.bg p.color4 p.color5
-    p.surface p.bg p.surface_alt p.fg p.fg_dim
+    p.fg
+    p.surface
+    p.surface_high
+    p.surface_high
+    p.surface_low
+    p.surface
+    p.fg
+    p.selection_strong
+    p.fg
+    p.bg
+    p.bg
+    p.color8
+    p.color4
+    p.bg
+    p.color4
+    p.color5
+    p.surface
+    p.bg
+    p.surface_alt
+    p.fg
+    p.fg_dim
   ];
   disabledColors = join [
-    p.fg_dim p.surface p.surface_high p.surface_high p.surface_low p.surface
-    p.fg_dim p.fg p.fg_dim p.bg p.bg p.color8
-    p.surface_high p.fg_dim p.color4 p.color5
-    p.surface p.bg p.surface_alt p.fg_dim p.fg_dimmer
+    p.fg_dim
+    p.surface
+    p.surface_high
+    p.surface_high
+    p.surface_low
+    p.surface
+    p.fg_dim
+    p.fg
+    p.fg_dim
+    p.bg
+    p.bg
+    p.color8
+    p.surface_high
+    p.fg_dim
+    p.color4
+    p.color5
+    p.surface
+    p.bg
+    p.surface_alt
+    p.fg_dim
+    p.fg_dimmer
   ];
   inactiveColors = activeColors;
 

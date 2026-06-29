@@ -17,7 +17,7 @@ in {
       window-padding-y = 12;
       background-opacity = 1.0;
 
-      cursor-style = "block";
+      cursor-style = "bar";
       cursor-style-blink = true;
       shell-integration = "zsh";
       copy-on-select = "clipboard";

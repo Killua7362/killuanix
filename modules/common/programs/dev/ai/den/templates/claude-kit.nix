@@ -88,9 +88,9 @@
   # intent; effective enforcement is the user's responsibility (e.g. lift
   # the unwanted skill out of `~/.claude/skills/` globally, or add a
   # corresponding `deniedTools` rule below).
-  excludeSkills   = [ ];
-  excludeAgents   = [ ];
-  excludeCommands = [ ];
+  excludeSkills = [];
+  excludeAgents = [];
+  excludeCommands = [];
 
   # Extra tool permissions, appended into settings.local.json:permissions.
   # Pattern syntax matches Claude Code's own permission grammar — e.g.

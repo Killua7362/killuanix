@@ -299,8 +299,10 @@ in {
         send-keys -X select-line \; \
         send-keys -X copy-pipe-and-cancel "${pkgs.wl-clipboard}/bin/wl-copy"
 
-      # click outside selection in copy-mode → cancel copy-mode (deselect).
-      bind -T copy-mode-vi MouseDown1Pane select-pane \; send-keys -X cancel
+      # click in copy-mode → clear current selection but STAY in copy-mode
+      # (send-keys -X cancel would exit copy-mode and snap back to the bottom
+      # of the buffer, killing the scroll position mid-select).
+      bind -T copy-mode-vi MouseDown1Pane select-pane \; send-keys -X clear-selection
 
       # ====================================================================
       # edit scrollback in nvim (zellij Ctrl-a v)

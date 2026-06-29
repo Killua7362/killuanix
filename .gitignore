@@ -8,3 +8,7 @@ result/*
 result
 wallpapers/
 .claude
+
+# Python bytecode (e.g. boeingvpn-ui daemon)
+__pycache__/
+*.pyc

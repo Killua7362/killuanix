@@ -78,7 +78,7 @@ in {
   services.flatpak.enable = true;
   services.sunshine = {
     enable = true;
-    autoStart = true;
+    autoStart = false;
     capSysAdmin = true;
     openFirewall = true;
   };
@@ -96,24 +96,18 @@ in {
     enable = true;
     trustedInterfaces = ["tailscale0" "docker0" "virbr0"];
     allowedUDPPorts = [41641 21116 1194];
-    allowedUDPPortRanges = [
-      {
-        from = 1714;
-        to = 1764;
-      }
-    ];
     allowedTCPPorts = [443];
     allowedTCPPortRanges = [
       {
         from = 21114;
         to = 21119;
       }
-      {
-        from = 1714;
-        to = 1764;
-      }
     ];
   };
+
+  # KDE Connect — phone integration. Installs kdePackages.kdeconnect-kde and
+  # opens 1714-1764 TCP+UDP in the firewall automatically.
+  programs.kdeconnect.enable = true;
 
   networking.hostName = "chrollo";
   networking.networkmanager = {
@@ -129,13 +123,13 @@ in {
   services.resolved = {
     enable = true;
     settings.Resolve = {
-      DNSSEC = "true";
+      DNSSEC = "allow-downgrade";
       Domains = ["~."];
       FallbackDNS = [
         "1.1.1.1"
         "1.0.0.1"
       ];
-      DNSOverTLS = "true";
+      DNSOverTLS = "opportunistic";
     };
   };
   time.timeZone = "Asia/Kolkata";
@@ -274,7 +268,11 @@ in {
     ocproxy
     hubstaff
     distrobox
+    inputs.iloader.packages.${pkgs.system}.default
   ];
+
+  # iOS sideloading daemon — required by iloader to talk to a plugged iPhone.
+  services.usbmuxd.enable = true;
 
   system.stateVersion = "25.11";
 

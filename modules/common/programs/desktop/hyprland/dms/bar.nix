@@ -98,7 +98,7 @@
             enabled = true;
           }
           {
-            id = "dankActions:variant_uwsm";
+            id = "dankActions:variant_wvkbd";
             enabled = true;
           }
           "systemTray"

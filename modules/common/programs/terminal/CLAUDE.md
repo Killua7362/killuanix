@@ -17,7 +17,7 @@ Home Manager configuration for two terminal emulators (ghostty, kitty) and the t
 - **Enabled** on Linux only (`lib.mkDefault pkgs.stdenv.isLinux`).
 - **Font**: JetBrainsMono Nerd Font, size 12.
 - **Window**: No decoration, 12px padding on both axes, full opacity (`background-opacity = 1.0`).
-- **Cursor**: Block style with blink.
+- **Cursor**: Bar style with blink (was block — bar reads thinner in tmux copy-mode, which uses the terminal's real cursor since tmux 3.6 has no per-copy-mode cursor option).
 - **Shell**: zsh (via `shell-integration = "zsh"` and `command = "zsh"`).
 - **Clipboard**: `copy-on-select = clipboard`, explicit `ctrl+shift+c`/`ctrl+shift+v` bindings.
 - **Scrollback**: 1000000 lines (raised from 3000 — long claude-code conversations were rolling out of the buffer mid-scroll).

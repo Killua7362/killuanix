@@ -81,11 +81,10 @@
   # reference via `~/.claude/skills/gstack/bin/...`). Wrap the whole input
   # under skills/gstack/ so a single `lazy add skill gstack` lands the
   # entire tree intact and the internal path refs resolve.
-  gstackSkills =
-    pkgs.runCommand "claude-gstack-skills-flat" {GSTACK = gstack;} ''
-      mkdir -p "$out/gstack"
-      cp -aL "$GSTACK"/. "$out/gstack/"
-    '';
+  gstackSkills = pkgs.runCommand "claude-gstack-skills-flat" {GSTACK = gstack;} ''
+    mkdir -p "$out/gstack"
+    cp -aL "$GSTACK"/. "$out/gstack/"
+  '';
   gstackCatalog = mkCatalog "gstack" {
     skillsDir = gstackSkills;
   };
@@ -97,19 +96,18 @@
   # `$out/` first so the few non-skill top-level files (README.md,
   # BUNDLES.md, secrets.enc.yaml, .gitignore) don't leak into the
   # skills list once the catalog walks `*/`.
-  glebisClaudeSkillsTree =
-    pkgs.runCommand "claude-glebis-skills-flat" {GLEBIS = glebisClaudeSkills;} ''
-      mkdir -p "$out"
-      for sub in "$GLEBIS"/*/; do
-        [ -d "$sub" ] || continue
-        name=$(basename "$sub")
-        # Skip the marketplace manifest dir; everything else is a skill.
-        case "$name" in
-          .claude-plugin) continue ;;
-        esac
-        cp -aL "$sub" "$out/$name"
-      done
-    '';
+  glebisClaudeSkillsTree = pkgs.runCommand "claude-glebis-skills-flat" {GLEBIS = glebisClaudeSkills;} ''
+    mkdir -p "$out"
+    for sub in "$GLEBIS"/*/; do
+      [ -d "$sub" ] || continue
+      name=$(basename "$sub")
+      # Skip the marketplace manifest dir; everything else is a skill.
+      case "$name" in
+        .claude-plugin) continue ;;
+      esac
+      cp -aL "$sub" "$out/$name"
+    done
+  '';
   glebisClaudeSkillsCatalog = mkCatalog "glebis-claude-skills" {
     skillsDir = glebisClaudeSkillsTree;
   };

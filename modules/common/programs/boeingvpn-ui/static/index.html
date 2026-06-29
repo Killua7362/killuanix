@@ -17,8 +17,23 @@
             <span id="status-dot" class="dot dot-grey"></span>
             <span id="status-label">Disconnected</span>
           </div>
+          <div class="field">
+            <label for="userid">User ID</label>
+            <input
+              id="userid"
+              type="text"
+              placeholder="userid"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+          <div class="field">
+            <label for="gateway">Gateway</label>
+            <select id="gateway"></select>
+          </div>
           <div class="buttons">
             <button id="btn-connect">Connect</button>
+            <button id="btn-fastest">Connect fastest</button>
             <button id="btn-disconnect" disabled>Disconnect</button>
             <button id="btn-reconnect" disabled>Reconnect</button>
           </div>

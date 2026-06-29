@@ -11,6 +11,7 @@ Substituted at build time by pkgs.replaceVars:
   openconnect -- openconnect store path (bin dir on PATH)
   ocproxy     -- ocproxy store path (bin dir on PATH)
   static      -- directory containing index.html, style.css, app.js, wallpaper.svg
+  useridfile  -- sops-decrypted file holding the default userid (boeing/vpn_userid)
 """
 
 import json
@@ -53,10 +54,127 @@ if _STATIC.startswith("@"):
     _STATIC = str(Path(__file__).resolve().parent / "static")
 STATIC_DIR = Path(_STATIC)
 
-VPN_HOST = "https://ta.as2.cbc.vpn.boeing.net"
-VPN_USER = "dj216f"
+# Gateway catalog (name, host). Single source of truth for the dropdown
+# (served via /api/config) and the fastest-probe (/api/fastest).
+GATEWAYS = [
+    ("Amsterdam E", "ta.eu1.cbc.vpn.boeing.net"),
+    ("Amsterdam F", "ta.eu2.cbc.vpn.boeing.net"),
+    ("Brisbane E", "ta.au1.cbc.vpn.boeing.net"),
+    ("Melbourne E", "ta.au2.cbc.vpn.boeing.net"),
+    ("Northwest E", "ta.nw1.cbc.vpn.boeing.net"),
+    ("Northwest F", "ta.nw2.cbc.vpn.boeing.net"),
+    ("Southeast 1", "ta.se1.cbc.vpn.boeing.net"),
+    ("Southeast 2", "ta.se2.cbc.vpn.boeing.net"),
+    ("Southwest E", "ta.sw1.cbc.vpn.boeing.net"),
+    ("Southwest F", "ta.sw2.cbc.vpn.boeing.net"),
+    ("Tokyo E", "ta.as1.cbc.vpn.boeing.net"),
+    ("Tokyo F", "ta.as2.cbc.vpn.boeing.net"),
+]
+GATEWAY_HOSTS = {host for _name, host in GATEWAYS}
+DEFAULT_HOST = GATEWAYS[0][1]
+
 VPN_GROUP = "gateway"
 SOCKS_PORT = 1080
+
+# Default userid: sops-decrypted file (path substituted at build time, or
+# BOEINGVPN_USERID_FILE for worktree runs). Empty if neither present — the UI
+# then requires the user to type one.
+_USERID_FILE = os.environ.get("BOEINGVPN_USERID_FILE") or "@useridfile@"
+if _USERID_FILE.startswith("@"):
+    _USERID_FILE = ""
+
+
+def default_userid() -> str:
+    if _USERID_FILE:
+        try:
+            return Path(_USERID_FILE).read_text().strip()
+        except OSError:
+            pass
+    return ""
+
+
+# Number of TCP-connect samples per gateway; the median is taken so a single
+# slow handshake (DNS warmup, transient loss) can't crown a loser.
+PROBE_SAMPLES = 5
+# Per-connect timeout (s). A down gateway costs at most this once, not ×SAMPLES,
+# because probe_host bails after the first failed sample.
+PROBE_TIMEOUT = 2.0
+# Hard wall-clock cap (s) for an entire rank_gateways() sweep. Gateways still
+# probing when it elapses are treated as unreachable for this run.
+RANK_DEADLINE = 8.0
+
+
+def _probe_once(host: str, port: int = 443, timeout: float = PROBE_TIMEOUT) -> float | None:
+    """One TCP-connect RTT to host:port in ms, or None if unreachable.
+
+    TLS is skipped on purpose: Boeing GP gateways require unsafe legacy
+    renegotiation that modern TLS stacks refuse, so the TCP handshake time is
+    the clean latency signal.
+    """
+    t0 = time.monotonic()
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return (time.monotonic() - t0) * 1000.0
+    except OSError:
+        return None
+
+
+def probe_host(host: str, samples: int = PROBE_SAMPLES) -> float | None:
+    """Median TCP-connect RTT over `samples` attempts, or None if all fail.
+
+    2-strike early-exit: bail only after two leading failures with no success
+    yet — a down host then costs ~2×timeout instead of samples×timeout. We don't
+    bail on the *first* failure because the cold sample (DNS warmup) can exceed
+    PROBE_TIMEOUT on a healthy gateway; the second, warm attempt succeeds.
+    """
+    from statistics import median
+
+    vals: list[float] = []
+    for i in range(samples):
+        ms = _probe_once(host)
+        if ms is None:
+            if not vals and i >= 1:
+                break
+            continue
+        vals.append(ms)
+    return median(vals) if vals else None
+
+
+def rank_gateways() -> list[dict]:
+    """Probe all gateways concurrently, return reachable ones sorted fastest-first.
+
+    Each gateway's samples run sequentially inside its own worker (so we don't
+    measure self-induced contention), but the gateways are probed in parallel.
+    A hard RANK_DEADLINE caps the whole sweep — stragglers are dropped.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    ranked: list[dict] = []
+    # Not a `with` block: the executor's context-manager exit calls
+    # shutdown(wait=True), which blocks on any still-running probe and would
+    # blow past RANK_DEADLINE. We shut down with wait=False so the sweep RETURNS
+    # at the deadline; stragglers finish (bounded by PROBE_TIMEOUT) and the pool
+    # is GC'd.
+    pool = ThreadPoolExecutor(max_workers=len(GATEWAYS))
+    futures = {pool.submit(probe_host, host): (name, host) for name, host in GATEWAYS}
+    try:
+        for fut in as_completed(futures, timeout=RANK_DEADLINE):
+            name, host = futures[fut]
+            ms = fut.result()
+            if ms is not None:
+                ranked.append({"name": name, "host": host, "ms": round(ms, 1)})
+    except TimeoutError:
+        print(
+            f"boeingvpn-ui: rank deadline {RANK_DEADLINE}s hit, "
+            f"{len(ranked)}/{len(GATEWAYS)} gateways measured",
+            file=sys.stderr,
+            flush=True,
+        )
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+    ranked.sort(key=lambda r: r["ms"])
+    return ranked
+
 
 BIND_HOST = "127.0.0.1"
 BIND_PORT = 7777
@@ -72,6 +190,8 @@ class VpnManager:
         self._last_error: str = ""
         self._started_at: float | None = None
         self._last_secret: str | None = None
+        self._last_userid: str | None = None
+        self._last_gateway: str | None = None
         self._stderr_tail: list[str] = []
 
     def snapshot(self) -> dict:
@@ -80,10 +200,16 @@ class VpnManager:
                 "state": self._state,
                 "started_at": self._started_at,
                 "last_error": self._last_error,
+                "userid": self._last_userid,
+                "gateway": self._last_gateway,
                 "pid": self._proc.pid if self._proc and self._proc.poll() is None else None,
             }
 
-    def connect(self, secret: str) -> tuple[bool, str]:
+    def connect(self, secret: str, userid: str, gateway: str) -> tuple[bool, str]:
+        if not userid:
+            return False, "missing userid"
+        if gateway not in GATEWAY_HOSTS:
+            return False, f"unknown gateway: {gateway}"
         with self._lock:
             if self._proc and self._proc.poll() is None:
                 return False, "already running"
@@ -97,13 +223,13 @@ class VpnManager:
                     [
                         OPENCONNECT,
                         "--protocol=gp",
-                        f"--user={VPN_USER}",
+                        f"--user={userid}",
                         f"--usergroup={VPN_GROUP}",
                         "--script-tun",
                         "--script",
                         f"ocproxy -D {SOCKS_PORT}",
                         "--passwd-on-stdin",
-                        VPN_HOST,
+                        f"https://{gateway}",
                     ],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.DEVNULL,
@@ -128,6 +254,8 @@ class VpnManager:
             self._started_at = time.time()
             self._last_error = ""
             self._last_secret = secret
+            self._last_userid = userid
+            self._last_gateway = gateway
             self._stderr_tail = []
 
         threading.Thread(target=self._watch, daemon=True).start()
@@ -164,10 +292,12 @@ class VpnManager:
 
     def reconnect(self) -> tuple[bool, str]:
         secret = self._last_secret
-        if not secret:
-            return False, "no cached secret; click Connect"
+        userid = self._last_userid
+        gateway = self._last_gateway
+        if not secret or not userid or not gateway:
+            return False, "no cached session; click Connect"
         self.disconnect()
-        return self.connect(secret)
+        return self.connect(secret, userid, gateway)
 
     def _watch(self) -> None:
         proc = self._proc
@@ -269,6 +399,19 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/status":
             self._json(200, VPN.snapshot())
             return
+        if self.path == "/api/config":
+            self._json(200, {
+                "default_userid": default_userid(),
+                "gateways": [{"name": n, "host": h} for n, h in GATEWAYS],
+            })
+            return
+        if self.path == "/api/fastest":
+            ranked = rank_gateways()
+            if not ranked:
+                self._json(503, {"ok": False, "error": "no gateway reachable"})
+                return
+            self._json(200, {"ok": True, "fastest": ranked[0], "ranking": ranked})
+            return
         self._serve_static(self.path)
 
     def do_POST(self) -> None:  # noqa: N802
@@ -282,10 +425,22 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/api/connect":
             secret = (payload.get("secret") or "").strip()
+            userid = (payload.get("userid") or "").strip() or default_userid()
+            gateway = (payload.get("gateway") or "").strip()
             if not secret:
                 self._json(400, {"ok": False, "error": "missing secret"})
                 return
-            ok, msg = VPN.connect(secret)
+            if not userid:
+                self._json(400, {"ok": False, "error": "missing userid"})
+                return
+            # gateway == "auto" → probe and pick the fastest now.
+            if gateway == "auto" or not gateway:
+                ranked = rank_gateways()
+                if not ranked:
+                    self._json(503, {"ok": False, "error": "no gateway reachable"})
+                    return
+                gateway = ranked[0]["host"]
+            ok, msg = VPN.connect(secret, userid, gateway)
             self._json(200 if ok else 409, {"ok": ok, "msg": msg, **VPN.snapshot()})
             return
         if self.path == "/api/disconnect":

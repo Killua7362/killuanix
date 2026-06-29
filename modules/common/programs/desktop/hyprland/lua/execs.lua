@@ -7,6 +7,6 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("uwsm app -- hyprpolkitagent")
   hl.exec_cmd("uwsm app -- nm-applet --indicator")
   hl.exec_cmd("uwsm app -- blueman-applet")
-  hl.exec_cmd("uwsm app -- sunshine")
+  -- sunshine autostart disabled; start manually (`sunshine`) or `systemctl start sunshine` when needed
   hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE")
 end)

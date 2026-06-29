@@ -45,10 +45,10 @@
   # IDs cross-referenced against ~/.mozilla/firefox/default/extensions.json.
   initiallyDisabledExtensionIds = [
     "{74145f27-f039-47ce-a470-a662b129930a}" # ClearURLs
-    "7esoorv3@alefvanoon.anonaddy.me"        # LibRedirect
-    "extension@tabliss.io"                   # Tabliss
-    "treestyletab@piro.sakura.ne.jp"         # Tree Style Tab
-    "uMatrix@raymondhill.net"                # uMatrix
+    "7esoorv3@alefvanoon.anonaddy.me" # LibRedirect
+    "extension@tabliss.io" # Tabliss
+    "treestyletab@piro.sakura.ne.jp" # Tree Style Tab
+    "uMatrix@raymondhill.net" # uMatrix
     "{2d4c0962-e9ff-4cad-8039-9a8b80d9b8b6}" # YouTube Redux
     "{36d78ab3-8f38-444a-baee-cb4a0cadbf98}" # YouTube Playlist Duration Calculator
   ];

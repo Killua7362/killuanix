@@ -13,6 +13,31 @@ commented module-level option reference (`systemd`, `enable*`, `quickshell.packa
 `leaderHud` plugin wiring, and the `xdg.configFile.…force = lib.mkForce true`
 escape hatch.
 
+## Plugins
+
+Two sources:
+
+- **`dms-plugin-registry`** (flake input `dms-plugin-registry =
+  github:AvengeMedia/dms-plugin-registry`) — its homeModule
+  (`inputs.dms-plugin-registry.homeModules.default`, imported alongside the dms
+  module in `flake.nix` archnix + `chrollo/home-manager/home.nix` +
+  `killua/home.nix`) registers **all 238 registry plugins** with
+  `enable = mkDefault false` and a prefetched `src`. To use one, just set
+  `programs.dank-material-shell.plugins.<id>.enable = true;` (+ optional
+  `settings`); do **not** set `src` (that conflicts with the registry's own
+  `src` def). The `<id>` is the registry id (e.g. `dankActions`,
+  `dankBatteryAlerts`) — last path segment of the install URL on
+  https://danklinux.com/plugins. Currently enabled: all 12 first-party
+  `AvengeMedia/dms-plugins` (`dankActions` — with `settings.variants` —
+  `dankBatteryAlerts`, `dankClight`, `dankDesktopWeather`, `dankGifSearch`,
+  `dankHooks`, `dankHyprlandWindows`, `dankKDEConnect`, `dankLauncherKeys`,
+  `dankNotepadModule`, `dankPomodoroTimer`, `dankStickerSearch`). **Bumping** all
+  registry plugins = `nix flake update dms-plugin-registry` (daily-updated
+  upstream pin in `flake.lock`); no per-plugin rev/sha to maintain.
+- **Local / out-of-registry** — set `src` manually (package or path). Only
+  `leaderHud` (`src = ../../qml/leader-hud`) uses this; it's an in-repo QML
+  plugin not in the registry.
+
 ## When you want to change X, open Y
 
 | Topic | File | Owns |

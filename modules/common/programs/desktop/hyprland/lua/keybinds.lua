@@ -188,7 +188,7 @@ M.binds = {
   { keys = "Super, W",       action = A.exec("vicinae toggle") },
   { keys = "Super, V",       action = A.exec("vicinae vicinae://extensions/vicinae/clipboard/history") },
   { keys = "Super, C",       action = A.exec("uwsm-app -- clipboard-menu") },
-  { keys = "Super, U",       action = A.exec("uwsm-app -- rctl") },
+  { keys = "Super, U",       action = A.exec("uwsm-app -- uuctl") },
   { keys = "Super, F12",     action = A.exec("uwsm-app -- /home/killua/.local/bin/switch-session.sh") },
   { keys = "Super ALT, L",   action = A.exec("uwsm-app -- dms ipc call lock lock") },
 

@@ -8,6 +8,7 @@
 # The Chrome ManagedBookmarks policy that drops a bookmark to this URL is
 # system-scoped — see ./nixos.nix, which chrollo/killua import directly.
 {
+  config,
   pkgs,
   lib,
   ...
@@ -22,6 +23,9 @@
     openconnect = pkgs.openconnect;
     ocproxy = pkgs.ocproxy;
     static = staticAssets;
+    # Default userid is read at runtime from this sops-decrypted path; the UI
+    # field is prefilled from it and can be overridden per-connect.
+    useridfile = config.sops.secrets."boeing/vpn_userid".path;
   };
 
   boeingvpnUi =

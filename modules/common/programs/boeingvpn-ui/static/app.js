@@ -5,10 +5,13 @@
   const label = document.getElementById("status-label");
   const errLine = document.getElementById("error-line");
   const btnConnect = document.getElementById("btn-connect");
+  const btnFastest = document.getElementById("btn-fastest");
   const btnDisconnect = document.getElementById("btn-disconnect");
   const btnReconnect = document.getElementById("btn-reconnect");
   const btnSubmit = document.getElementById("btn-submit");
   const secret = document.getElementById("secret");
+  const userid = document.getElementById("userid");
+  const gateway = document.getElementById("gateway");
 
   // ---- Draggable window ---------------------------------------------------
 
@@ -38,12 +41,13 @@
 
   // ---- UI state machine ---------------------------------------------------
   //
-  // Local UI states mirror daemon states but add `awaiting-secret`, which only
-  // exists between the user pressing Connect and submitting the secret (the
-  // daemon has no concept of that — it only spawns openconnect on submit).
+  // Local UI states mirror daemon states but add `awaiting-secret` (between
+  // pressing Connect and submitting the secret) and `probing` (while the
+  // fastest-gateway probe runs). The daemon knows neither.
 
   const UI = {
     IDLE: "idle",
+    PROBING: "probing",
     AWAITING: "awaiting-secret",
     CONNECTING: "connecting",
     CONNECTED: "connected",
@@ -55,6 +59,7 @@
 
   const STYLES = {
     [UI.IDLE]:          { dot: "dot-grey",   text: "Disconnected" },
+    [UI.PROBING]:       { dot: "dot-yellow", text: "Finding fastest gateway…" },
     [UI.AWAITING]:      { dot: "dot-yellow", text: "Enter PIN+token" },
     [UI.CONNECTING]:    { dot: "dot-yellow", text: "Connecting…" },
     [UI.CONNECTED]:     { dot: "dot-green",  text: "Connected" },
@@ -62,21 +67,26 @@
     [UI.ERROR]:         { dot: "dot-red",    text: "Error" },
   };
 
-  function render(state, errorMsg) {
+  function render(state, errorMsg, labelOverride) {
     uiState = state;
     const s = STYLES[state];
     dot.className = "dot " + s.dot;
-    label.textContent = s.text;
+    label.textContent = labelOverride || s.text;
     errLine.textContent = state === UI.ERROR && errorMsg ? errorMsg : "";
 
     const isAwaiting = state === UI.AWAITING;
     const isConnected = state === UI.CONNECTED;
-    const isConnecting = state === UI.CONNECTING || state === UI.DISCONNECTING;
+    const isBusy = state === UI.CONNECTING || state === UI.DISCONNECTING || state === UI.PROBING;
     const isIdle = state === UI.IDLE || state === UI.ERROR;
 
     btnConnect.disabled = !isIdle;
+    btnFastest.disabled = !isIdle;
     btnDisconnect.disabled = !(isAwaiting || isConnected || state === UI.CONNECTING);
     btnReconnect.disabled = !(isConnected || state === UI.ERROR);
+
+    // userid + gateway are editable only while not yet committed to a session.
+    userid.disabled = !(isIdle || isAwaiting);
+    gateway.disabled = !(isIdle || isAwaiting);
 
     secret.disabled = !isAwaiting;
     btnSubmit.disabled = !isAwaiting;
@@ -84,7 +94,7 @@
     if (isAwaiting) {
       secret.focus();
     }
-    if (!isAwaiting && !isConnecting) {
+    if (!isAwaiting && !isBusy) {
       secret.value = "";
     }
   }
@@ -100,8 +110,10 @@
   }
 
   function applyDaemonState(snap) {
-    // Don't clobber the local-only AWAITING state with a poll result.
-    if (uiState === UI.AWAITING) return;
+    // Don't clobber local-only states with a poll result.
+    if (uiState === UI.AWAITING || uiState === UI.PROBING) return;
+    // Keep the dropdown in sync with whatever gateway is actually in use.
+    if (snap.gateway) gateway.value = snap.gateway;
     if (snap.state === "connecting") render(UI.CONNECTING);
     else if (snap.state === "connected") render(UI.CONNECTED);
     else if (snap.state === "disconnecting") render(UI.DISCONNECTING);
@@ -112,7 +124,23 @@
   // ---- Wiring -------------------------------------------------------------
 
   btnConnect.addEventListener("click", () => {
+    // Uses whatever gateway is selected in the dropdown.
     render(UI.AWAITING);
+  });
+
+  btnFastest.addEventListener("click", async () => {
+    render(UI.PROBING);
+    try {
+      const r = await api("/api/fastest");
+      if (!r.ok || !r.fastest) {
+        render(UI.ERROR, r.error || "no gateway reachable");
+        return;
+      }
+      gateway.value = r.fastest.host;
+      render(UI.AWAITING, null, `Fastest: ${r.fastest.name} (${r.fastest.ms}ms)`);
+    } catch (e) {
+      render(UI.ERROR, String(e));
+    }
   });
 
   btnDisconnect.addEventListener("click", async () => {
@@ -143,9 +171,17 @@
   async function submit() {
     const value = secret.value;
     if (!value) return;
+    if (!userid.value.trim()) {
+      render(UI.ERROR, "missing userid");
+      return;
+    }
     render(UI.CONNECTING);
     try {
-      const snap = await api("/api/connect", { secret: value });
+      const snap = await api("/api/connect", {
+        secret: value,
+        userid: userid.value.trim(),
+        gateway: gateway.value,
+      });
       if (!snap.ok && snap.error) render(UI.ERROR, snap.error);
       else applyDaemonState(snap);
     } catch (e) {
@@ -160,7 +196,23 @@
 
   // ---- Boot ---------------------------------------------------------------
 
-  api("/api/status").then(applyDaemonState).catch(() => render(UI.IDLE));
+  // Populate userid default + gateway list from the daemon, then sync state.
+  api("/api/config")
+    .then((cfg) => {
+      if (cfg.default_userid && !userid.value) userid.value = cfg.default_userid;
+      gateway.innerHTML = "";
+      (cfg.gateways || []).forEach((gw) => {
+        const opt = document.createElement("option");
+        opt.value = gw.host;
+        opt.textContent = `${gw.name} (${gw.host})`;
+        gateway.appendChild(opt);
+      });
+    })
+    .catch(() => {})
+    .finally(() => {
+      api("/api/status").then(applyDaemonState).catch(() => render(UI.IDLE));
+    });
+
   setInterval(() => {
     api("/api/status").then(applyDaemonState).catch(() => {});
   }, 2000);

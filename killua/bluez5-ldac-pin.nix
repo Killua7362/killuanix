@@ -33,10 +33,7 @@
 # you select LDAC); that one is fixed in pipewire 1.6.3 by upstream
 # commit 99f901d and is *not* addressed here. If you hit it, switch to
 # the bluez5/-subdir-swap approach instead.
-{
-  pkgs,
-  ...
-}: let
+{pkgs, ...}: let
   fixDecodeInitPatch = pkgs.writeText "fix-decode-init.patch" ''
     --- a/src/ldacBT_api.o.c
     +++ b/src/ldacBT_api.o.c

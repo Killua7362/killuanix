@@ -215,6 +215,10 @@
     allowedUDPPorts = [41641];
   };
 
+  # KDE Connect — phone integration. Installs kdePackages.kdeconnect-kde and
+  # opens 1714-1764 TCP+UDP in the firewall automatically.
+  programs.kdeconnect.enable = true;
+
   # ── Packages ──
   environment.systemPackages = with pkgs; [
     git
@@ -224,7 +228,11 @@
     hubstaff
     distrobox
     docker-compose
+    inputs.iloader.packages.${pkgs.system}.default
   ];
+
+  # iOS sideloading daemon — required by iloader to talk to a plugged iPhone.
+  services.usbmuxd.enable = true;
 
   # ── Fonts ──
   fonts.packages = with pkgs; [

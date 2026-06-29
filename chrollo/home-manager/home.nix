@@ -15,6 +15,7 @@
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dank-material-shell
+    inputs.dms-plugin-registry.homeModules.default
     inputs.chaotic.homeManagerModules.default
     inputs.vicinae.homeManagerModules.default
     inputs.nixCats.homeModule

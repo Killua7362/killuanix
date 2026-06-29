@@ -32,8 +32,7 @@
   config,
   ...
 }: let
-  hookCmd = event:
-    "${lib.getExe pkgs.bun} ${config.home.homeDirectory}/.claude/hooks/index.ts ${event}";
+  hookCmd = event: "${lib.getExe pkgs.bun} ${config.home.homeDirectory}/.claude/hooks/index.ts ${event}";
 
   mkEntry = event: [
     {

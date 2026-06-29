@@ -79,6 +79,13 @@
       url = "github:AvengeMedia/DankMaterialShell/stable";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Community + first-party DMS plugins/themes. Daily-updated package set;
+    # its homeModule registers every plugin disabled-by-default, flip
+    # `.enable = true` per plugin. See dms/default.nix.
+    dms-plugin-registry = {
+      url = "github:AvengeMedia/dms-plugin-registry";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     hyprland.url = "github:hyprwm/Hyprland";
     portainer-on-nixos.url = "gitlab:cbleslie/portainer-on-nixos";
     portainer-on-nixos.inputs.nixpkgs.follows = "nixpkgs";
@@ -148,6 +155,14 @@
     determinate.url = "github:DeterminateSystems/determinate";
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
     claude-code.url = "github:sadjow/claude-code-nix";
+
+    # iloader — Tauri iOS sideloader (install SideStore / import IPAs + pairing
+    # files). Ships its own flake exposing packages.<system>.default. Pulled
+    # into chrollo + killua system packages; runtime needs services.usbmuxd.
+    iloader = {
+      url = "github:nab138/iloader";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     ghgrab = {
       url = "github:abhixdd/ghgrab";
@@ -391,6 +406,7 @@
           inputs.vicinae.homeManagerModules.default
           inputs.nixCats.homeModule
           inputs.dms.homeModules.dank-material-shell
+          inputs.dms-plugin-registry.homeModules.default
           inputs.nix-index-database.homeModules.default
           # inputs.nix-yazi-plugins.legacyPackages.x86_64-linux.homeManagerModules.default # TODO: Revisit in future
           ./archnix/home.nix

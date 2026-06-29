@@ -143,13 +143,89 @@
 
         # Functions (converted from fish)
         boeingvpn() {
+          # usage: boeingvpn [userid] [gateway-host]
+          # userid : positional $1 overrides; else default from sops
+          #          (boeing/vpn_userid at ${config.sops.secrets."boeing/vpn_userid".path})
+          # gateway: positional $2 or $BOEINGVPN_GATEWAY overrides; else auto-pick
+          #          lowest TCP-connect RTT across the gateway list.
+          local userid="''${1:-}"
+          if [ -z "$userid" ]; then
+            userid="$(cat ${config.sops.secrets."boeing/vpn_userid".path} 2>/dev/null)"
+          fi
+          if [ -z "$userid" ]; then
+            echo "boeingvpn: no userid (pass as arg or set boeing/vpn_userid in sops)" >&2
+            return 1
+          fi
+
+          local gw="''${2:-''${BOEINGVPN_GATEWAY:-}}"
+          if [ -z "$gw" ]; then
+            local hosts=(
+              ta.eu1.cbc.vpn.boeing.net   # Amsterdam E
+              ta.eu2.cbc.vpn.boeing.net   # Amsterdam F
+              ta.au1.cbc.vpn.boeing.net   # Brisbane E
+              ta.au2.cbc.vpn.boeing.net   # Melbourne E
+              ta.nw1.cbc.vpn.boeing.net   # Northwest E
+              ta.nw2.cbc.vpn.boeing.net   # Northwest F
+              ta.se1.cbc.vpn.boeing.net   # Southeast 1
+              ta.se2.cbc.vpn.boeing.net   # Southeast 2
+              ta.sw1.cbc.vpn.boeing.net   # Southwest E
+              ta.sw2.cbc.vpn.boeing.net   # Southwest F
+              ta.as1.cbc.vpn.boeing.net   # Tokyo E
+              ta.as2.cbc.vpn.boeing.net   # Tokyo F
+            )
+            local samples="''${BOEINGVPN_SAMPLES:-3}"
+            local deadline="''${BOEINGVPN_DEADLINE:-15}"   # hard wall-clock cap (s)
+            local ctimeout="''${BOEINGVPN_CONNECT_TIMEOUT:-2}"
+            echo "boeingvpn: probing $#hosts gateways ($samples samples, median RTT, ''${deadline}s cap)..." >&2
+            local h t i ms best="" bestms=999999
+            SECONDS=0   # wall-clock timer
+            for h in "''${hosts[@]}"; do
+              # Hard cap: stop probing once the deadline passes, use best so far.
+              if (( SECONDS >= deadline )); then
+                echo "boeingvpn: deadline ''${deadline}s hit, using best so far" >&2
+                break
+              fi
+              # time_connect = TCP RTT to :443. TLS skipped (Boeing gateways
+              # need unsafe legacy renegotiation; OpenSSL refuses it). 0 = down.
+              # Median of N samples so one slow handshake can't crown a loser.
+              local vals=()
+              for ((i = 0; i < samples; i++)); do
+                t=$(curl -ks --connect-timeout "$ctimeout" --max-time "$ctimeout" -o /dev/null -w '%{time_connect}' "https://$h" 2>/dev/null || true)
+                if [ -n "$t" ] && [ "$t" != "0" ] && [ "$t" != "0.000000" ]; then
+                  vals+=("$t")
+                elif (( ''${#vals[@]} == 0 && i >= 1 )); then
+                  # two leading failures, no success -> host down, stop retrying.
+                  # (not on first failure: cold DNS sample can exceed the timeout.)
+                  break
+                fi
+              done
+              [ ''${#vals[@]} -eq 0 ] && continue
+              ms=$(printf '%s\n' "''${vals[@]}" | sort -n | awk '
+                { v[NR] = $1 }
+                END {
+                  n = NR
+                  if (n % 2) m = v[(n + 1) / 2]
+                  else       m = (v[n / 2] + v[n / 2 + 1]) / 2
+                  printf "%d", m * 1000
+                }')
+              [ "$ms" -le 0 ] && continue
+              if [ "$ms" -lt "$bestms" ]; then bestms="$ms"; best="$h"; fi
+            done
+            if [ -z "$best" ]; then
+              echo "boeingvpn: no gateway reachable" >&2
+              return 1
+            fi
+            gw="$best"
+            echo "boeingvpn: fastest = $gw (''${bestms}ms)" >&2
+          fi
+
           openconnect \
               --protocol=gp \
-              --user=dj216f \
+              --user="$userid" \
               --usergroup=gateway \
               --script-tun \
               --script "ocproxy -D 1080 -v" \
-              https://ta.as2.cbc.vpn.boeing.net
+              "https://$gw"
         }
 
         chrome-socks() {

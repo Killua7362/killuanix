@@ -11,6 +11,7 @@
     secrets = {
       "boeing/git_name" = {};
       "boeing/git_email" = {};
+      "boeing/vpn_userid" = {};
       "das/git_name" = {};
       "das/git_email" = {};
       "realdebrid_token" = {};
