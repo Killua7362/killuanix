@@ -17,23 +17,11 @@
       slots = [
         {
           key = "F";
+          label = "Firefox Nightly";
+        }
+        {
+          key = "N";
           label = "Nemo";
-        }
-        {
-          key = "B";
-          label = "Firefox";
-        }
-        {
-          key = "T";
-          label = "Ghostty";
-        }
-        {
-          key = "E";
-          label = "Zed";
-        }
-        {
-          key = "M";
-          label = "Thunderbird";
         }
         {
           key = "O";

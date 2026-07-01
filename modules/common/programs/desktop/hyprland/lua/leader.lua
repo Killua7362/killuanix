@@ -20,11 +20,8 @@ local submaps = {
     name = "leader",
     trigger = "SUPER, Space",
     slots = {
-      { key = "F", cmd = "uwsm-app -- nemo" },
-      { key = "B", cmd = "uwsm-app -- firefox" },
-      { key = "T", cmd = "uwsm-app -- ghostty" },
-      { key = "E", cmd = "uwsm-app -- zeditor" },
-      { key = "M", cmd = "uwsm-app -- thunderbird" },
+      { key = "F", cmd = "uwsm-app -- firefox-nightly" },
+      { key = "N", cmd = "uwsm-app -- nemo" },
       { key = "O", cmd = "uwsm-app -- obsidian" },
     },
   },

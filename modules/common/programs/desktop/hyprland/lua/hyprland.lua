@@ -7,6 +7,7 @@ local LUA_DIR = HOME .. "/killuanix/modules/common/programs/desktop/hyprland/lua
 
 package.path = package.path
   .. ";" .. LUA_DIR .. "/?.lua"
+  .. ";" .. HOME .. "/.config/hypr/?.lua"
 
 local function try_require(name)
   if package.searchpath(name, package.path) then
@@ -16,6 +17,10 @@ end
 
 require("env")
 require("general")
+-- Per-host monitor layout (e.g. chrollo's device-monitors.lua). Hyprland owns
+-- output hotplug natively here — no kanshi. Set before rules/execs so outputs
+-- exist when workspace/window rules evaluate.
+try_require("device-monitors")
 require("misc")
 require("layout")
 require("input")

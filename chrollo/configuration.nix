@@ -113,6 +113,14 @@ in {
   networking.networkmanager = {
     enable = true;
     # dns = "systemd-resolved"; # Use resolved for DNS
+    # Don't probe for internet + don't switch away from an active wifi net when a
+    # "better"/connected-to-internet one appears. Once connected, stay connected —
+    # even with no internet. connectivity.enabled=false kills the periodic probe
+    # that would otherwise deprioritize a no-internet connection and roam off it.
+    settings = {
+      connectivity.enabled = false;
+      main.no-auto-default = "*";
+    };
   };
 
   # networking.nameservers = [
@@ -155,6 +163,10 @@ in {
 
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+  # Auto-unlock gnome-keyring at SDDM login so NM's agent-owned wifi secrets are
+  # readable without a re-prompt (DMS is the NM secret agent under Hyprland).
+  # Requires the keyring password == login password (see note in this dir's docs).
+  security.pam.services.sddm.enableGnomeKeyring = true;
 
   services.xserver.xkb = {
     layout = "us";

@@ -112,6 +112,7 @@ in {
       pkgs.jetbrains.datagrip
       pkgs.sqlcl
       pkgs.proxychains-ng
+      pkgs.azure-storage-azcopy
     ];
 
     # Default ON: every `bastion-ssh` invocation routes through the

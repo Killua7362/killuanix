@@ -417,7 +417,10 @@
       # Apply with: home-manager switch --flake .#chrollo
       chrollo = home-manager.lib.homeManagerConfiguration {
         pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
-        extraSpecialArgs = {inherit inputs;};
+        extraSpecialArgs = {
+          inherit inputs;
+          hostName = "chrollo";
+        };
         modules = [
           ./chrollo/home-manager/home.nix
         ];
@@ -427,7 +430,10 @@
       # Apply with: home-manager switch --flake .#killua
       killua = home-manager.lib.homeManagerConfiguration {
         pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
-        extraSpecialArgs = {inherit inputs;};
+        extraSpecialArgs = {
+          inherit inputs;
+          hostName = "killua";
+        };
         modules = [
           ./killua/home.nix
         ];

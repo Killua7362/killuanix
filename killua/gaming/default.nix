@@ -119,6 +119,13 @@ in {
     };
   };
 
+  # Auto-unlock gnome-keyring so NM's agent-owned wifi secrets don't re-prompt via
+  # DMS. NOTE: greetd here is PASSWORDLESS autologin — pam_gnome_keyring gets an
+  # empty password, so this only unlocks a keyring whose password is ALSO empty.
+  # One-time: delete ~/.local/share/keyrings/* and set the login keyring password
+  # to blank (seahorse, or the first secret dialog) so it auto-unlocks headless.
+  security.pam.services.greetd.enableGnomeKeyring = true;
+
   # ── Replicate essential services from Jovian's autoStart ──
   systemd.user.services.gamescope-session = {
     overrideStrategy = "asDropin";

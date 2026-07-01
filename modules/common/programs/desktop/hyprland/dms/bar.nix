@@ -1,4 +1,8 @@
 {
+  lib,
+  hostName ? null,
+  ...
+}: {
   programs.dank-material-shell.settings = {
     # ---- Top-bar widget visibility (left/center/right placement is in barConfigs below) ----
     showLauncherButton = true;
@@ -92,23 +96,30 @@
         centerWidgets = [
           "clock"
         ];
-        rightWidgets = [
-          {
-            id = "leaderHud";
-            enabled = true;
-          }
-          {
-            id = "dankActions:variant_wvkbd";
-            enabled = true;
-          }
-          "systemTray"
-          "clipboard"
-          "cpuUsage"
-          "memUsage"
-          "notificationButton"
-          "battery"
-          "controlCenterButton"
-        ];
+        rightWidgets =
+          [
+            {
+              id = "leaderHud";
+              enabled = true;
+            }
+          ]
+          # On-screen keyboard toggle (wvkbd) only on the handheld — chrollo has a
+          # physical keyboard, so the button is just an empty pill there.
+          ++ lib.optionals (hostName == "killua") [
+            {
+              id = "dankActions:variant_wvkbd";
+              enabled = true;
+            }
+          ]
+          ++ [
+            "systemTray"
+            "clipboard"
+            "cpuUsage"
+            "memUsage"
+            "notificationButton"
+            "battery"
+            "controlCenterButton"
+          ];
         spacing = 4;
         innerPadding = 4;
         bottomGap = 0;

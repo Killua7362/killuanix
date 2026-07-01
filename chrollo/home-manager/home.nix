@@ -11,7 +11,6 @@
     ../../modules/common/programs/chat
     ../../modules/common/programs/cloud/azure-bastion
     ./users/dots-manage.nix
-    ./kanshi.nix
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dank-material-shell
@@ -55,6 +54,14 @@
     package = null;
     portalPackage = null;
   };
+
+  # Per-host monitor layout (replaces services.kanshi). Live-edit symlink like
+  # hyprland.lua — Hyprland sources it via try_require("device-monitors") and
+  # applies output hotplug natively, which fixes the kanshi double-reconfig that
+  # crashed every Wayland client on undock.
+  xdg.configFile."hypr/device-monitors.lua".source =
+    config.lib.file.mkOutOfStoreSymlink
+    "${config.home.homeDirectory}/killuanix/chrollo/home-manager/device-monitors.lua";
 
   # chrollo only hosts the Oracle 19c VM; skip the work-ubuntu Hubstaff VM
   # (avoids the ~3 GB Ubuntu ISO fetch + autoinstall ISO repack).

@@ -89,7 +89,7 @@ M.binds = {
   -- ============================================================
   { keys = "Super+Alt, A",   action = A.global("quickshell:sidebarLeftToggleDetach") },
   { keys = "Super, B",       action = A.global("quickshell:sidebarLeftToggle") },
-  { keys = "Ctrl+Super, R",  action = A.exec("killall ags agsv1 gjs ydotool qs quickshell; dms restart &") },
+  { keys = "Super+Shift, R",  action = A.exec("killall ags agsv1 gjs ydotool qs quickshell; dms restart &") },
   { keys = ", Print",        action = A.exec("sh -c 'REGION=$(slurp) || exit; grim -g \"$REGION\" - | satty -f -'") },
 
   -- ============================================================

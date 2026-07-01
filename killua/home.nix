@@ -13,7 +13,6 @@
     ../modules/common/programs/chat
     ../modules/common/programs/cloud/azure-bastion
     ../modules/vms
-    ./kanshi.nix
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-flatpak.homeManagerModules.nix-flatpak
     inputs.dms.homeModules.dank-material-shell
@@ -59,6 +58,9 @@
     # Ships org.kde.ksshaskpass.desktop into XDG_DATA_DIRS so xdg-desktop-portal
     # can resolve the app id when SSH_ASKPASS=ksshaskpass is invoked under Qt.
     kdePackages.ksshaskpass
+    # On-screen keyboard for the handheld — provides wvkbd-mobintl, toggled by the
+    # DMS bar's wvkbd button (killua-only) via DotFiles/scripts/wvkbd-toggle.sh.
+    wvkbd
   ];
 
   # antimicrox desktop controller profile
@@ -75,6 +77,13 @@
     package = null;
     portalPackage = null;
   };
+
+  # Per-host monitor layout (replaces services.kanshi). Live-edit symlink like
+  # hyprland.lua — Hyprland sources it via try_require("device-monitors").
+  # Handheld panel stays on when docked; an external extends the desktop.
+  xdg.configFile."hypr/device-monitors.lua".source =
+    config.lib.file.mkOutOfStoreSymlink
+    "${config.home.homeDirectory}/killuanix/killua/device-monitors.lua";
 
   # NixOS-specific systemd configuration
   systemd.user.startServices = "sd-switch";

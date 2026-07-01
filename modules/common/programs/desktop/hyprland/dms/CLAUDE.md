@@ -38,6 +38,22 @@ Two sources:
   `leaderHud` (`src = ../../qml/leader-hud`) uses this; it's an in-repo QML
   plugin not in the registry.
 
+## Per-host bar widgets (`hostName` specialArg)
+
+`bar.nix` is a **function** `{ lib, hostName ? null, ... }:` — the HM `hostName`
+comes from `flake.nix` `extraSpecialArgs` (`"chrollo"` / `"killua"`; unset →
+`null` for archnix). `barConfigs` must stay in this one file (lists concat), so
+per-host widget differences are done by building `rightWidgets` with
+`lib.optionals (hostName == "…") [ … ]` rather than a second `barConfigs`.
+
+Currently the only per-host widget is the **wvkbd on-screen-keyboard toggle**
+(`dankActions:variant_wvkbd`), included on **killua only** (handheld, no physical
+keyboard). Its wiring spans three places: the `dankActions` variant + its
+`clickCommand` in `default.nix`, the `wvkbd` package in `killua/home.nix`, and
+`DotFiles/scripts/wvkbd-toggle.sh` (starts `wvkbd-mobintl --hidden`, toggles
+visibility with `kill -34`/SIGRTMIN — nixpkgs `wvkbd` ships **only**
+`wvkbd-mobintl`, not `wvkbd-deskintl`).
+
 ## When you want to change X, open Y
 
 | Topic | File | Owns |

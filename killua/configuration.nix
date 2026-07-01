@@ -61,6 +61,14 @@
   # Re-enabled for boeingvpn. Heads up: webkitgtk can't substitute from cache here
   # because the pipewire-pin overlay changes its closure, so it builds locally.
   networking.networkmanager.plugins = [pkgs.networkmanager-openconnect];
+  # Don't probe for internet + don't switch away from an active wifi net when a
+  # "better"/connected-to-internet one appears. Once connected, stay connected —
+  # even with no internet. connectivity.enabled=false kills the periodic probe
+  # that would otherwise deprioritize a no-internet connection and roam off it.
+  networking.networkmanager.settings = {
+    connectivity.enabled = false;
+    main.no-auto-default = "*";
+  };
 
   # ── Locale / Timezone ──
   time.timeZone = "Asia/Kolkata";

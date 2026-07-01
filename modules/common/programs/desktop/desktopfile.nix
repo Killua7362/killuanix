@@ -30,4 +30,27 @@
     categories = ["Network" "WebBrowser"];
     mimeType = ["x-scheme-handler/google-chrome"];
   };
+
+  # nwg-displays — override the upstream launcher (same id shadows the package
+  # entry via ~/.local/share/applications precedence). Redirects the persist
+  # output to $XDG_RUNTIME_DIR throwaways (-m/-w) so launching it from the app
+  # menu never clobbers the declarative lua monitor layout
+  # (device-monitors.lua) or the read-only pinned hyprland.conf. It still
+  # applies live via `hyprctl keyword monitor`, which is the on-the-fly repos
+  # we want; a hyprland reload snaps back to lua. Persist a layout by copying
+  # values into the host's device-monitors.lua. See hyprland/CLAUDE.md Monitors.
+  xdg.desktopEntries.nwg-displays = {
+    name = "Displays Settings";
+    genericName = "Output configuration utility";
+    comment = "Visual monitor layout (live via hyprctl; persist output discarded)";
+    exec = "${pkgs.writeShellScript "nwg-displays-ephemeral" ''
+      exec ${pkgs.nwg-displays}/bin/nwg-displays \
+        -m "''${XDG_RUNTIME_DIR:-/tmp}/nwg-monitors.conf" \
+        -w "''${XDG_RUNTIME_DIR:-/tmp}/nwg-workspaces.conf"
+    ''}";
+    icon = "nwg-displays";
+    terminal = false;
+    type = "Application";
+    categories = ["Settings" "DesktopSettings"];
+  };
 }

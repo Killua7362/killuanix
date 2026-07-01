@@ -25,8 +25,9 @@ Hyprland 0.55+ native-Lua configuration. The user-side config (keybinds, rules, 
 | `lua/keybinds.lua` | Flat data table `M.binds` of every keybind + `M.register()` walker. Action helpers (`A.focus_dir`, `A.swap_dir`, `A.move_ws`, `A.layout`, …) build dispatchers lazily so the module loads without `hl` defined. Flag mapping in the header comment. |
 | `lua/leader.lua` | `hl.define_submap("leader", …)` + the trigger bind. Writes `~/.cache/leader-hud/state` on enter/exit for the LeaderHud DMS bar plugin. Add more submaps by extending the `submaps` table. |
 | `lua/execs.lua` | `hl.on("hyprland.start", …)` with `uwsm app --` wrappers (dms, hyprpolkitagent, nm-applet, blueman-applet). Sunshine autostart is disabled (start manually). |
+| `lua/ws-external.lua` | Shared helper module. `require("ws-external").setup("eDP-1")` registers a `monitor.added` handler that moves workspaces 1-6 onto whatever external connects (port-agnostic). Called from each per-host `device-monitors.lua`. |
 | `clipboard.nix` | Systemd user services `cliphist-text` / `cliphist-image` running `wl-paste --watch`. `Restart=always` + `KillMode=mixed` so children are reaped on restart. |
-| `hypridle.nix` | Idle daemon: screen off after 5400s; `hyprctl dispatch dpms on/off` on transitions. |
+| `hypridle.nix` | Idle daemon: screen off after 5400s; DPMS on/off on transitions. **Must use the Lua dispatcher form** `hyprctl dispatch 'hl.dsp.dpms("on")'` — Hyprland 0.55+ evals the dispatch arg as Lua, so the bare `hyprctl dispatch dpms on` string fails with `')' expected near 'on'` (DPMS-on after resume silently no-ops). |
 | `hyprlock.nix` | Lock screen: blurred Sung Jinwoo wallpaper, centered Rubik clock/date, bottom input field. |
 | `dms/` | Modular DankMaterialShell config (Wayland shell, unrelated to hyprlang). See [`dms/CLAUDE.md`](dms/CLAUDE.md). |
 
@@ -73,12 +74,19 @@ The HUD plugin reads:
 - `~/.cache/leader-hud/state` — written by `lua/leader.lua` on submap enter (`echo NAME > state`) / exit (`echo '' > state`).
 - `~/.config/leader-hud/submaps.json` — written by `default.nix` from `leaderHudMetadata`.
 
-## Per-host overrides (not wired yet)
+## Per-host overrides
 
-`lua/hyprland.lua` already calls `try_require("device-keybinds")` so per-host extras can be added later by dropping a `device-keybinds.lua` somewhere on `package.path` (currently only the `lua/` dir is on the path; extend `LUA_DIR` to add a host directory).
+`lua/hyprland.lua` puts both the shared `lua/` dir **and** `~/.config/hypr/` on `package.path`, then `try_require()`s two optional per-host files (no-ops if absent):
+
+- `try_require("device-monitors")` — per-host monitor layout (see Monitors below). **chrollo** ships one (`chrollo/home-manager/device-monitors.lua`, symlinked to `~/.config/hypr/device-monitors.lua` from `chrollo/home-manager/home.nix`).
+- `try_require("device-keybinds")` — per-host keybind extras (no host provides one yet; drop a `device-keybinds.lua` on `package.path`).
 
 ## What's left in pure nix
 
-- **Monitors** — `services.kanshi` per host (`killua/kanshi.nix`, `chrollo/home-manager/kanshi.nix`).
+- **Monitors** — native Hyprland `hl.monitor{}` rules per host, loaded via `try_require("device-monitors")`. **Do not** add `services.kanshi` back — running kanshi on top of Hyprland double-reconfigures outputs on hotplug and crashes every Wayland client with `wl_display: invalid object` on undock (the bug this replaced). Both hosts' kanshi.nix are deleted.
+  - **chrollo** — `chrollo/home-manager/device-monitors.lua`. `eDP-1` is the anchor at `auto`; externals (`HDMI-A-1`/`DP-1`) use `auto-left`, so Hyprland reflows on plug/unplug — laptop + external side by side, single owner, no race.
+  - **killua** (handheld) — `killua/device-monitors.lua`. Same static `auto`/`auto-left` rules as chrollo: the handheld panel stays on when docked and an external **extends** the desktop (departs from the old kanshi docked profiles, which disabled eDP). No black-screen risk.
+  - Both call `require("ws-external").setup("eDP-1")` so **workspaces 1-6 move onto a connected external** (port-agnostic; see `lua/ws-external.lua` and the Files table). On unplug Hyprland returns those workspaces to `eDP-1` natively.
+  - **Live layout GUI (`nwg-displays`)** — launched from the app menu as **"Displays Settings"** (no keybind). The upstream `.desktop` is overridden in `modules/common/programs/desktop/desktopfile.nix` (same id shadows the package entry via `~/.local/share/applications` precedence) so its persist output goes to `$XDG_RUNTIME_DIR/nwg-{monitors,workspaces}.conf` **throwaways** (`-m`/`-w`), never clobbering `device-monitors.lua` or the read-only pinned `hyprland.conf`. It applies live via `hyprctl keyword monitor` regardless of the lua config — that's the on-the-fly repositioning. Do not point it at `~/.config/hypr/`: that reintroduces a two-owner config race and its static `workspace=monitor` lines break the port-agnostic `ws-external` logic. Live tweaks are ephemeral; a hyprland reload snaps back to the lua layout. Persist a position by copying the values into the host's `device-monitors.lua`. Pkg is in `packages.nix` `desktopPackages`.
 - **System-level Hyprland** — `programs.hyprland.enable = true` (UWSM, portals, session target) lives in the NixOS host configs, not here.
 - **Workspaces** — `~/.config/hypr/workspaces.conf` is empty on every host; if you need workspace pinning add a `hl.workspace_rule` to `lua/rules.lua`.

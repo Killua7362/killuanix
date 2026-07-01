@@ -203,33 +203,23 @@ return {
 					local project_name = opts.project_name(root_dir)
 					local cmd = vim.deepcopy(opts.cmd)
 
-					-- Determine jdtls path based on environment
-					local jdtls_path
-					if is_nixcats then
-						jdtls_path = nixcats_paths.jdtls
-					else
-						jdtls_path = vim.fn.stdpath("data") .. "/mason/packages/jdtls"
-					end
-
-					local launcher = vim.fn.glob(jdtls_path .. "/plugins/org.eclipse.equinox.launcher_*.jar")
-
+					-- The `jdtls` launcher (nix wrapper here, mason bin otherwise) is a
+					-- Python script that already assembles the full java invocation
+					-- itself: equinox launcher jar, eclipse product/application,
+					-- --add-modules/--add-opens, shared configuration and heap. It only
+					-- parses --jvm-arg=, -data and --java-executable; every other token
+					-- is forwarded as an APPLICATION arg appended after its own
+					-- `-jar <launcher> -data <dir>`. Passing the raw equinox block
+					-- (`-Declipse... -jar <launcher2> -configuration ... -data ...`)
+					-- therefore produced a duplicate -jar/-data and crashed equinox
+					-- with exit code 13 before any workspace was created. Pass JVM
+					-- tuning via --jvm-arg= and only the per-project -data; let the
+					-- wrapper supply the rest.
 					if project_name then
 						vim.list_extend(cmd, {
-							"-Declipse.application=org.eclipse.jdt.ls.core.id1",
-							"-Dosgi.bundles.defaultStartLevel=4",
-							"-Declipse.product=org.eclipse.jdt.ls.core.product",
-							"-Dlog.protocol=true",
-							"-Dlog.level=ALL",
-							"-Xmx4g",
-							"--add-modules=ALL-SYSTEM",
-							"--add-opens",
-							"java.base/java.util=ALL-UNNAMED",
-							"--add-opens",
-							"java.base/java.lang=ALL-UNNAMED",
-							"-jar",
-							launcher,
-							"-configuration",
-							opts.jdtls_config_dir(project_name),
+							"--jvm-arg=-Xmx4g",
+							"--jvm-arg=-Dlog.protocol=true",
+							"--jvm-arg=-Dlog.level=ALL",
 							"-data",
 							opts.jdtls_workspace_dir(project_name),
 						})
@@ -270,14 +260,34 @@ return {
 									return name
 								end
 
+								-- A valid JDK home has a release file (carrying
+								-- JAVA_VERSION). jdtls rejects a path without the JDK
+								-- layout ("does not point to a JDK"), and detect_java_name
+								-- needs release to label the version. We key on release
+								-- specifically: the NixOS openjdk wrapper exposes a
+								-- bin/java at its root but keeps release under
+								-- lib/openjdk, so an executable-check would wrongly accept
+								-- the wrapper root and skip the descent below.
+								local function is_jdk(home)
+									return home ~= nil and home ~= "" and vim.fn.filereadable(home .. "/release") == 1
+								end
+
+								-- Resolve the real JDK home. On NixOS $JAVA_HOME points
+								-- at the wrapper derivation (.../openjdk-25.x) whose
+								-- bin/ and release actually live under lib/openjdk, so
+								-- descend there; otherwise fall back to the java on PATH.
 								local java_home = vim.env.JAVA_HOME
-								if not java_home or java_home == "" then
-									local java_exec = vim.fn.resolve(vim.fn.exepath("java") or "")
-									if java_exec ~= "" then
-										java_home = vim.fn.fnamemodify(java_exec, ":h:h")
+								if not is_jdk(java_home) then
+									if is_jdk((java_home or "") .. "/lib/openjdk") then
+										java_home = java_home .. "/lib/openjdk"
+									else
+										local java_exec = vim.fn.resolve(vim.fn.exepath("java") or "")
+										if java_exec ~= "" then
+											java_home = vim.fn.fnamemodify(java_exec, ":h:h")
+										end
 									end
 								end
-								if java_home and vim.fn.isdirectory(java_home) == 1 then
+								if is_jdk(java_home) then
 									return {
 										{ name = detect_java_name(java_home), path = java_home, default = true },
 									}
@@ -375,7 +385,20 @@ return {
 					end
 
 					local java_test_bundles = vim.fn.glob(java_test_path, false, true)
-					local excluded_patterns = { "jacocoagent", "runner%-jar%-with%-dependencies" }
+					-- jdtls 1.58 embeds JUnit 6, so the junit/jupiter/vintage/suite/apiguardian/
+						-- opentest4j jars vscode-java-test 0.45.0 ships collide on OSGi install
+						-- ("A bundle is already installed ... version 6.0.1") and crash jdtls
+						-- with exit code 13 before any LSP attaches. Only the Microsoft test
+						-- plugin is a real OSGi bundle; the rest are test-runtime classpath deps
+						-- the plugin loads itself. Keep only jars NOT matching this denylist.
+						local excluded_patterns = {
+							"jacocoagent",
+							"runner%-jar%-with%-dependencies",
+							"^junit%-",
+							"^org%.apiguardian",
+							"^org%.opentest4j",
+							"^org%.eclipse%.jdt%.junit",
+						}
 
 					for _, java_test_jar in ipairs(java_test_bundles) do
 						local fname = vim.fn.fnamemodify(java_test_jar, ":t")

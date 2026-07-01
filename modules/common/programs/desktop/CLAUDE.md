@@ -8,7 +8,7 @@ Desktop environment configuration shared across Linux platforms. Covers the Hypr
 |---|---|
 | `default.nix` | Entry point. Imports `hyprland/`, `satty.nix`, and `desktopfile.nix`. |
 | `satty.nix` | Configures the Satty screenshot annotation tool. Output saved to `~/Pictures/Screenshots/` with timestamped filenames. Saves to file on Enter. |
-| `desktopfile.nix` | Defines a custom XDG desktop entry `google-chrome-sock` that launches Chrome through a SOCKS5 proxy (`127.0.0.1:1080`) with a separate user data dir (`~/.config/teams-vpn-chrome`). |
+| `desktopfile.nix` | Custom XDG desktop entries. `google-chrome-sock` launches Chrome through a SOCKS5 proxy (`127.0.0.1:1080`) with a separate user data dir (`~/.config/teams-vpn-chrome`). `nwg-displays` **overrides** the upstream "Displays Settings" launcher so its persist output is redirected to `$XDG_RUNTIME_DIR` throwaways (`-m`/`-w`) — keeps the app-menu display tool from clobbering the declarative lua monitor layout; see `hyprland/CLAUDE.md` Monitors. |
 
 ## Submodules
 
