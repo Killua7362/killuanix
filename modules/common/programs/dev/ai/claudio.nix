@@ -15,7 +15,7 @@
 #
 # To silence without rebuilding: `export CLAUDIO_ENABLED=false` in the shell
 # launching claude. To bump: change `claudioVersion`/`claudioRev` + flip
-# `vendorHash` to `lib.fakeHash`, run `scripts/nix_switch`, paste the real
+# `vendorHash` to `lib.fakeHash`, run `nix_switch`, paste the real
 # hash from the failure back in.
 {
   pkgs,

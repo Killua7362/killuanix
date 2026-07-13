@@ -63,8 +63,8 @@
 #                       all-mcp-servers.json so `claude-kit project sync` can
 #                       mirror it into a project's local ./.mcp.json on demand.
 #                       Use for servers that need per-project setup (e.g.
-#                       claude-flow after `ruflo init`, gitnexus after
-#                       `gitnexus analyze`) and shouldn't load everywhere.
+#                       claude-flow after `ruflo init`) and shouldn't load
+#                       everywhere.
 {
   filesystem = {
     mcpServerNix = "mcp-server-filesystem";
@@ -79,17 +79,12 @@
     package = "mcp-server-fetch";
   };
 
-  memory = {
-    mcpServerNix = "mcp-server-memory";
-    runtime = "npx";
-    package = "@modelcontextprotocol/server-memory";
-    env.MEMORY_FILE_PATH = "/home/killua/.local/share/claude/memory.json";
-  };
-
   sequential-thinking = {
     mcpServerNix = "mcp-server-sequential-thinking";
     runtime = "npx";
     package = "@modelcontextprotocol/server-sequential-thinking";
+    # Per-project — opt in via `claude-kit.nix:mcp = [ "sequential-thinking" ];`.
+    optional = true;
   };
 
   # jwingnut/mcp-libre — UNO-aware LibreOffice MCP. Two pieces:
@@ -180,6 +175,9 @@
       BASIC_MEMORY_HOME = "/home/killua/killuanix/Notes/claude/memory";
       BASIC_MEMORY_PROJECT = "killuanix";
     };
+    # Disabled globally (not currently used). Re-enable everywhere by dropping
+    # this flag, or opt in per-project via `claude-kit.nix:mcp = [ "basic-memory" ];`.
+    optional = true;
   };
 
   # ruvnet/ruflo (a.k.a. "claude-flow") — multi-agent orchestration platform.
@@ -205,35 +203,12 @@
     optional = true;
   };
 
-  # abhigyanpatwari/GitNexus — Tree-sitter-backed code knowledge graph.
-  # Complements `code-index` (registered separately in
-  # programs/dev/ai/code-index.nix): code-index does semantic vector search
-  # over Qdrant, GitNexus does relational queries (impact analysis, call
-  # graphs, process tracing) over an embedded LadybugDB graph.
-  #
-  # MCP server runs over stdio with `gitnexus mcp`. The graph itself must be
-  # built first per-repo with `gitnexus analyze` from the repo root; the
-  # global registry of indexed repos lives at `~/.gitnexus/` and per-project
-  # data at `<repo>/.gitnexus/` (gitignored via the global ignore file in
-  # programs/dev/git.nix). No API key required for the core 16 MCP tools —
-  # the optional `wiki` subcommand wants OpenAI/Anthropic creds but that's
-  # not what we expose here.
-  #
-  # `cacheNamespace = "gitnexus"` matches the standalone CLI shim in
-  # programs/dev/ai/gitnexus-cli.nix (same `~/.cache/gitnexus/` root) so the
-  # MCP probe reuses the install populated by `gitnexus analyze` instead of
-  # re-resolving the dep tree on Claude Code's cold start. Same pattern as
-  # claude-flow ↔ ruflo above.
-  gitnexus = {
-    npxDirect = {
-      package = "gitnexus@latest";
-      cacheNamespace = "gitnexus";
-    };
-    runtime = "npx-direct";
-    args = ["mcp"];
-    # Per-project — gitnexus requires `gitnexus analyze` to build the
-    # per-repo knowledge graph at <repo>/.gitnexus/ first. Opt in via
-    # `claude-kit.nix:mcp = [ "gitnexus" ];`.
-    optional = true;
-  };
+  # DeusData/codebase-memory-mcp — persistent Tree-sitter code-intelligence
+  # knowledge graph (call chains / blast-radius / structural search, ~99% fewer
+  # tokens than grep). NOT defined here: it needs the **UI-enabled** release
+  # binary (the npm package ships WITHOUT the embedded UI). Defined instead in
+  # programs/dev/ai/codebase-memory-mcp.nix — a serena-style wrapper that execs
+  # the ~/.local/bin/codebase-memory-mcp UI build (installed per upstream
+  # install.sh --ui) with `--ui=true`. Server name stays `codebase-memory-mcp`
+  # (upstream skills reference it). Opt in via claude-kit.nix:mcp = [...].
 }

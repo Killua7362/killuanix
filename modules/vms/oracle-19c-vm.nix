@@ -1,6 +1,6 @@
 # Oracle Database 19c VM — libvirt domain backed by a qcow2 imported from the
 # upstream Oracle 19c vagrant OVA. The OVA → qcow2 conversion is a one-shot
-# performed by scripts/oracle-vm-import.sh; this module only defines the
+# performed by oracle-vm-import.sh; this module only defines the
 # libvirt domain so virt-manager / virsh can manage it.
 {
   pkgs,

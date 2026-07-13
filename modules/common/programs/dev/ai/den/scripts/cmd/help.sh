@@ -18,20 +18,29 @@ Binding lifecycle:
   init <NAME> [.|--path P]   bind cwd to existing project; runs pull
   clean [--yes]              remove this binding's symlinks; keep host-only files
   list                       projects in Notes/projects/
+                             (rename a project dir to .<name> to archive it —
+                             hidden from den entirely; rename back to restore)
 
 Files in the binding:
   ls                         list files (symlinked / host-only / untracked)
   status [--diff] [--json]   drift report (5 buckets)
   add <path>... [--force] [--as-dir] [--hardlink|--symlink|--kind=KIND]
+                             (files inside a git clone are auto-guarded via
+                             .git/info/exclude so they can't leak to its remote)
   ignore <path>...           mark host-only
-  rm <path>... [--yes]       delete from project
+  rm <path>... [--yes] [-f]  delete from project (refuses unless the target is
+                             committed+clean in Notes; -f overrides + skips prompt)
   re-add <path>...           ingest a real file replacing a project link
   restore <path>...          undo `den add` (move file back, keep content here)
   pull [--dry-run] [--ignore-failures] [--resume]
-  replicate [--source <dir>] <target>
-                             re-create source binding's links under <target>
-                             without registering <target> as a binding
-                             (used by `wt new` to seed sibling worktrees)
+
+Shelf (git-stash-like; per project):
+  shelf add <path>...|. [--name N]  shelve (remove) matched den files as one row
+  shelf / shelf list                list rows (ids like git stash, in a pager)
+  shelf apply [id]                  copy a row back (row kept; default top row)
+  shelf pop [id]                    move a row back (row pruned/deleted)
+  shelf drop <id>                   delete one row
+  shelf clear [-f]                  wipe the archive (needs Notes clean; -f skips)
 
 Patches:
   stash <SERIES> [--message M] [--edit]
@@ -72,16 +81,17 @@ EOF
       cat <<'EOF'
 bindings — how den maps cwds to projects
 
-Each working directory is "bound" to at most one project via
-.den-meta.json (host-side, gitignored). The project source lives at
-$DEN_NOTES/projects/<NAME>/ and is shared via the Notes git repo.
+Each working directory is "bound" to at most one project via the
+.den/ dir (host-side, gitignored; holds meta.json + reflog + generations).
+The project source lives at $DEN_NOTES/projects/<NAME>/ and is shared
+via the Notes git repo.
 
 Path resolution (only for `new` and `init`):
   - default: prefer git root if cwd is in a work-tree, else cwd
   - .       : force cwd, with warning if in a git repo
   - --path P: literal path
 
-Other commands walk upward from cwd until .den-meta.json is found.
+Other commands walk upward from cwd until a .den/ binding is found.
 EOF
       ;;
     patches)
@@ -120,7 +130,7 @@ exit codes
   0   ok
   1   drift / generic failure
   2   usage error
-  64  unbound — no .den-meta.json found
+  64  unbound — no .den/ binding found
   65  manifest corrupt
   69  missing runtime tool
   75  lock held — another den process is running
@@ -135,7 +145,7 @@ Add to ~/.config/starship.toml:
 
   [custom.den]
   command = "den prompt"
-  when = "test -f .den-meta.json"
+  when = "test -e .den/meta.json"
   format = "[$output]($style) "
   style = "bold cyan"
 
@@ -202,7 +212,7 @@ den_cmd_explain() {
   case "$code" in
     DRIFT-001) echo "manifest hash mismatches recorded value; pull to reconcile" ;;
     I1) echo "every applied symlink's source must resolve under project files/ or overlay" ;;
-    I2) echo "every symlink target on disk must match .den-meta.json.symlinks" ;;
+    I2) echo "every symlink target on disk must match .den/meta.json .symlinks" ;;
     I3) echo 'Den-Anchor: SHA missing locally and from CAS - try `den apply <S> --onto <ref>`' ;;
     I4) echo "every CAS object filename must equal sha256 of its content" ;;
     I5) echo "every reflog entry's prev_project must be loadable from Notes" ;;

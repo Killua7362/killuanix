@@ -1,4 +1,4 @@
-{
+{hostName ? null, ...}: {
   programs.dank-material-shell.settings = {
     # ---- Lock screen layout / widgets ----
     lockScreenShowPowerActions = true;
@@ -22,7 +22,11 @@
     u2fMode = "or"; # "or" = u2f OR password, "and" = both required
 
     # ---- Idle / fade-to-lock ----
-    lockBeforeSuspend = false;
+    # Lock (via DMS, gated by loginctlLockIntegration below) before the system
+    # suspends, so any suspend sleeps locked — including chrollo's power-button
+    # short press (HandlePowerKey=suspend, chrollo/power.nix). SessionService
+    # registers this with the DMS backend as a delay inhibitor on PrepareForSleep.
+    lockBeforeSuspend = true;
     loginctlLockIntegration = true;
     fadeToLockEnabled = true;
     fadeToLockGracePeriod = 5;
@@ -34,12 +38,24 @@
     acLockTimeout = 0;
     acSuspendTimeout = 0;
     acSuspendBehavior = 0; # SettingsData.SuspendBehavior enum
-    acProfileName = "";
+    # Auto-switch profile on charger plug/unplug (DMS BatteryService
+    # onIsPluggedInChanged). Enum: ""=don't change, "0"=power-saver,
+    # "1"=balanced, "2"=performance. Only fires on the AC-state *event*, so a
+    # manual pick in the battery popout persists until the next plug/unplug.
+    # chrollo only (laptop); killua keeps "" so its handheld power tooling
+    # (hhd/TDP) stays the sole profile authority.
+    acProfileName =
+      if hostName == "chrollo"
+      then "2" # performance on AC
+      else "";
     batteryMonitorTimeout = 0;
     batteryLockTimeout = 0;
     batterySuspendTimeout = 0;
     batterySuspendBehavior = 0;
-    batteryProfileName = "";
+    batteryProfileName =
+      if hostName == "chrollo"
+      then "1" # balanced on battery
+      else "";
     batteryChargeLimit = 100;
 
     # ---- Power menu ----

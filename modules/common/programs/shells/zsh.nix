@@ -19,7 +19,7 @@
     };
 
     shellAliases = {
-      "oil" = "~/killuanix/DotFiles/scripts/oil-ssh.sh";
+      "oil" = "~/killuanix/DotFiles/scripts/v1/oil-ssh.sh";
       ".." = "cd ..";
       "ls" = "eza --color=auto --group-directories-first --classify always";
       "lst" = "eza --color=auto --group-directories-first --classify --tree";
@@ -42,13 +42,22 @@
       "t" = "tmux attach || tmux";
       "tl" = "tmux ls";
       "tn" = "tmux new-session";
-      "ts" = "~/killuanix/scripts/tmux-sessionizer.sh";
+      "ts" = "~/killuanix/DotFiles/scripts/v1/tmux-sessionizer.sh";
       "ovpn-connect" = "sudo openvpn --config vpn/goutam-pivotree.ovpn --auth-retry interact";
       "annepro2_tools" = "/home/killua/repo/AnnePro2-Tools/target/release/annepro2_tools";
       "d" = "nvim -d";
       "restart-desktop" = "systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal pipewire pipewire-pulse wireplumber";
       "lgw" = "lazygit -g \"$(git rev-parse --git-common-dir)\" -w .";
     };
+
+    # Set in .zshenv so these are exported BEFORE antidote sources forgit.
+    # forgit binds each alias as ${forgit_x:-default}; renaming its binding
+    # frees the identically-named ohmyzsh git alias whose meaning is unrelated.
+    envExtra = ''
+      export forgit_stash_show=gsti       # keep omz gss  = git status --short
+      export forgit_checkout_file=gcofi   # keep omz gcf  = git config --list
+      export forgit_checkout_branch=gcoi  # keep omz gcb  = git checkout -b   (optional)
+    '';
 
     sessionVariables = {
       COLORTERM = "truecolor";
@@ -76,7 +85,7 @@
       LC_CTYPE = "en_US.UTF-8";
 
       FZF_DEFAULT_COMMAND = "fd --type f --hidden --follow";
-      FZF_DEFAULT_OPTS = "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672";
+      FZF_DEFAULT_OPTS = "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/v1/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672";
       FZF_CTRL_T_OPTS = "";
       FZF_COMPLETION_OPTS = "--height=60% --border --margin=1 --padding=1";
       FZF_TMUX = "1";
@@ -93,13 +102,57 @@
         fpath=(/usr/share/zsh/site-functions /usr/share/zsh/functions/Completion/{Linux,Unix} $fpath)
 
         # PATH modifications
-        export PATH="$HOME/killuanix/scripts:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+        export PATH="$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$HOME/.local/bin:$PATH"
         export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
         autoload -Uz compinit
         compinit -d "''${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-$ZSH_VERSION"
+
+        # forgit aliases (gd/glo/gso/gbl/gcp) expand to forgit::* functions before
+        # completion (COMPLETE_ALIASES unset), so dispatch finds no completion for the
+        # function name and falls back to file completion instead of git refs.
+        # Fix: point each forgit function at _git, rewriting $words to `git <sub> …`
+        # and setting service/curcontext so _git completes like the real subcommand.
+        _forgit_as() {
+          local sub=$1; shift
+          words=(git $sub "''${(@)words[2,-1]}"); (( CURRENT++ ))
+          local service=git
+          curcontext="''${curcontext%:*:*}:git-$sub:"
+          _git
+        }
+        compdef '_forgit_as diff'        forgit::diff
+        compdef '_forgit_as log'         forgit::log
+        compdef '_forgit_as show'        forgit::show
+        compdef '_forgit_as blame'       forgit::blame
+        compdef '_forgit_as cherry-pick' forgit::cherry::pick::from::branch
+
         eval $(starship init zsh)
         eval $(zoxide init zsh)
+
+        # WezTerm autolock: announce the running foreground command as a user
+        # var so wezterm.nix forwards its modal Ctrl-chords to it instead of
+        # grabbing them. This is the only signal that crosses the wezterm mux
+        # (`wezterm connect unix`), where per-pane process detection returns nil.
+        # forgit aliases resolve to fzf, so mark those "fzf" (a trigger) by
+        # inspecting the command's `type` output — no need to list each alias.
+        if [[ -n "$WEZTERM_PANE" ]]; then
+          autoload -Uz add-zsh-hook
+          _wezterm_set_uv() {
+            printf '\033]1337;SetUserVar=%s=%s\007' "$1" "$(printf %s "$2" | base64 | tr -d '\n')"
+          }
+          _wezterm_preexec() {
+            local w=''${1%% *}
+            # Inspect the resolution (alias target) AND the function body, so a
+            # forgit alias/function (e.g. gcoi -> forgit::checkout::branch, which
+            # runs fzf) is recognized and marked "fzf" (a passthrough trigger).
+            local def; def="$(whence -v "$w" 2>/dev/null) $(functions "$w" 2>/dev/null)"
+            if [[ "$def" == *forgit* || "$def" == *fzf* ]]; then w=fzf; fi
+            _wezterm_set_uv WEZTERM_PROG "$w"
+          }
+          _wezterm_precmd() { _wezterm_set_uv WEZTERM_PROG ""; }
+          add-zsh-hook preexec _wezterm_preexec
+          add-zsh-hook precmd _wezterm_precmd
+        fi
 
         # Re-source plugins AFTER zsh-vi-mode initializes so keybindings survive
         zvm_after_init() {
@@ -232,7 +285,7 @@
           # boeingvpn-ui SOCKS via --proxy-server (socks5h equivalent —
           # proxy-side DNS, needed for split-horizon Boeing endpoints).
           # For 10.55.* dev VNet URLs, use `avd-chrome` instead (separate
-          # profile + SOCKS via bastion-sql's ssh -D :11180).
+          # profile + SOCKS via `bastion sql`'s ssh -D :11180).
           google-chrome \
             --proxy-server="socks5://127.0.0.1:1080" \
             --proxy-bypass-list="127.0.0.1" \

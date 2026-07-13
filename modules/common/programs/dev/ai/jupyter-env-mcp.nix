@@ -12,7 +12,7 @@
 #
 # Both are registered directly here (outside mcp-servers.nix) because the
 # pair shares lifecycle wiring that the registry's catalog/git-source schema
-# doesn't model — same precedent as code-index.nix.
+# doesn't model — same precedent as kindly-web-search.nix.
 #
 # To bump datalayer rev:
 #   git ls-remote https://github.com/datalayer/jupyter-mcp-server HEAD

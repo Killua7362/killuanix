@@ -15,7 +15,7 @@
 
       # Development tools
       git
-      nh # nix-helper: faster rebuilds + closure diff (wired into scripts/nix_switch)
+      nh # nix-helper: faster rebuilds + closure diff (wired into nix_switch)
       nix-search-cli
       nixpkgs-fmt
       direnv
@@ -46,6 +46,9 @@
         inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;
       })
       inputs.ghgrab.packages.${pkgs.stdenv.hostPlatform.system}.default
+      # RTK (Rust Token Killer): compresses verbose dev-command output before
+      # it reaches Claude Code. Not in nixpkgs; built from the upstream git tag.
+      (pkgs.callPackage ../../packages/rtk/package.nix {})
     ];
 
   # Terminal and shell packages

@@ -1,12 +1,10 @@
 # shellcheck shell=bash
 den_cmd_sync() {
+  _bind_ctx
   local other="${1:-}"
   [ -n "$other" ] || _err 2 "usage: den sync <OTHER>"
-  local out
-  out="$(_require_bound)"
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  _reject_hidden_project "$other"
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
   local pd from_pd
   pd="$(_project_dir_for "$proj")"
   from_pd="$(_project_dir_for "$other")"

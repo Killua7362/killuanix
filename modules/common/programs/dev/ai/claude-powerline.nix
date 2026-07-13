@@ -20,7 +20,7 @@
 #      `display.lines[].segments`, but Nix's `builtins.toJSON` alphabetises
 #      attrset keys on serialisation, which silently scrambles the layout.
 #      Edit the `segmentOrder` list + the `configJson` template below, then
-#      `scripts/nix_switch`.
+#      `nix_switch`.
 #
 # Wiring into Claude Code lives in `claude.nix` via
 # `programs.claude-code.settings.statusLine.command = "claude-powerline"`

@@ -56,9 +56,9 @@ main() {
     re-add)                 den_cmd_re_add "$@";;
     restore)                den_cmd_restore "$@";;
     pull)                   den_cmd_pull "$@";;
-    replicate)              den_cmd_replicate "$@";;
     clean)                  den_cmd_clean "$@";;
     sync)                   den_cmd_sync "$@";;
+    shelf)                  den_cmd_shelf "$@";;
     stash)                  den_cmd_stash "$@";;
     apply)                  den_cmd_apply "$@";;
     patches)                den_cmd_patches "$@";;

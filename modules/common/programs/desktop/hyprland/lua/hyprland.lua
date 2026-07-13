@@ -24,7 +24,9 @@ try_require("device-monitors")
 require("misc")
 require("layout")
 require("input")
-require("gestures")
+-- Per-host touchpad gestures (chrollo ships device-gestures.lua; killua
+-- handheld intentionally has none). Loaded like device-monitors.
+try_require("device-gestures")
 require("rules")
 require("execs")
 require("leader")

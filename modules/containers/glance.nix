@@ -27,18 +27,18 @@
 #   • SPEEDTEST_URL               ← inline 'http://localhost:8765'
 #   • SPEEDTEST_TRACKER_API_TOKEN ← speedtest_tracker_api_token
 #   • TRAKT_API_KEY               ← trakt_api_key (OAuth Client ID)
-#   • TRAKT_ACCESS_TOKEN          ← trakt_access_token (rotate every ~3mo via scripts/trakt-auth.sh)
+#   • TRAKT_ACCESS_TOKEN          ← trakt_access_token (rotate every ~3mo via trakt-auth.sh)
 #   • TRAKT_USERNAME              ← trakt_username (plaintext)
 #   • TMDB_API_KEY                ← tmdb_api_key (themoviedb.org v3)
 # Not wired:
 #   • CRONICLE_API_KEY — Cronicle uses admin/admin session login, no API key
 #
 # To activate a secret-gated widget: uncomment the widget block below and
-# `scripts/nix_switch`. Empty values are tolerated: the env-file gets `KEY=`
+# `nix_switch`. Empty values are tolerated: the env-file gets `KEY=`
 # and the widget fails-soft (custom-api tiles 401, etc.).
 #
 # Trakt OAuth bootstrap (required for /calendars/my/...): run
-# `TRAKT_CLIENT_ID=... TRAKT_CLIENT_SECRET=... scripts/trakt-auth.sh`, paste
+# `TRAKT_CLIENT_ID=... TRAKT_CLIENT_SECRET=... trakt-auth.sh`, paste
 # the printed access_token into sops as `trakt_access_token`. See script
 # header for full walkthrough. Refresh by re-running the script (no automated
 # refresh service in v1).

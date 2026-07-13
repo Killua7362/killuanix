@@ -1,11 +1,8 @@
 # shellcheck shell=bash
 den_cmd_re_add() {
   [ $# -gt 0 ] || _err 2 "usage: den re-add <path>..."
-  local out
-  out="$(_require_bound)"
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  _bind_ctx
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
   local pd
   pd="$(_project_dir_for "$proj")"
   _with_lock "$root" _do_re_add "$root" "$pd" "$@"
@@ -48,6 +45,7 @@ _do_re_add() {
     mv -f "$tmp" "$src"
     rm -f "$cwd_real"
     _link_for_kind "$kind" "$src" "$cwd_real"
+    _guard_after_link "$root" "$pd" "$rel"   # reassert leak guard (no-op off-repo)
     if [ "$kind" = "hardlink" ]; then
       echo "  re-added $rel (hardlink)"
     else

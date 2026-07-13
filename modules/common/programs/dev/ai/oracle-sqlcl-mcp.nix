@@ -25,7 +25,7 @@ in {
   # Lives here (not modules/common/mcp-servers.nix) so the wrapper can pin
   # the exact pkgs.sqlcl store path on the command line. Registers via the
   # `local.extraMcpServers` side-channel declared in claude.nix — same
-  # pattern as code-index.nix / kindly-web-search.nix.
+  # pattern as kindly-web-search.nix.
   #
   # `optional = true` keeps it out of the global mcpServers list so it only
   # loads in projects that opt in via
@@ -33,12 +33,12 @@ in {
   # (or `claude-kit lazy add mcp oracle-sqlcl` outside a den project).
   #
   # Prerequisites the user owns (not nix-managed):
-  #   1. Create a saved SQLcl connection that points at the bastion-sql
+  #   1. Create a saved SQLcl connection that points at the `bastion sql`
   #      tunnel. nixpkgs renames the launcher to `sqlcl` (avoids clash with
   #      GNU parallel's `sql`); use that name from the user shell:
   #        sqlcl /nolog
   #        SQL> connect -save beastg1 -savepwd ${user}/${pass}@127.0.0.1:1521/beastg1
-  #      (Bastion tunnel must be up: `BASTION_SSH_VIA_SOCKS=1 bastion-sql dev`.)
+  #      (Bastion tunnel must be up: `BASTION_SSH_VIA_SOCKS=1 bastion sql`.)
   #   2. Connection name (`beastg1` in the example) is the handle the MCP
   #      tools accept. SERVICE_NAME switches stages — re-use the same
   #      connection name with different service names if needed.

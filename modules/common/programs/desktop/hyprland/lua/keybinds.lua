@@ -183,10 +183,10 @@ M.binds = {
   -- ============================================================
   -- Apps / launchers
   -- ============================================================
-  { keys = "Super, Return",  action = A.exec("uwsm-app -- ghostty") },
+  { keys = "Super, Return",  action = A.exec("uwsm-app -- wezterm connect unix") },
   { keys = "Ctrl+Super, Backslash", action = A.resize_exact(640, 480) },
   { keys = "Super, W",       action = A.exec("vicinae toggle") },
-  { keys = "Super, V",       action = A.exec("vicinae vicinae://extensions/vicinae/clipboard/history") },
+  { keys = "Super, V",       action = A.exec("uwsm-app -- clipboard-history") },
   { keys = "Super, C",       action = A.exec("uwsm-app -- clipboard-menu") },
   { keys = "Super, U",       action = A.exec("uwsm-app -- uuctl") },
   { keys = "Super, F12",     action = A.exec("uwsm-app -- /home/killua/.local/bin/switch-session.sh") },

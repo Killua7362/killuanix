@@ -1,10 +1,7 @@
 # shellcheck shell=bash
 den_cmd_log() {
-  local out
-  out="$(_require_bound)"
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  _bind_ctx
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
   local act
   act="$(_activity_dir "$proj")/$DEN_HOST.jsonl"
   if [ ! -f "$act" ]; then

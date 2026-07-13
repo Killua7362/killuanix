@@ -1,11 +1,8 @@
 # shellcheck shell=bash
 den_cmd_ignore() {
   [ $# -gt 0 ] || _err 2 "usage: den ignore <path>..."
-  local out
-  out="$(_require_bound)"
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  _bind_ctx
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
   local pd
   pd="$(_project_dir_for "$proj")"
   _with_lock "$root" _do_ignore "$root" "$pd" "$@"

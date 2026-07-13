@@ -4,10 +4,8 @@ den_cmd_rollback() {
   case "${2:-}" in --dry-run|-n) dry=1;; esac
   _warn "rollback v1 is symlinks-only and does NOT touch the bound git repo"
   _info "to reverse a patch, use: den apply <SERIES> --reverse"
-  local out
-  out="$(_require_bound)"
-  local root
-  root="$(echo "$out" | sed -n 1p)"
+  _bind_ctx
+  local root="$BOUND_ROOT"
   local gd
   gd="$(_gen_dir "$root")"
   [ -d "$gd" ] || _err 2 "no generations"

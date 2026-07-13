@@ -37,7 +37,7 @@ Cache is wiped + rebuilt on every `nix_switch` (cheap; ~hundreds of symlinks + s
      src = ../../qml/leader-hud-v2;
    };
    ```
-3. `scripts/nix_switch` to activate. DMS reads the plugin on next launch (cache busts via `dmsQmlcacheBust` activation already in `dms/default.nix`).
+3. `nix_switch` to activate. DMS reads the plugin on next launch (cache busts via `dmsQmlcacheBust` activation already in `dms/default.nix`).
 
 ## Editing flow
 
@@ -48,7 +48,7 @@ nvim LeaderHudWidget.qml
 # :LspInfo should show qmlls6 attached
 ```
 
-If LSP claims `qs.Common module not found`, the cache is missing or stale — run `scripts/nix_switch` and reopen the file.
+If LSP claims `qs.Common module not found`, the cache is missing or stale — run `nix_switch` and reopen the file.
 
 ## Integration
 

@@ -27,7 +27,7 @@ in {
   #
   # Lives outside modules/common/mcp-servers.nix because the chromium binary
   # path needs pkgs in scope. Registers via the `local.extraMcpServers`
-  # side-channel declared in claude.nix — same pattern as code-index.nix.
+  # side-channel declared in claude.nix — same pattern as jupyter-env-mcp.nix.
   #
   # `optional = true` keeps it out of the global mcpServers list so it only
   # loads in projects that opt in via `claude-kit.nix:mcp = [ "kindly-web-search" ]`

@@ -140,7 +140,7 @@
 
   clipboardMenu = pkgs.writeShellApplication {
     name = "clipboard-menu";
-    runtimeInputs = with pkgs; [wofi wl-clipboard wtype libnotify coreutils];
+    runtimeInputs = with pkgs; [wofi wl-clipboard libnotify coreutils];
     text = ''
       declare -A secrets=(
         ${lib.concatStringsSep "\n        " (lib.mapAttrsToList
@@ -166,8 +166,7 @@
       fi
 
       wl-copy --trim-newline < "$file"
-      sleep 0.05
-      wtype -M ctrl v -m ctrl || true
+      notify-send 'Clipboard' "Copied: $choice"
     '';
   };
 in

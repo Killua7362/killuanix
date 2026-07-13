@@ -261,7 +261,7 @@
         # then subtract `excludeMcp`.
         mcp_servers='{}'
         if [ "$inherit_global" = true ] && [ ! -f "$catalog" ]; then
-          echo "${name}: MCP catalog not found at $catalog — inheritGlobal=true needs it (run scripts/nix_switch)" >&2
+          echo "${name}: MCP catalog not found at $catalog — inheritGlobal=true needs it (run nix_switch)" >&2
           exit 1
         fi
         global_names='[]'

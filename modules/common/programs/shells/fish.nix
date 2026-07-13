@@ -12,7 +12,7 @@
       # pkgs.fishPlugins.nvm
     ];
     shellAliases = {
-      "oil" = "~/killuanix/DotFiles/scripts/oil-ssh.sh";
+      "oil" = "~/killuanix/DotFiles/scripts/v1/oil-ssh.sh";
       ".." = "cd ..";
       "ls" = "/home/killua/.nix-profile/bin/exa --color=auto --group-directories-first --classify";
       "lst" = "$ls --tree";
@@ -37,13 +37,13 @@
       "ta" = "tmux a -t \$1";
       "td" = "tmux kill-session -t \$1";
       "tn" = "tmux new-session";
-      "ts" = "~/killuanix/scripts/tmux-sessionizer.sh";
+      "ts" = "~/killuanix/DotFiles/scripts/v1/tmux-sessionizer.sh";
       "ovpn-connect" = "sudo openvpn --config vpn/goutam-pivotree.ovpn --auth-retry interact";
       "annepro2_tools" = "/home/killua/repo/AnnePro2-Tools/target/release/annepro2_tools";
       "d" = "nvim -d";
     };
     functions = {
-      # nix_switch lives in ~/killuanix/scripts/nix_switch (on PATH)
+      # nix_switch lives in ~/killuanix/DotFiles/scripts/personal/nix_switch (on PATH)
       pacsave = ''
         function pacsave
             pushd ~/killuanix/archnix/aconfmgr/
@@ -81,7 +81,7 @@
       set -gx XDG_CONFIG_HOME "$HOME/.config"
       set -gx XDG_DATA_DIRS "$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
-      set -x PATH "$HOME/killuanix/scripts:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts:$HOME/.local/bin:$PATH"
+      set -x PATH "$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$HOME/.local/bin:$PATH"
       # set -x JAVA_HOME "$HOME/Documents/Boeing/java/jdk1.8.0_291"
       #set -x JAVA_HOME "/home/killua/Documents/Boeing/jdk1.8.0_291/"
       set -x JAVA_HOME "/home/killua/Downloads/java/jdk1.8.0_291"
@@ -98,7 +98,7 @@
       set -x LANG en_US.UTF-8
       set -x LC_CTYPE en_US.UTF-8
       set -x FZF_DEFAULT_COMMAND "fd --type f --hidden --follow"
-      set -x FZF_DEFAULT_OPTS "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672"
+      set -x FZF_DEFAULT_OPTS "--height=60% --border --margin=1 --padding=1 --preview '~/killuanix/DotFiles/scripts/v1/fzf/fzf-preview.sh {}' --bind 'ctrl-n:down,ctrl-p:up,ctrl-u:preview-up,ctrl-d:preview-down' --color=bg+:#293739,bg:#1B1D1E,border:#808080,spinner:#E6DB74,hl:#7E8E91,fg:#F8F8F2,header:#7E8E91,info:#A6E22E,pointer:#A6E22E,marker:#F92672,fg+:#F8F8F2,prompt:#F92672,hl+:#F92672"
       set -x FZF_CTRL_T_OPTS ""
       set -x FZF_COMPLETION_OPTS "--height=60% --border --margin=1 --padding=1"
       set -x FZF_TMUX 1

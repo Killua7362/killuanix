@@ -1,13 +1,10 @@
 # shellcheck shell=bash
 den_cmd_activate() {
-  local out
-  if ! out="$(_require_bound 2>/dev/null)"; then
+  if ! _try_bind_ctx; then
     # silently emit nothing (eval-friendly)
     return 0
   fi
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
   local bound_at
   bound_at="$(_meta_get "$root" .bound_at)"
   cat <<EOF

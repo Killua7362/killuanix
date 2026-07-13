@@ -26,11 +26,47 @@
   <div class="sb-grid">
   {{ range .JSON.Array "" }}
     {{ $status := .String "status" }}
-    <a class="sb-tile card" href="{{ .String "url" }}" target="_blank">
+    <a class="sb-tile card" href="{{ .String "url" }}" target="_blank"
+       data-status="{{ $status }}" data-url="{{ .String "url" }}"
+       data-unit="{{ .String "unit" }}" data-name="{{ .String "name" }}"
+       onclick="return sbOpen(this, event)">
       <img src="{{ .String "iconUrl" }}" alt="">
       <span class="sb-name">{{ .String "name" }}</span>
       <span class="sb-pill {{ $status }}">{{ $status }}</span>
     </a>
   {{ end }}
   </div>
+  <script>
+  // Glance renders this custom-api template server-side into the page, so this
+  // handler runs in the glance tab (same origin the bridge CORS-allows). A dead
+  // service has no useful web page, so intercept the click:
+  //   up    → open the web UI (or nothing if the service has no url)
+  //   down  → confirm, then POST start to the bridge; never open the dead page
+  //   error → running but not answering yet; offer to open anyway
+  window.sbOpen = function (el, ev) {
+    var d = el.dataset;
+    if (d.status === "up") {
+      if (d.url) return true;               // running + has web UI → let the link open
+      ev.preventDefault(); return false;    // running, no web UI → nothing to open
+    }
+    ev.preventDefault();
+    if (d.status === "error") {
+      if (d.url && confirm(d.name + " is running but its page isn't responding yet. Open it anyway?")) {
+        window.open(d.url, "_blank");
+      }
+      return false;
+    }
+    // down
+    if (confirm(d.name + " is not running. Start it now?")) {
+      fetch("http://localhost:8770/services/" + encodeURIComponent(d.unit) + "/start", { method: "POST" })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.ok) { setTimeout(function () { location.reload(); }, 1000); }
+          else { alert("Failed to start " + d.name + ": " + (j.stderr || ("rc=" + j.rc))); }
+        })
+        .catch(function (e) { alert("Bridge error: " + e); });
+    }
+    return false;
+  };
+  </script>
 ''

@@ -8,7 +8,7 @@
 # do NOT auto-load globally) and are symlinked into the launcher's
 # state dir at launch — visible only when running `claude-news`. Paths
 # are passed as strings (via `notesCmd`), not nix `./...` paths, so
-# content edits propagate live without `scripts/nix_switch`.
+# content edits propagate live without `nix_switch`.
 #
 # `inheritGlobal = false` keeps the MCP set lean (no mermaid /
 # filesystem / memory leaking in). `restrictToDirs` pins

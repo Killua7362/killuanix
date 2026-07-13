@@ -52,7 +52,7 @@ _bindings_owner() { # _bindings_owner <abs-path>  → project<TAB>cwd
       '
 }
 
-# Sanity-prune: drop registry entries whose .den-meta.json no longer
+# Sanity-prune: drop registry entries whose .den binding no longer
 # exists or no longer points at the same project.
 _bindings_prune() {
   _bindings_init
@@ -61,9 +61,9 @@ _bindings_prune() {
   local cleaned="{}"
   while IFS=$'\t' read -r proj cwd; do
     [ -z "$proj" ] && continue
-    if [ -f "$cwd/.den-meta.json" ]; then
+    if _den_is_bound_dir "$cwd"; then
       local actual
-      actual="$(jq -r '.project // ""' "$cwd/.den-meta.json" 2>/dev/null || true)"
+      actual="$(jq -r '.project // ""' "$(_meta_file "$cwd")" 2>/dev/null || true)"
       if [ "$actual" = "$proj" ]; then
         cleaned="$(jq --arg p "$proj" --arg c "$cwd" \
           '.[$p] = ((.[$p] // []) + [$c] | unique)' <<<"$cleaned")"

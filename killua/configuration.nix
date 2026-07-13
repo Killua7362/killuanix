@@ -212,7 +212,7 @@
 
   # ── Tailscale ──
   services.tailscale = {
-    enable = true;
+    enable = false; # disabled for now; re-enable when tailnet needed again
     useRoutingFeatures = "client";
   };
 

@@ -20,11 +20,8 @@ den_cmd_add() {
     *) _err 2 "unknown --kind: $kind (expected symlink|hardlink)";;
   esac
   [ "${#paths[@]}" -gt 0 ] || _err 2 "usage: den add <path>... [--force] [--as-dir] [--hardlink|--symlink|--kind=KIND]"
-  local out
-  out="$(_require_bound)"
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  _bind_ctx
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
   _with_lock "$root" _do_add "$root" "$proj" "$force" "$as_dir" "$kind" "${paths[@]}"
 }
 
@@ -99,8 +96,13 @@ _add_one() {
   fi
   _link_for_kind "$kind" "$target_in_proj" "$abs"
   _set_manifest_kind "$pd" "$rel" "$kind"
+  # Leak guard: if the site sits inside a git tree, exclude it from that repo
+  # and record the clone (path + remote) for host bootstrap. No-op otherwise.
+  _guard_after_link "$root" "$pd" "$rel"
   if [ "$kind" = "hardlink" ]; then
     echo "  + $rel (hardlink)"
+  elif _guard_is_guarded "$root" "$rel" && [ -n "$(_guard_repo_top "$root/$rel")" ]; then
+    echo "  + $rel (guarded)"
   else
     echo "  + $rel"
   fi

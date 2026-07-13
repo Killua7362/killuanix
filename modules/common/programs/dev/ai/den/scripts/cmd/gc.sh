@@ -10,11 +10,8 @@ den_cmd_gc() {
   done
 
   # 1. Generations: keep last 20 per cwd; only run if we're bound.
-  local out
-  out="$(_require_bound)" 2>/dev/null || true
-  if [ -n "$out" ]; then
-    local root
-    root="$(echo "$out" | sed -n 1p)"
+  if _try_bind_ctx; then
+    local root="$BOUND_ROOT"
     local gd
     gd="$(_gen_dir "$root")"
     if [ -d "$gd" ]; then

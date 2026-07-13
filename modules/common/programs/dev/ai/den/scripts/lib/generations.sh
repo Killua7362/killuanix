@@ -1,6 +1,6 @@
 # shellcheck shell=bash
-# Per-cwd snapshot generations under <root>/.den-generations/.
-_gen_dir() { printf '%s/.den-generations\n' "$1"; }
+# Per-cwd snapshot generations under <root>/.den/generations/.
+_gen_dir() { printf '%s/.den/generations\n' "$1"; }
 
 _write_generation() { # _write_generation <root> <op>
   local root="$1" op="$2"

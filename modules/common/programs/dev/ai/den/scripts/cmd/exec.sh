@@ -4,10 +4,8 @@ den_cmd_exec() {
   [ -n "$name" ] || _err 2 "usage: den exec <NAME> <cmd>..."
   shift
   # v1: requires running from the bound cwd
-  local out
-  out="$(_require_bound)" || _err 2 "must be inside a bound dir"
-  local proj
-  proj="$(echo "$out" | sed -n 2p)"
+  _bind_ctx
+  local proj="$BOUND_PROJECT"
   [ "$proj" = "$name" ] || _err 2 "current binding is '$proj', not '$name'"
   "$@"
 }

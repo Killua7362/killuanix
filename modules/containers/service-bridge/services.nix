@@ -39,6 +39,17 @@
       icon = "si:speedtest";
       homepage = true;
     }
+    {
+      # Browser viewer for the cliphist clipboard store (system unit, no
+      # autostart — start it from here). See modules/containers/cliphist-viewer/.
+      # No CDN icon for cliphist exists, so a self-contained base64 SVG data URI
+      # is passed verbatim (service-bridge only rewrites si:/di: prefixes).
+      name = "Clipboard";
+      unit = "cliphist-viewer.service";
+      url = "http://localhost:8899";
+      icon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjY2RkNmY0IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iOCIgeT0iMiIgd2lkdGg9IjgiIGhlaWdodD0iNCIgcng9IjEiLz48cGF0aCBkPSJNOCA0SDZhMiAyIDAgMCAwLTIgMnYxNGEyIDIgMCAwIDAgMiAyaDEyYTIgMiAwIDAgMCAyLTJWNmEyIDIgMCAwIDAtMi0yaC0yIi8+PHBhdGggZD0iTTkgMTJoNk05IDE2aDQiLz48L3N2Zz4=";
+      homepage = true;
+    }
     # ── Containers-tab only ────────────────────────────────────────
     {
       name = "Glance";
@@ -58,18 +69,6 @@
       unit = "cronicle.service";
       url = "http://localhost:3012";
       icon = "si:clockify";
-    }
-    {
-      name = "Element";
-      unit = "element-web.service";
-      url = "http://localhost:8009";
-      icon = "si:element";
-    }
-    {
-      name = "Qdrant";
-      unit = "qdrant.service";
-      url = "http://localhost:6333";
-      icon = "si:qdrant";
     }
     {
       name = "LiteLLM";
@@ -102,76 +101,10 @@
       icon = "si:meilisearch";
     }
     {
-      name = "Synapse";
-      unit = "synapse.service";
-      url = "http://localhost:8008/health";
-      icon = "si:matrix";
-    }
-    {
-      name = "Matrix Postgres";
-      unit = "matrix-postgres.service";
-      url = null;
-      icon = "si:postgresql";
-    }
-    {
-      name = "mautrix-telegram";
-      unit = "mautrix-telegram.service";
-      url = null;
-      icon = "si:telegram";
-    }
-    {
-      name = "mautrix-whatsapp";
-      unit = "mautrix-whatsapp.service";
-      url = null;
-      icon = "si:whatsapp";
-    }
-    {
-      name = "mautrix-instagram";
-      unit = "mautrix-meta-instagram.service";
-      url = null;
-      icon = "si:instagram";
-    }
-    {
-      name = "mautrix-messenger";
-      unit = "mautrix-meta-messenger.service";
-      url = null;
-      icon = "si:messenger";
-    }
-    {
       name = "iCloud Drive";
       unit = "icloud-drive.service";
       url = null;
       icon = "si:icloud";
-    }
-    {
-      name = "Boeing Mongo";
-      unit = "boeing-mongo.service";
-      url = null;
-      icon = "si:mongodb";
-    }
-    {
-      name = "Boeing Mongo Express";
-      unit = "boeing-mongo-express.service";
-      url = "http://localhost:8181";
-      icon = "si:mongodb";
-    }
-    {
-      name = "Boeing Redis";
-      unit = "boeing-redis.service";
-      url = null;
-      icon = "si:redis";
-    }
-    {
-      name = "Boeing Redis Commander";
-      unit = "boeing-redis-commander.service";
-      url = "http://localhost:8281";
-      icon = "si:redis";
-    }
-    {
-      name = "Boeing Postgres";
-      unit = "boeing-postgres.service";
-      url = null;
-      icon = "si:postgresql";
     }
     {
       name = "Cockpit";

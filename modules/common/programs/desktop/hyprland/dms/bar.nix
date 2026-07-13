@@ -10,7 +10,7 @@
     showFocusedWindow = true;
     showWeather = true;
     showMusic = true;
-    showClipboard = true;
+    showClipboard = false; # clipboard history lives on Super+V (wofi + cliphist), not the DMS bar
     showCpuUsage = true;
     showMemUsage = true;
     showCpuTemp = true;
@@ -113,7 +113,6 @@
           ]
           ++ [
             "systemTray"
-            "clipboard"
             "cpuUsage"
             "memUsage"
             "notificationButton"

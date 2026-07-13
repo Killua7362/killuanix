@@ -88,7 +88,7 @@
       #                       (https://trakt.tv/oauth/applications). Public
       #                       endpoints (trending) need only this.
       # `trakt_access_token`= OAuth Bearer token for /calendars/my/...
-      #                       Obtained via `scripts/trakt-auth.sh` device flow.
+      #                       Obtained via `trakt-auth.sh` device flow.
       #                       Expires after ~3 months — re-run the script + sops
       #                       to rotate. No automated refresh.
       # `trakt_username`    = Trakt username (plaintext, used in history URL).

@@ -223,10 +223,6 @@ in {
               url = "http://localhost:4000";
             }
             {
-              name = "Qdrant";
-              url = "http://localhost:6333/dashboard";
-            }
-            {
               name = "MCP Hub";
               url = "http://localhost:31415";
             }

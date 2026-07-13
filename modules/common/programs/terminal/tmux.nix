@@ -94,7 +94,7 @@ in {
       bind -n M-t display-popup -E -w 80% -h 80% -d "#{pane_current_path}" "$SHELL"
       bind -n M-s choose-tree -Zs
       bind -n M-p display-popup -E -w 80% -h 80% \
-        "${config.home.homeDirectory}/killuanix/scripts/zj-proj"
+        "${config.home.homeDirectory}/killuanix/DotFiles/scripts/personal/zj-proj"
 
       # zellij Alt [ / Alt ] = swap layout (NOT window cycle)
       bind -n "M-[" previous-layout
@@ -128,7 +128,7 @@ in {
       bind X kill-window
       bind w display-popup -E -w 80% -h 80% -d "#{pane_current_path}" "$SHELL"
       bind p display-popup -E -w 80% -h 80% \
-        "${config.home.homeDirectory}/killuanix/scripts/zj-proj"
+        "${config.home.homeDirectory}/killuanix/DotFiles/scripts/personal/zj-proj"
       bind s choose-tree -Zs
       bind d detach-client
 

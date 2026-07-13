@@ -29,7 +29,7 @@
   # Extra slash commands. Each entry: <name> = <path-to-md-file>.
   # Becomes `~/.claude/commands/<name>.md` inside the launcher state dir.
   # Use `notesCmd "foo"` to point at a live file under Notes/.../commands/
-  # (content edits propagate without `scripts/nix_switch`).
+  # (content edits propagate without `nix_switch`).
   commands = {};
 
   # Extra plugin slugs to flip to true in settings.json.enabledPlugins.

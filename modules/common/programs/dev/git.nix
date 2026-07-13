@@ -33,12 +33,14 @@ in {
     # Global gitignore — written by HM to ~/.config/git/ignore and pointed to
     # by core.excludesFile. Single source of truth across every host/repo.
     ignores = [
-      ".gitnexus/" # GitNexus per-repo knowledge graph (rebuildable, never commit)
       # `den` host-side state. Lives next to bound working dirs; per-host only.
+      # All state now consolidated into a single `.den/` dir (git-style); the
+      # legacy flat `.den-*` entries are kept so un-migrated dirs stay ignored.
+      ".den/"
+      ".den-staging/"
       ".den-meta.json"
       ".den-meta.json.lock"
       ".den-meta.json.reflog"
-      ".den-staging/"
       ".den-generations/"
     ];
 
@@ -46,6 +48,11 @@ in {
       user = {
         name = userConfig.fullName;
         email = userConfig.email;
+      };
+      core = {
+        # -F: quit if output fits one screen (no pager for short diffs).
+        # -X: don't clear screen on exit, so output stays in terminal.
+        pager = "less -FX";
       };
       "http \"https://dev.azure.com\"" = {
         proxy = "socks5h://127.0.0.1:1080";

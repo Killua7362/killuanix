@@ -52,7 +52,7 @@ After first run: open the desktop app, log in, then **Settings → Allow browser
 
 Shared/declarative entries go through `policies.ManagedBookmarks` instead. This is a Firefox enterprise policy that produces a read-only **Managed Bookmarks** toolbar folder backed by a separate store from `places.sqlite`, so it does not touch user-managed bookmarks. Currently seeded with two subfolders:
 
-- **Self-hosted** -- toolbar shortcuts to local container UIs (Dashboard, Portainer, SearXNG, LiteLLM, Qdrant, MCP Hub, Excalidraw, Mermaid Live)
+- **Self-hosted** -- toolbar shortcuts to local container UIs (Dashboard, Portainer, SearXNG, LiteLLM, MCP Hub, Excalidraw, Mermaid Live)
 - **Userscripts** -- direct links to `*.user.js` URLs on greasyfork.org; Violentmonkey auto-prompts to install on click. Violentmonkey stores installed scripts in IndexedDB which cannot be materialized from the Nix store, so this curated link list is the realistic declarative path. If a URL 404s after a Greasyfork slug update, strip to `/scripts/<id>` and Greasyfork will redirect; update the pin afterwards.
 
 ## Vendored userscripts

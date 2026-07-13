@@ -26,7 +26,7 @@ _mcp_require_catalog() {
   cat=$(_mcp_catalog)
   if [ ! -f "$cat" ]; then
     echo "claude-kit mcp: catalog not found: $cat" >&2
-    echo "                (run scripts/nix_switch first to generate it)" >&2
+    echo "                (run nix_switch first to generate it)" >&2
     exit 1
   fi
 }

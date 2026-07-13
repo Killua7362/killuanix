@@ -2,10 +2,8 @@
 den_cmd_diff() {
   local a="${1:-}" b="${2:-}"
   [ -n "$a" ] || _err 2 "usage: den diff <gen-a> [<gen-b>]"
-  local out
-  out="$(_require_bound)"
-  local root
-  root="$(echo "$out" | sed -n 1p)"
+  _bind_ctx
+  local root="$BOUND_ROOT"
   local gd
   gd="$(_gen_dir "$root")"
   local fa="$gd/gen-$(printf '%03d' "$a").json"

@@ -8,7 +8,7 @@ _den() {
   local cur prev cmds
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  cmds="new init list ls status add ignore rm re-add restore pull clean sync stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version"
+  cmds="new init list ls status add ignore rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
     return 0
@@ -45,7 +45,7 @@ EOF
       cat <<'EOF'
 _den() {
   local cmds
-  cmds=(new init list ls status add ignore rm re-add restore pull clean sync stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version)
+  cmds=(new init list ls status add ignore rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version)
   if (( CURRENT == 2 )); then
     _describe 'den command' cmds
     return
@@ -83,7 +83,7 @@ EOF
     fish)
       cat <<'EOF'
 complete -c den -f
-complete -c den -n "__fish_use_subcommand" -a "new init list ls status add ignore rm re-add restore pull clean sync stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version"
+complete -c den -n "__fish_use_subcommand" -a "new init list ls status add ignore rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version"
 complete -c den -n "__fish_seen_subcommand_from init cd exec sync rollback diff" -a "(den list --plain 2>/dev/null | sed 's/^[* ] //; s/  *.*//')"
 complete -c den -n "__fish_seen_subcommand_from new" -l path -l from -l preset -l devshell -l no-devshell
 complete -c den -n "__fish_seen_subcommand_from new; and __fish_prev_arg_in --devshell" -a "(if test -n \"\$DEN_DEV_TEMPLATES_DIR\"; for d in \$DEN_DEV_TEMPLATES_DIR/*/; test -f \"\$d/flake.nix\"; and basename \$d; end; end)"

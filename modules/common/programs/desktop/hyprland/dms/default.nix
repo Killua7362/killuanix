@@ -24,11 +24,19 @@
 
     # ---- Module-level options (commented = upstream defaults; uncomment to override) ----
     # Source: ${dms}/distro/nix/options.nix and ${dms}/distro/nix/home.nix
-    # systemd = {
-    #   enable = false; # we launch dms via UWSM exec-once in execs.nix; keep off
-    #   restartIfChanged = true;
-    #   target = config.wayland.systemd.target;
-    # };
+    # Run DMS as a systemd user service (Restart= via the wayland target) instead
+    # of an exec-once scope, so it self-heals after a Wayland object-registry
+    # desync — the `wl_display: error 0: invalid object` death that HDMI hotplug
+    # flaps trigger across every client (see hyprland/CLAUDE.md Monitors). An
+    # exec-once scope stays dead; the service respawns in seconds. NOTE: the
+    # matching `uwsm app -- dms run` in lua/execs.lua is removed so DMS launches
+    # exactly once (service, not scope) — do not re-add it.
+    systemd = {
+      enable = true;
+      restartIfChanged = true;
+      # No `target` sub-option exists upstream (options.nix only defines
+      # enable + restartIfChanged); home.nix wires the wanted-by target itself.
+    };
     # dgop.package = pkgs.dgop;
     # quickshell.package = inputs.dms.packages.${pkgs.system}.quickshell; # default: built from DMS source
     # enableSystemMonitoring = true;
@@ -181,7 +189,7 @@
           icon = "⌨️";
           displayText = "";
           displayCommand = "";
-          clickCommand = "sh ${config.home.homeDirectory}/killuanix/DotFiles/scripts/wvkbd-toggle.sh";
+          clickCommand = "sh ${config.home.homeDirectory}/killuanix/DotFiles/scripts/v1/wvkbd-toggle.sh";
           middleClickCommand = "";
           rightClickCommand = "";
           updateInterval = 0;

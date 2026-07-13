@@ -63,6 +63,18 @@
     config.lib.file.mkOutOfStoreSymlink
     "${config.home.homeDirectory}/killuanix/chrollo/home-manager/device-monitors.lua";
 
+  # Per-host touchpad gestures (ThinkPad trackpad). Sourced via
+  # try_require("device-gestures"); killua handheld ships none.
+  xdg.configFile."hypr/device-gestures.lua".source =
+    config.lib.file.mkOutOfStoreSymlink
+    "${config.home.homeDirectory}/killuanix/chrollo/home-manager/device-gestures.lua";
+
+  # Per-host keybinds (power-button long-press → DMS power menu). Sourced via
+  # try_require("device-keybinds"); killua/archnix ship none.
+  xdg.configFile."hypr/device-keybinds.lua".source =
+    config.lib.file.mkOutOfStoreSymlink
+    "${config.home.homeDirectory}/killuanix/chrollo/home-manager/device-keybinds.lua";
+
   # chrollo only hosts the Oracle 19c VM; skip the work-ubuntu Hubstaff VM
   # (avoids the ~3 GB Ubuntu ISO fetch + autoinstall ISO repack).
   vms.workUbuntu.enable = false;

@@ -2,7 +2,7 @@
 #
 # A small CLI that binds named projects (under Notes/projects/<NAME>/) to
 # working directories via symlinks. Project state travels in the Notes git
-# repo; per-host binding state lives in <cwd>/.den-meta.json (globally
+# repo; per-host binding state lives in <cwd>/.den/ (git-style dir, globally
 # gitignored). See `den help` for the full command surface and the design
 # doc at ~/.claude/plans/could-i-have-a-cheeky-stallman.md.
 #
@@ -272,7 +272,7 @@ in {
     programs.starship.settings = lib.mkIf (cfg.starshipBlock && config.programs.starship.enable) {
       custom.den = {
         command = "den prompt";
-        when = "test -f .den-meta.json";
+        when = "test -e .den/meta.json -o -f .den-meta.json";
         format = "[$output]($style) ";
         style = "bold cyan";
       };

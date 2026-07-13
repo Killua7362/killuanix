@@ -3,7 +3,8 @@
     ./opencode.nix
     ./claude.nix
     ./claude-hooks.nix
-    ./claudio.nix
+    ./rtk.nix
+    # ./claudio.nix  # disabled — no contextual hook sounds
     ./claude-resources
     ./claude-kit
     ./claude-launchers
@@ -12,12 +13,12 @@
     ./ccr.nix
     ./ccmanager.nix
     ./claude-powerline.nix
-    ./code-index.nix
-    ./gitnexus-cli.nix
     ./jupyter-env-mcp.nix
     ./kindly-web-search.nix
     ./libreoffice-mcp-launcher.nix
     ./oracle-sqlcl-mcp.nix
+    ./serena-mcp.nix
+    ./codebase-memory-mcp.nix
     ./freshrss-mcp
     ./den
   ];

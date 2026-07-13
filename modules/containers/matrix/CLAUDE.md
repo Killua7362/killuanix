@@ -1,5 +1,11 @@
 # Matrix stack — Synapse + mautrix bridges + Element Web
 
+> **⚠️ Currently DISABLED.** The `./matrix` import (and its quadlet volumes +
+> `matrix-net` network) is commented out in `modules/containers/default.nix`, so
+> nothing here builds or runs, and the stack is absent from the Glance
+> service-bridge catalogue. These files are kept intact; re-enable by
+> uncommenting the import + volumes + network in `modules/containers/default.nix`.
+
 Private Matrix hub with Telegram / WhatsApp / Instagram / Messenger bridged into one client. Federation disabled. Reaches the world only through `tailscale serve` on the user's tailnet — no public HTTPS, no `.well-known`.
 
 ## Server identity
@@ -111,7 +117,7 @@ If you want one host (e.g. killua) to autostart while chrollo stays manual, gate
 
 ## First-run user steps (NOT automated)
 
-After the first successful `sudo scripts/nix_switch`:
+After the first successful `nix_switch`:
 
 1. **Create your Matrix account.**
    ```sh

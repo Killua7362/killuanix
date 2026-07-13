@@ -1,9 +1,17 @@
 {pkgs, ...}: let
-  handler = type:
-    pkgs.writeShellScript "cliphist-${type}-handler" ''
-      cliphist store
-      qs ipc call cliphistService update 2>/dev/null || true
-    '';
+  # Backend store for the `clipboard-history` wofi picker (Super+V, see
+  # utils/clipboard-history.nix) and the `cliphist-viewer` web UI. Stores the
+  # clip, then records `<newest-id>\t<iso8601>` into a timestamp sidecar —
+  # cliphist itself keeps no timestamps, and the viewer reads this file to offer
+  # date filtering + a timestamped CSV export. Newest id is line 1 of the list
+  # right after a synchronous store. Sidecar grows unbounded (append-only); it's
+  # cheap text and cliphist's own store cap bounds what's actually shown.
+  store = pkgs.writeShellScript "cliphist-store-stamped" ''
+    ${pkgs.cliphist}/bin/cliphist store
+    ts_file="$HOME/.cache/cliphist/timestamps"
+    id=$(${pkgs.cliphist}/bin/cliphist list | ${pkgs.coreutils}/bin/head -n1 | ${pkgs.coreutils}/bin/cut -f1)
+    [ -n "$id" ] && printf '%s\t%s\n' "$id" "$(${pkgs.coreutils}/bin/date -Iseconds)" >> "$ts_file"
+  '';
 in {
   systemd.user.services = {
     cliphist-text = {
@@ -13,7 +21,7 @@ in {
         PartOf = ["graphical-session.target"];
       };
       Service = {
-        ExecStart = "${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${handler "text"}";
+        ExecStart = "${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${store}";
         Restart = "always";
         RestartSec = 1;
         KillMode = "mixed";
@@ -27,7 +35,7 @@ in {
         PartOf = ["graphical-session.target"];
       };
       Service = {
-        ExecStart = "${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${handler "image"}";
+        ExecStart = "${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${store}";
         Restart = "always";
         RestartSec = 1;
         KillMode = "mixed";

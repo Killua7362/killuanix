@@ -13,7 +13,7 @@ hl.config({
     "WLR_DRM_NO_ATOMIC,1",
     "WLR_NO_HARDWARE_CURSORS,1",
     "ILLOGICAL_IMPULSE_VIRTUAL_ENV,~/.local/state/quickshell/.venv",
-    "TERMINAL,ghostty",
+    "TERMINAL,wezterm",
     "XDG_SESSION_TYPE,wayland",
     "XDG_CURRENT_DESKTOP,Hyprland",
     "XDG_SESSION_DESKTOP,Hyprland",

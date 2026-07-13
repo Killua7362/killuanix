@@ -319,6 +319,8 @@ return {
 								"**/.metadata/**",
 								"**/archetype-resources/**",
 								"**/META-INF/maven/**",
+								"**/bin/**",
+								"**/classes/**",
 							},
 						},
 						project = {},

@@ -25,12 +25,14 @@ _yesno() { # _yesno <prompt>
 }
 
 # ---- path resolution -----------------------------------------------------
-# find_binding_root: walk upward from cwd, return dir containing .den-meta.json
+# find_binding_root: walk upward from cwd, return dir holding the .den binding
+# marker (new .den/meta.json or legacy .den-meta.json), migrating legacy in place.
 _find_binding_root() {
   local d
   d="$(pwd -P)"
   while [ "$d" != "/" ]; do
-    if [ -f "$d/.den-meta.json" ]; then
+    if _den_is_bound_dir "$d"; then
+      _den_migrate_if_legacy "$d"
       printf '%s\n' "$d"
       return 0
     fi
@@ -77,8 +79,8 @@ _resolve_target_path() {
 # ---- locking -------------------------------------------------------------
 _with_lock() { # _with_lock <bound-root> <cmd...>
   local root="$1"; shift
-  local lock="$root/.den-meta.json.lock"
-  mkdir -p "$root"
+  local lock; lock="$(_lock_path "$root")"
+  mkdir -p "$(dirname "$lock")"
   exec 9>"$lock" || _err 75 "cannot open lock file $lock"
   if ! flock -n 9; then
     _err 75 "another den process is mutating $root; try again later"

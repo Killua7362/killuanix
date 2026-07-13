@@ -22,7 +22,8 @@
 # ── MCP servers ──────────────────────────────────────────────────────────
 # Servers come from the canonical registry at modules/common/mcp-servers.nix.
 # Binaries are provided by natsukium/mcp-servers-nix (no hashes to manage).
-# Custom non-catalog servers (like code-index) live alongside in ./code-index.nix.
+# Custom non-catalog servers (needing pkgs/sops in scope) live alongside, e.g.
+# ./jupyter-env-mcp.nix, ./kindly-web-search.nix.
 {
   inputs,
   config,
@@ -36,7 +37,7 @@
   # Cherry-pick individual skills from larger flake-input repos where you
   # don't want the whole tree. Key = skill name (becomes ~/.claude/skills/<key>/),
   # value = nix-store path. These are nix-managed (read-only) and require
-  # `scripts/nix_switch` to update.
+  # `nix_switch` to update.
   #
   # Upstream bundles (anthropics/skills, ruflo, wshobson) live in per-source
   # lazy sub-catalogs (Notes/claude/lazy/{anthropics-skills,ruflo,wshobson}/)
@@ -45,26 +46,27 @@
   # Local hand-authored always-on skills live in Notes/claude/skills/ and are
   # wired as out-of-store symlinks under `config.home.file` below (same
   # live-edit pattern as Notes/claude/{global.md,memory,commands}).
+  # All disabled globally. Re-enable by uncommenting an entry.
   extraSkills = {
-    # garrytan/gstack — `office-hours` + `plan-eng-review` requested
-    # globally. Their SKILL.md bodies reference `~/.claude/skills/gstack/bin/...`
-    # and other sibling sub-skills under `~/.claude/skills/gstack/<name>/`, so
-    # the umbrella tree must be present alongside. Without it the preamble
-    # falls back to defaults but loses telemetry, config, learnings,
-    # update-check, upgrade-flow, and any cross-skill jumps.
-    gstack = "${inputs.gstack}";
-    office-hours = "${inputs.gstack}/office-hours";
-    plan-eng-review = "${inputs.gstack}/plan-eng-review";
+    # garrytan/gstack — `office-hours` + `plan-eng-review`. Their SKILL.md
+    # bodies reference `~/.claude/skills/gstack/bin/...` and other sibling
+    # sub-skills under `~/.claude/skills/gstack/<name>/`, so the umbrella tree
+    # must be present alongside. Without it the preamble falls back to defaults
+    # but loses telemetry, config, learnings, update-check, upgrade-flow, and
+    # any cross-skill jumps.
+    # gstack = "${inputs.gstack}";
+    # office-hours = "${inputs.gstack}/office-hours";
+    # plan-eng-review = "${inputs.gstack}/plan-eng-review";
 
     # mattpocock/skills — `grill-me` (interview-style code review) +
     # `handoff` (session-handoff doc generator). Self-contained, no
     # external path refs.
-    grill-me = "${inputs.mattpocock-skills}/skills/productivity/grill-me";
-    handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";
+    # grill-me = "${inputs.mattpocock-skills}/skills/productivity/grill-me";
+    # handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";
 
     # glebis/claude-skills — `balanced` (cognitive-balance response-style
     # skill). Self-contained single SKILL.md, no cross-skill refs.
-    balanced = "${inputs.glebis-claude-skills}/balanced";
+    # balanced = "${inputs.glebis-claude-skills}/balanced";
   };
 
   # Wrapper for git-sourced MCP servers. The fetched source lives in the Nix
@@ -352,8 +354,8 @@
     '';
 in {
   # Side-channel for MCP server stanzas defined outside mcp-servers.nix
-  # (servers that need `pkgs` / sops in scope, e.g. code-index, jupyter-env,
-  # jupyter). Each entry may include `optional = true` — same semantics as
+  # (servers that need `pkgs` / sops in scope, e.g. jupyter-env, jupyter,
+  # kindly-web-search). Each entry may include `optional = true` — same semantics as
   # the registry: excluded from global wiring, still resolvable through
   # `claude-kit project sync` via the all-mcp-servers.json catalog below.
   options.local.extraMcpServers = lib.mkOption {
@@ -465,10 +467,21 @@ in {
           repo = "JuliusBrussee/caveman";
         };
 
+        # obra/superpowers-marketplace — Jesse Vincent's Superpowers plugin.
+        # Enforces a seven-phase dev pipeline (Brainstorm → Spec → Plan → TDD
+        # → Subagent Dev → Review → Finalize) with mandatory test-first
+        # discipline. Marketplace key must stay `superpowers-marketplace` so
+        # the `superpowers@superpowers-marketplace` plugin ref below resolves.
+        # Equivalent to `/plugin marketplace add obra/superpowers-marketplace`.
+        extraKnownMarketplaces.superpowers-marketplace.source = {
+          source = "github";
+          repo = "obra/superpowers-marketplace";
+        };
+
         # Plugins are disabled by default — every enabled entry adds its
         # skills/agents/commands to the always-on startup blob. Flip a single
         # plugin to `true` only when you actively need it; re-run
-        # `scripts/nix_switch` afterwards. The flat ruflo/wshobson bundles
+        # `nix_switch` afterwards. The flat ruflo/wshobson bundles
         # under ~/.claude/{agents,commands,skills}/ are governed separately
         # by `claude-resources.nix` — see the cleanup notes there.
         enabledPlugins = {
@@ -482,6 +495,7 @@ in {
           "ruflo-testgen@ruflo" = false; # Test gap detection + TDD
           "ruflo-docs@ruflo" = false; # Doc generation + drift detection
           "caveman@caveman" = true; # Token-compressed response style + Shrink MCP
+          "superpowers@superpowers-marketplace" = false; # per-project; opt in via `claude-kit lazy add plugin superpowers@superpowers-marketplace`
         };
       };
     };
@@ -503,7 +517,7 @@ in {
     # `.caveman-active`, and writes `$CLAUDE_CONFIG_DIR/.caveman-statusline-suffix`
     # of the form `⛏ Nk`. Bypasses upstream `caveman-stats.js` (which would
     # render the same lifetime total in every concurrent session). Lifetime /
-    # 5h-block aggregation lives separately in `scripts/caveman`. `node`
+    # 5h-block aggregation lives separately in `caveman`. `node`
     # resolves from PATH (provided by nodejs_20 in ruflo-cli.nix /
     # claude-flow-cli.nix). Savings ratio: caveman `full`-mode benchmark
     # (~65% mean per-task token reduction; only mode with benchmark data).
@@ -598,7 +612,7 @@ in {
     # vault path: each subdir of Notes/claude/skills/ becomes
     # ~/.claude/skills/<name>, each .md file under Notes/claude/commands/
     # becomes ~/.claude/commands/<file>.md. Adding a new dir/file requires
-    # `scripts/nix_switch` (re-evaluates readDir); content edits inside
+    # `nix_switch` (re-evaluates readDir); content edits inside
     # existing entries don't. Commands sit alongside the flattened
     # ruflo--*/wshobson--* bundle (claude-resources.nix uses `recursive =
     # true` so per-file additions don't conflict).
@@ -607,7 +621,7 @@ in {
       # treat it as part of the flake source tree (which would require
       # every entry inside the Notes submodule to be tracked at the
       # parent repo level — impossible by definition). Requires
-      # `nix --impure` at build time; scripts/nix_switch passes it.
+      # `nix --impure` at build time; nix_switch passes it.
       liveBase = "${config.home.homeDirectory}/killuanix/Notes/claude";
       notesSkills = /. + "${liveBase}/skills";
       notesCommands = /. + "${liveBase}/commands";

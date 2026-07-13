@@ -44,7 +44,7 @@ sops -d --extract '["ferdium_services"]' secrets/personal.yaml
 
 ## Post-install runbook
 
-1. `scripts/nix_switch <host>` to apply.
+1. `nix_switch <host>` to apply.
 2. Launch Ferdium. Confirm `~/.config/Ferdium/config/custom.css` is a read-only symlink into `/nix/store/...`.
 3. Sign up / log in to the local Ferdium account on first launch (Ferdium offers an offline "Use Ferdium without an account" option — pick that if you don't want their sync).
 4. Decrypt the `ferdium_services` note (see above) and add each service via the in-app Services panel.

@@ -113,7 +113,31 @@ in {
               bind "n" { HalfPageScrollDown; }
               bind "p" { HalfPageScrollUp; }
               bind "s" { SwitchToMode "entersearch"; SearchInput 0; }
-              bind "u" { EditScrollback; SwitchToMode "normal"; }
+              // u = only the visible viewport at the current scroll position, opened
+              // in nvim IN PLACE of the current pane (tmux-copy-mode-style takeover).
+              // DumpScreen (full=false) writes the screenful you scrolled to; Run with
+              // in_place replaces the focused pane and returns to the terminal on :q.
+              // Closest thing to "text around cursor" — scroll mode has only a viewport.
+              bind "u" {
+                  DumpScreen "/tmp/zj-scroll-view.txt";
+                  Run "sh" "-c" "nvim /tmp/zj-scroll-view.txt; rm -f /tmp/zj-scroll-view.txt" {
+                      in_place true
+                      close_on_exit true
+                  };
+                  SwitchToMode "normal";
+              }
+              // U = scrollback in nvim, capped to the last 20000 lines (EditScrollback
+              // has no line limit — it would dump the whole buffer, up to the 1,000,000
+              // scroll_buffer_size). DumpScreen full=true writes the entire buffer, then
+              // tail trims to the most recent 20000 and pipes into nvim (in place).
+              bind "U" {
+                  DumpScreen "/tmp/zj-full.txt" full=true;
+                  Run "sh" "-c" "tail -n 20000 /tmp/zj-full.txt | nvim -; rm -f /tmp/zj-full.txt" {
+                      in_place true
+                      close_on_exit true
+                  };
+                  SwitchToMode "normal";
+              }
           }
           search {
               bind "c" { SearchToggleOption "CaseSensitivity"; }
@@ -214,6 +238,12 @@ in {
                   }
               }
               bind "Alt w" { CloseFocus; }
+              bind "Alt x" {
+                  LaunchOrFocusPlugin "zextract" {
+                      floating true
+                      move_to_focused_tab true
+                  }
+              }
           }
       //"locked"
           shared_except "move" {
@@ -261,6 +291,8 @@ in {
               bind "Ctrl c" { ScrollToBottom; SwitchToMode "normal"; }
               bind "d" { HalfPageScrollDown; }
               bind "Ctrl d" { PageScrollDown; }
+              bind "g" { ScrollToTop; }
+              bind "G" { ScrollToBottom; }
               bind "e" { ScrollDown; }
               bind "Ctrl f" { PageScrollDown; }
               bind "h" { PageScrollUp; }
@@ -336,6 +368,8 @@ in {
               reaction_seconds "0.3"
               print_to_log true
           }
+          // tmux-fingers-style hint picker: grab paths/URLs/hashes without mouse.
+          zextract location="https://github.com/codingfragments/zellij-zextract/releases/latest/download/zextract.wasm"
       }
 
       load_plugins {

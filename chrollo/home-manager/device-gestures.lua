@@ -1,4 +1,9 @@
--- Touchpad gestures. Ported from gestures.nix.
+-- Per-host touchpad gestures for chrollo (ThinkPad — real trackpad).
+--
+-- Host-scoped (loaded via try_require("device-gestures")) rather than shared,
+-- so the killua handheld doesn't get workspace-swipe/pinch bound to its small
+-- trackpad. Formerly lua/gestures.lua (global) — moved here when chrollo became
+-- the only host that wants them.
 
 hl.config({
   gestures = {

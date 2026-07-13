@@ -56,7 +56,7 @@ The image entrypoint only honors `ADMIN_API_PASSWORD` on first boot. Rotating
 the sops secret alone won't propagate. The workflow:
 
 1. `sops secrets/personal.yaml` — edit `freshrss_admin_api_password`.
-2. `scripts/nix_switch` — restarts `freshrss-env.service`, and
+2. `nix_switch` — restarts `freshrss-env.service`, and
    `freshrss-bootstrap-api-pw.service` then calls
    `cli/update-user.php --user killua --api-password "$ADMIN_API_PASSWORD"`
    inside the container, which **does** rotate the running credential.

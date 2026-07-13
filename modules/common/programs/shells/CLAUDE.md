@@ -20,7 +20,7 @@ Both shells define the same core alias set:
 - `c` (clear), `d` (nvim diff), `svim` (sudoedit).
 - `t`/`tl`/`tn`/`ts`/`ta`/`td` -- tmux attach/list/new/sessionizer/kill shortcuts.
 - `sysu`/`jnsu` -- `systemctl --user` and `journalctl --user`.
-- `oil` -- runs `DotFiles/scripts/oil-ssh.sh`.
+- `oil` -- runs `DotFiles/scripts/v1/oil-ssh.sh`.
 
 ## Custom Functions
 
@@ -28,11 +28,11 @@ Defined in both shells:
 
 - `pacsave` / `pacapply` -- run `aconfmgr` save/apply for Arch native package tracking.
 
-`nix_switch` used to be defined in both shells; it now lives as a standalone script at `~/killuanix/scripts/nix_switch` (on PATH via the scripts dir). Supports `home` / `system` / `both` modes, `--host chrollo|killua|archnix` (autodetected from `/etc/hostname` + `/etc/arch-release` when omitted), and a `--limit` flag that applies `--max-jobs 2 --cores 2` plus a `systemd-run --user --scope` cgroup cap (CPU 200%, memory 4G) for builds that should not starve the interactive session.
+`nix_switch` used to be defined in both shells; it now lives as a standalone script at `~/killuanix/DotFiles/scripts/personal/nix_switch` (on PATH via the `DotFiles/scripts/personal` dir). Supports `home` / `system` / `both` modes, `--host chrollo|killua|archnix` (autodetected from `/etc/hostname` + `/etc/arch-release` when omitted), and a `--limit` flag that applies `--max-jobs 2 --cores 2` plus a `systemd-run --user --scope` cgroup cap (CPU 200%, memory 4G) for builds that should not starve the interactive session.
 
 Zsh-only:
 
-- `boeingvpn [userid] [gateway-host]` -- connects via `openconnect` with SOCKS proxy (`ocproxy`). `--user` defaults to the `boeing/vpn_userid` sops secret (read at runtime from its decrypted path); pass `$1` to override. Gateway auto-picked by probing all GP gateways for lowest **median** TCP-connect RTT (TLS skipped — Boeing gateways require unsafe legacy renegotiation); override with `$2` or `$BOEINGVPN_GATEWAY`. Probe tunables: `BOEINGVPN_SAMPLES` (default 3), `BOEINGVPN_DEADLINE` (default 15s hard wall-clock cap — stops probing and uses best-so-far), `BOEINGVPN_CONNECT_TIMEOUT` (default 2s/connect). A down gateway is dropped after 2 leading failures (not 1 — the cold DNS sample can exceed the timeout on a healthy gateway). Standalone ranking tool: `scripts/gp-fastest-gateway.sh` (`SAMPLES`/`DEADLINE`/`CONNECT_TIMEOUT` env knobs).
+- `boeingvpn [userid] [gateway-host]` -- connects via `openconnect` with SOCKS proxy (`ocproxy`). `--user` defaults to the `boeing/vpn_userid` sops secret (read at runtime from its decrypted path); pass `$1` to override. Gateway auto-picked by probing all GP gateways for lowest **median** TCP-connect RTT (TLS skipped — Boeing gateways require unsafe legacy renegotiation); override with `$2` or `$BOEINGVPN_GATEWAY`. Probe tunables: `BOEINGVPN_SAMPLES` (default 3), `BOEINGVPN_DEADLINE` (default 15s hard wall-clock cap — stops probing and uses best-so-far), `BOEINGVPN_CONNECT_TIMEOUT` (default 2s/connect). A down gateway is dropped after 2 leading failures (not 1 — the cold DNS sample can exceed the timeout on a healthy gateway). Standalone ranking tool: `gp-fastest-gateway.sh` (`SAMPLES`/`DEADLINE`/`CONNECT_TIMEOUT` env knobs).
 - `chrome-socks` -- launches Chrome through the SOCKS proxy.
 - `opencode` -- runs opencode in a rootless podman container with bind mounts.
 - `ta`/`td` -- tmux attach/kill wrappers (needed as functions for argument passing).
@@ -46,6 +46,7 @@ Zsh-only:
 - **History**: 10000 entries, dedup enabled, shared across sessions.
 - **Key bindings**: vi-insert mode bindings for Home/End, Ctrl+Right/Left word movement, Ctrl+C break. `fzf_history_search` is rebound after `zsh-vi-mode` init via `zvm_after_init`.
 - **Init order**: HM session vars sourced first, then PATH additions, then `starship init zsh` and `zoxide init zsh`.
+- **WezTerm autolock hook**: when `$WEZTERM_PANE` is set, a `preexec`/`precmd` pair emits an OSC 1337 `WEZTERM_PROG` user var naming the running foreground command (cleared at the prompt). WezTerm's modal-chord passthrough (see `terminal/CLAUDE.md` → WezTerm → Autolock) reads it — this is the only per-command signal that crosses the `wezterm connect unix` mux. forgit aliases are marked `fzf` by inspecting `type` output so their fzf UI locks like nvim does.
 
 ## Fish Details
 

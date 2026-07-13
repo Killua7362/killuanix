@@ -51,7 +51,6 @@
   # MCP server names from the user's global registry (resolved via
   # ~/.claude.json). Each named server is copied into ./.mcp.json.
   mcp = [
-    # "code-index"
     # "basic-memory"
   ];
 

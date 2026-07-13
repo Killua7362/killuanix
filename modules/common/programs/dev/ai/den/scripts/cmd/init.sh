@@ -5,6 +5,7 @@ den_cmd_init() {
     name="$(den_cmd_list --plain | sed 's/^[* ] //; s/  *.*//' | fzf --prompt='den project> ')" || _err 2 "cancelled"
   fi
   [ -n "$name" ] || _err 2 "usage: den init <NAME> [.|--path P]"
+  _reject_hidden_project "$name"
   shift || true
   local mode=default arg=
   while [ $# -gt 0 ]; do
@@ -20,7 +21,7 @@ den_cmd_init() {
 
   _resolve_target_path "$mode" "$arg"
   [ -d "$TARGET_PATH" ] || mkdir -p "$TARGET_PATH"
-  if [ -f "$TARGET_PATH/.den-meta.json" ]; then
+  if _den_is_bound_dir "$TARGET_PATH"; then
     local existing
     existing="$(_meta_get "$TARGET_PATH" .project)"
     if [ "$existing" = "$name" ]; then

@@ -59,7 +59,7 @@
     # can resolve the app id when SSH_ASKPASS=ksshaskpass is invoked under Qt.
     kdePackages.ksshaskpass
     # On-screen keyboard for the handheld — provides wvkbd-mobintl, toggled by the
-    # DMS bar's wvkbd button (killua-only) via DotFiles/scripts/wvkbd-toggle.sh.
+    # DMS bar's wvkbd button (killua-only) via DotFiles/scripts/v1/wvkbd-toggle.sh.
     wvkbd
   ];
 

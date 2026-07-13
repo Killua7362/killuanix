@@ -3,14 +3,11 @@ den_cmd_doctor() {
   local strict=0
   case "${1:-}" in --strict) strict=1;; esac
   local exit_code=0
-  local out
-  if ! out="$(_require_bound 2>/dev/null)"; then
+  if ! _try_bind_ctx; then
     echo "[no binding here] (run \`den init <NAME>\`)"
     return 0
   fi
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
   local pd
   pd="$(_project_dir_for "$proj")"
 
@@ -43,6 +40,33 @@ den_cmd_doctor() {
   if [ "$dangling" -gt 0 ]; then
     printf '  [DANGLING] %d link(s)\n' "$dangling"
     exit_code=$((exit_code + dangling))
+  fi
+  # G1: leak guard — SECURITY: an in-repo link not in info/exclude would leak
+  # to that clone's remote on a stray `git add`.
+  local unguarded=0 t
+  while IFS= read -r t; do
+    [ -L "$root/$t" ] || continue
+    _guard_is_guarded "$root" "$t" || unguarded=$((unguarded+1))
+  done < <(jq -r '.symlinks[].target' "$(_meta_path "$root")")
+  if [ "$unguarded" -gt 0 ]; then
+    printf '  [UNGUARDED] %d in-repo link(s) not in info/exclude — WOULD LEAK (run: den pull)\n' "$unguarded"
+    exit_code=$((exit_code + unguarded))
+  else
+    echo "  [ok] in-repo links info/exclude-guarded"
+  fi
+  # G2: registered clones present? (missing is expected on a fresh host)
+  local mc=0 cp
+  while IFS= read -r cp; do
+    [ -n "$cp" ] && [ "$cp" != "." ] || continue
+    [ -e "$root/$cp/.git" ] || mc=$((mc+1))
+  done < <(_clones_read "$pd" | jq -r '.clones[]?.path')
+  if [ "$mc" -gt 0 ]; then
+    if [ "$strict" = 1 ]; then
+      printf '  [CLONES] %d registered clone(s) missing (run: den pull)\n' "$mc"
+      exit_code=$((exit_code + mc))
+    else
+      printf '  [info] %d registered clone(s) not present — den pull prints git clone commands\n' "$mc"
+    fi
   fi
   # I3: anchor missing — lax
   # (placeholder: check each patch has a Den-Anchor trailer)

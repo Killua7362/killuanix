@@ -1,9 +1,7 @@
 # shellcheck shell=bash
 den_cmd_last_applied() {
-  local out
-  out="$(_require_bound)"
-  local proj
-  proj="$(echo "$out" | sed -n 2p)"
+  _bind_ctx
+  local proj="$BOUND_PROJECT"
   local ad
   ad="$(_activity_dir "$proj")"
   if [ ! -d "$ad" ]; then

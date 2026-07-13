@@ -11,7 +11,7 @@
 #   • TS files live under Notes/claude/hooks/, surfaced into ~/.claude/hooks/
 #     via mkOutOfStoreSymlink (same live-edit pattern as Notes/claude/skills/
 #     and Notes/claude/commands/). Edits in Obsidian apply instantly; only
-#     adding/removing files needs `scripts/nix_switch`.
+#     adding/removing files needs `nix_switch`.
 #   • Hook commands (`bun ~/.claude/hooks/index.ts <Event>`) are registered
 #     through the shared `local.extraHooks` side-channel declared in
 #     claude.nix — so we co-exist with claudio (PreToolUse / PostToolUse /

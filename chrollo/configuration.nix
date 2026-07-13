@@ -12,6 +12,7 @@
 in {
   imports = [
     ./hardware-configuration.nix
+    ./power.nix
     inputs.sops-nix.nixosModules.sops
     ../modules/common/sops-system.nix
     ../modules/common/programs/boeingvpn-ui/nixos.nix
@@ -71,7 +72,7 @@ in {
     .linuxPackages;
 
   services.tailscale = {
-    enable = true;
+    enable = false; # disabled for now; re-enable when tailnet needed again
     useRoutingFeatures = "client";
     extraUpFlags = ["--accept-dns=false"]; # Disable Tailscale DNS override
   };
@@ -128,18 +129,28 @@ in {
   #   "1.0.0.1"
   # ];
 
-  services.resolved = {
-    enable = true;
-    settings.Resolve = {
-      DNSSEC = "allow-downgrade";
-      Domains = ["~."];
-      FallbackDNS = [
-        "1.1.1.1"
-        "1.0.0.1"
-      ];
-      DNSOverTLS = "opportunistic";
-    };
-  };
+  # resolved was only here for Tailscale MagicDNS split-DNS + a cache. Tailscale
+  # is disabled for now, so NM's default DNS is enough (matches killua). Left
+  # commented for easy re-enable when the tailnet comes back.
+  #
+  # IMPORTANT if you re-enable: keep DNSSEC and DNSOverTLS = "false". With them on
+  # (DoT was "opportunistic", DNSSEC "allow-downgrade") wifi took ~1 min to reach
+  # the internet after associating — on every fresh link resolved probed TCP 853
+  # against a router that doesn't do DoT and ran DNSSEC lookups before first
+  # replies. opportunistic DoT gives ~zero privacy anyway (silent plaintext
+  # fallback), so both stay off.
+  # services.resolved = {
+  #   enable = true;
+  #   settings.Resolve = {
+  #     DNSSEC = "false";
+  #     Domains = ["~."];
+  #     FallbackDNS = [
+  #       "1.1.1.1"
+  #       "1.0.0.1"
+  #     ];
+  #     DNSOverTLS = "false";
+  #   };
+  # };
   time.timeZone = "Asia/Kolkata";
   i18n.defaultLocale = "en_IN";
   # Re-enabled for boeingvpn (zsh function uses openconnect --protocol=gp).
@@ -409,6 +420,12 @@ in {
   services.dbus.packages = [pkgs.blueman pkgs.openvpn3];
   services.udev.packages = [pkgs.vial];
 
+  # Stop the Logitech G502 HERO mouse from USB-autosuspending (kernel powers it
+  # down after idle, forcing a button press to wake it). Pin power/control=on.
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="046d", ATTR{idProduct}=="c08b", ATTR{power/control}="on"
+  '';
+
   # Removable media auto-mount + Nemo device sidebar
   services.udisks2.enable = true;
   services.gvfs.enable = true;
@@ -450,4 +467,13 @@ in {
   #    };
   #  };
   #  programs.regreet.enable = true;
+
+  # Compressed RAM swap — safety net vs OOM (no disk swap on this host).
+  # memoryPercent is the uncompressed cap; zstd ~2-3:1 so real RAM cost is a
+  # fraction of it, allocated lazily only when pages are actually swapped.
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+    memoryPercent = 50;
+  };
 }

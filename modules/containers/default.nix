@@ -7,15 +7,16 @@
     ./excalidraw.nix
     ./mermaid-live.nix
     ./glance.nix
-    ./qdrant.nix
     ./karakeep.nix
     ./speedtest-tracker.nix
     ./rss-bridge.nix
     ./freshrss
     ./cronicle
     ./boeing
-    ./matrix
+    # ./matrix  # Matrix/Synapse/Element/mautrix stack disabled — not built or run.
+    #           # Re-enable by uncommenting this + the matrix volumes/network below.
     ./service-bridge
+    ./cliphist-viewer
     ./cockpit.nix
   ];
 
@@ -38,12 +39,13 @@
       boeing_mongo_data.volumeConfig = {};
       boeing_redis_data.volumeConfig = {};
       boeing_pg_data.volumeConfig = {};
-      matrix_postgres_data.volumeConfig = {};
-      matrix_synapse_data.volumeConfig = {};
-      mautrix_telegram_data.volumeConfig = {};
-      mautrix_whatsapp_data.volumeConfig = {};
-      mautrix_meta_instagram_data.volumeConfig = {};
-      mautrix_meta_messenger_data.volumeConfig = {};
+      # ── matrix stack disabled (see ./matrix import above) ──
+      # matrix_postgres_data.volumeConfig = {};
+      # matrix_synapse_data.volumeConfig = {};
+      # mautrix_telegram_data.volumeConfig = {};
+      # mautrix_whatsapp_data.volumeConfig = {};
+      # mautrix_meta_instagram_data.volumeConfig = {};
+      # mautrix_meta_messenger_data.volumeConfig = {};
     };
 
     # ── Shared networks ──
@@ -51,9 +53,10 @@
       portainer-net.networkConfig = {
         subnets = ["10.89.1.0/24"];
       };
-      matrix-net.networkConfig = {
-        subnets = ["10.89.2.0/24"];
-      };
+      # matrix stack disabled (see ./matrix import above)
+      # matrix-net.networkConfig = {
+      #   subnets = ["10.89.2.0/24"];
+      # };
       karakeep-net.networkConfig = {
         subnets = ["10.89.3.0/24"];
       };

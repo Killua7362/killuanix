@@ -6,11 +6,8 @@ den_cmd_hooks() {
       shift
       local name="${1:-}"
       [ -n "$name" ] || _err 2 "usage: den hooks trust <event>"
-      local out
-      out="$(_require_bound)"
-      local root proj
-      root="$(echo "$out" | sed -n 1p)"
-      proj="$(echo "$out" | sed -n 2p)"
+      _bind_ctx
+      local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
       local hook="$DEN_OVERLAY_ROOT/$proj/hooks/$name"
       [ -f "$hook" ] || _err 2 "no host hook at $hook"
       local sha

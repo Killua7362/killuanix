@@ -82,7 +82,7 @@ Pattern syntax matches Claude Code's permission grammar — e.g. `"Bash(curl:*)"
 1. Drop a file `claude-launchers/<name>.nix` in this dir following the shape of `claude-algo.nix` (every supported attr listed explicitly — copy that file as a starting template).
 2. If the launcher needs a flake input for a skill/agent/command source, add it to `flake.nix` and reference via `inputs.<name>`.
 3. To reference an MCP by name, make sure it's registered in `modules/common/mcp-servers.nix` or `local.extraMcpServers` (claude.nix) so it appears in the runtime catalog at `$XDG_DATA_HOME/claude-kit/all-mcp-servers.json`.
-4. Run `scripts/nix_switch`.
+4. Run `nix_switch`.
 
 The auto-discover loop in `default.nix` (`builtins.readDir ./.`) picks up the file on the next eval. No edit to `default.nix` needed.
 

@@ -77,11 +77,11 @@ Writes per-project state into `./.claude/{skills,agents,commands,settings.local.
 ```nix
 {
   envVars  = { APP_HOST = "killua"; DATABASE_URL = ""; };  # "" = inherit
-  skills   = [ "code-search" ];
+  skills   = [ "mermaid-diagrams" ];
   agents   = [];
   commands = [];
   plugins  = [ "ruflo-core@ruflo" ];
-  mcp      = [ "code-index" ];
+  mcp      = [ "kindly-web-search" ];
 
   # Subtractive + hardening (all materialize into settings.local.json):
   excludeMcp       = [ "mermaid" ];          # adds mcp__mermaid__* deny rule
@@ -105,7 +105,7 @@ Resolution rules:
 
 - **skills/agents/commands** — looked up in the lazy catalog (`_lazy_find`, same lane as `lazy add`). Names not in any catalog are reported and skipped, not fatal.
 - **plugins** — written verbatim into `enabledPlugins.<slug>=true` in `./.claude/settings.local.json` (no catalog lookup).
-- **mcp** — server stanza resolved by `_lazy_resolve_mcp`, which checks two sources in order: (1) `$XDG_DATA_HOME/claude-kit/all-mcp-servers.json` — the full Nix-emitted catalog from `mcp-servers.nix` (includes `optional = true` entries excluded from the global wiring); (2) `~/.claude.json:.mcpServers` — fallback for runtime additions via `claude mcp add`. Resolved stanza copied verbatim into `./.mcp.json`. Names not in either source are skipped with a notice. This means `optional = true` registry entries (currently `claude-flow`, `gitnexus`) only load in projects whose `claude-kit.nix` lists them.
+- **mcp** — server stanza resolved by `_lazy_resolve_mcp`, which checks two sources in order: (1) `$XDG_DATA_HOME/claude-kit/all-mcp-servers.json` — the full Nix-emitted catalog from `mcp-servers.nix` (includes `optional = true` entries excluded from the global wiring); (2) `~/.claude.json:.mcpServers` — fallback for runtime additions via `claude mcp add`. Resolved stanza copied verbatim into `./.mcp.json`. Names not in either source are skipped with a notice. This means `optional = true` registry entries (e.g. `claude-flow`) only load in projects whose `claude-kit.nix` lists them.
 - **envVars** — emitted by `claude-kit project envrc` as `export VAR=val` lines, with **empty values skipped** (so the host shell value, if any, passes through). Hooked from `.envrc` via `eval "$(claude-kit project envrc)"` before the `sync` call.
 - **excludeMcp** — each entry becomes a `"mcp__<name>__*"` rule appended into `./.claude/settings.local.json`'s `permissions.deny`. Effective for any globally-loaded MCP server (mermaid, filesystem, …) the project wants disabled. *Also* applied at the MCP boundary when **restrictToDirs** is set and the project declares `"filesystem"` in `mcp = [...]`: the filesystem server's `args` get narrowed to `restrictToDirs` so the upstream server itself refuses paths outside.
 - **excludePlugins** — each entry becomes `enabledPlugins."<slug>" = false` in `./.claude/settings.local.json`. Plugins that aren't globally enabled stay alone. Settings precedence means this overrides a `true` in the global `settings.json`.

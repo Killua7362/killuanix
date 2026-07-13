@@ -19,9 +19,9 @@ den_cmd_which() {
     return 0
   fi
   # Fallback: maybe the path itself is a binding root (registry stale).
-  if [ -f "$abs/.den-meta.json" ]; then
+  if _den_is_bound_dir "$abs"; then
     local proj
-    proj="$(jq -r '.project // ""' "$abs/.den-meta.json" 2>/dev/null)"
+    proj="$(jq -r '.project // ""' "$(_meta_file "$abs")" 2>/dev/null)"
     if [ -n "$proj" ]; then
       _bindings_add "$proj" "$abs"
       printf '%s\t%s\n' "$proj" "$abs"

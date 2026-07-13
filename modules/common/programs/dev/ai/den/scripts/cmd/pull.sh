@@ -9,11 +9,8 @@ den_cmd_pull() {
       *) shift;;
     esac
   done
-  local out
-  out="$(_require_bound)"
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  _bind_ctx
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
 
   if [ "$dry" = 1 ]; then
     _do_pull_dry "$root" "$proj"
@@ -55,10 +52,23 @@ _do_pull() {
   # Build new links for missing-link entries.
   local errors=0
   local applied=0
+  local missing_clones=0
   while IFS= read -r rel; do
     [ -z "$rel" ] && continue
     local src="$pd/files/$rel"
     local target="$root/$rel"
+    # Clone gate: if this file belongs inside a registered clone that isn't
+    # present yet, skip it (don't create the clone's dirs) and report the
+    # `git clone` to run. Root-scaffolding files (no clone) fall through.
+    local cp
+    cp="$(_clone_path_for_rel "$pd" "$rel")"
+    if [ -n "$cp" ] && [ ! -e "$root/$cp/.git" ]; then
+      local rmt; rmt="$(_clone_remote_for_path "$pd" "$cp")"
+      _warn "clone '$cp' not present — clone it, then re-run den pull:"
+      printf '    git clone %s %s\n' "${rmt:-<remote-unknown>}" "$root/$cp" >&2
+      missing_clones=$((missing_clones+1))
+      continue
+    fi
     mkdir -p "$(dirname "$target")"
     # validate source exists
     if [ ! -e "$src" ]; then
@@ -87,6 +97,9 @@ _do_pull() {
     kind="$(echo "$kinds" | jq -r --arg r "$rel" '.[$r] // "symlink"')"
     sym_arr="$(echo "$sym_arr" | jq --arg t "$rel" --arg s "files/$rel" --arg k "$kind" \
       '. + [{src: $s, target: $t, mode: "0644", kind: $k}]')"
+    # Reassert the leak guard for every present link (idempotent; no-op when
+    # the site isn't inside a git tree, e.g. a clone still missing).
+    _guard_after_link "$root" "$pd" "$rel"
   done
   local mh
   mh="$("$DEN_HELPER_BIN" manifest-hash --root "$pd" | jq -r .hash)"
@@ -108,4 +121,7 @@ _do_pull() {
     _err 1 "pull failed ($errors error(s)); $applied link(s) applied"
   fi
   echo "applied $applied link(s); drift after = $new_drift"
+  if [ "$missing_clones" -gt 0 ]; then
+    echo "note: $missing_clones clone(s) not present — clone them (commands above), then re-run den pull"
+  fi
 }

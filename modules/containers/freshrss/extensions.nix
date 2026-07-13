@@ -18,7 +18,7 @@
 #
 # Adding an extension:
 #   1. Uncomment / add the entry below (nixpkgs-curated or via buildFreshRssExtension).
-#   2. `scripts/nix_switch` — bundle rebuilds, bootstrap pre-ticks the new
+#   2. `nix_switch` — bundle rebuilds, bootstrap pre-ticks the new
 #      extension on the next run, container restarts cleanly.
 #
 # Removing an extension is the inverse — drop the entry, switch.

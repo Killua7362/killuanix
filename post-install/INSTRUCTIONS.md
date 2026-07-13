@@ -16,8 +16,9 @@ steps from re-running.
 ## Day 0 — fresh NixOS install
 
 You only have **internet, git, curl, terminal**. The flake is not yet
-applied; `scripts/nix_switch` does not exist yet. Run these literal
-commands:
+applied; `nix_switch` is not available yet — it now lives in the
+`DotFiles` submodule (`DotFiles/scripts/personal/nix_switch`), which this
+bootstrap does not clone. Run these literal commands:
 
 ```bash
 # 1. Clone the repo (no submodules — Notes/DotFiles/aconfmgr are private)
@@ -42,8 +43,8 @@ shred -u /tmp/sshkey 2>/dev/null || rm -f /tmp/sshkey
 nix run --extra-experimental-features 'nix-command flakes' \
   nixpkgs#sops -- -d secrets/personal.yaml >/dev/null && echo OK
 
-# 5. First system build — `scripts/nix_switch` is not on PATH yet, so
-#    invoke nixos-rebuild directly:
+# 5. First system build — `nix_switch` is not on PATH yet (DotFiles
+#    submodule not cloned), so invoke nixos-rebuild directly:
 sudo nixos-rebuild switch --flake .#$HOST
 
 # 6. First home-manager build — home-manager CLI is not on PATH yet,
@@ -52,9 +53,16 @@ nix run --extra-experimental-features 'nix-command flakes' \
   home-manager/master -- switch --flake .#$HOST
 ```
 
-After step 6, `scripts/nix_switch`, `home-manager`, and the rest of the
-flake are available. From then on, use `scripts/nix_switch` for normal
-rebuilds.
+After step 6, `home-manager` and the rest of the flake are available.
+`nix_switch` lives in the `DotFiles` submodule, so clone it before the
+command resolves on PATH:
+
+```bash
+git submodule update --init DotFiles   # (add Notes/aconfmgr too if wanted)
+```
+
+From then on, use `nix_switch` (bare — on PATH via
+`DotFiles/scripts/personal`) for normal rebuilds.
 
 ## Sentinel checklist
 

@@ -7,11 +7,18 @@ This folder configures `programs.dank-material-shell` (HM module from flake inpu
 `~/.config/DankMaterialShell/settings.json`); the Nix module system merges them
 attribute-wise.
 
-`default.nix` owns everything outside the settings attrset: `enable`, the
-commented module-level option reference (`systemd`, `enable*`, `quickshell.package`,
-`dgop.package`, `clipboardSettings`, `session`), the plugin schema example, the
-`leaderHud` plugin wiring, and the `xdg.configFile.…force = lib.mkForce true`
-escape hatch.
+`default.nix` owns everything outside the settings attrset: `enable`,
+`systemd.enable = true` (DMS runs as a **systemd user service** — the wanted-by
+target is wired by upstream `home.nix`; the only sub-options are `enable` +
+`restartIfChanged`, there is no `target`), not a Hyprland exec-once scope — so it
+auto-restarts after a Wayland object-registry desync; a monitor-hotplug flap
+kills every client with `wl_display: invalid object` and an exec-once scope
+would stay dead), the still-commented module-level option reference
+(`enable*`, `quickshell.package`, `dgop.package`, `clipboardSettings`,
+`session`), the plugin schema example, the `leaderHud` plugin wiring, and the
+`xdg.configFile.…force = lib.mkForce true` escape hatch. DMS is **not** launched
+from `lua/execs.lua` — removing the `uwsm app -- dms run` line there is what
+keeps it single-launch.
 
 ## Plugins
 
@@ -53,6 +60,22 @@ keyboard). Its wiring spans three places: the `dankActions` variant + its
 `DotFiles/scripts/wvkbd-toggle.sh` (starts `wvkbd-mobintl --hidden`, toggles
 visibility with `kill -34`/SIGRTMIN — nixpkgs `wvkbd` ships **only**
 `wvkbd-mobintl`, not `wvkbd-deskintl`).
+
+Note: power-profile switching does **not** need a custom widget — the native
+`battery` bar widget's popout (`quickshell/Modules/DankBar/Popouts/BatteryPopout.qml`,
+also control-center `BatteryDetail.qml`) has a Power Saver / Balanced /
+Performance button group that sets `PowerProfiles.profile` over ppd's D-Bus.
+
+**AC-based auto-switch** is also native: `acProfileName`/`batteryProfileName`
+in `lock-power.nix` (enum `""`=off, `"0"`=saver, `"1"`=balanced, `"2"`=perf) are
+read by DMS `BatteryService.qml` `onIsPluggedInChanged` — on the plug/unplug
+*event* it sets the matching profile. Currently `"2"` on AC / `"1"` on battery.
+Because it only fires on the event (not continuously), a manual pick in the
+popout holds until the next plug/unplug. The event handler is chrollo-relevant
+only (laptop); killua has a battery too but its keys default to `""` unless set.
+`chrollo/power.nix` seeds the same rule at boot (`power-profile-boot` reads
+`/sys/class/power_supply/*/type=Mains online`), since DMS doesn't run its
+handler at startup — the two share one rule so they never disagree.
 
 ## When you want to change X, open Y
 

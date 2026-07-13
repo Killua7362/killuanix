@@ -12,7 +12,7 @@
   #
   # For dev VNet 10.55.* URLs use the separate `avd-chrome` launcher
   # (modules/common/programs/cloud/azure-bastion) which proxies through
-  # bastion-sql's ssh -D :11180 with its own user-data-dir.
+  # `bastion sql`'s ssh -D :11180 with its own user-data-dir.
   xdg.desktopEntries.google-chrome-sock = {
     name = "google-chrome-sock";
     exec = "${pkgs.writeShellScript "google-chrome-sock" ''

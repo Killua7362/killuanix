@@ -6,5 +6,6 @@
     ./nemo.nix
     ./mimeapps.nix
     ./clipboard-menu.nix
+    ./clipboard-history.nix
   ];
 }

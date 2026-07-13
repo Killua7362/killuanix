@@ -7,7 +7,7 @@
 #
 # Lives outside modules/common/mcp-servers.nix because the env wires a
 # sops-rendered secret path (no `pkgs`/config in scope there). Registers via
-# `local.extraMcpServers.freshrss` — same side-channel as code-index.nix /
+# `local.extraMcpServers.freshrss` — same side-channel as
 # kindly-web-search.nix.
 #
 # `optional = true` so it does NOT load in every Claude Code session — the

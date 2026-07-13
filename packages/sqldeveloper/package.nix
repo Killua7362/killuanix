@@ -1,6 +1,6 @@
 # Oracle SQL Developer 24.3.x — public download, unfree license.
 #
-# Used to connect to the DA dev Oracle DB through `bastion-sql` (see
+# Used to connect to the DA dev Oracle DB through `bastion sql` (see
 # modules/common/programs/cloud/azure-bastion/). No bundled JRE — we
 # point JAVA_HOME at nixpkgs JDK 17 at wrapper time.
 {

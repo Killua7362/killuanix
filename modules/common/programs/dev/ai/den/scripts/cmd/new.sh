@@ -3,6 +3,7 @@ den_cmd_new() {
   local name="${1:-}"
   [ -n "$name" ] || _err 2 \
     "usage: den new <NAME> [.|--path P] [--from N] [--preset bare|minimal|claude-full] [--devshell LANG|--no-devshell]"
+  _reject_hidden_project "$name"
   shift
   local mode=default arg= preset=claude-full from= devshell= no_devshell=0
   while [ $# -gt 0 ]; do
@@ -21,7 +22,7 @@ den_cmd_new() {
   fi
   _resolve_target_path "$mode" "$arg"
   [ -d "$TARGET_PATH" ] || mkdir -p "$TARGET_PATH"
-  if [ -f "$TARGET_PATH/.den-meta.json" ]; then
+  if _den_is_bound_dir "$TARGET_PATH"; then
     _err 2 "$TARGET_PATH already bound (run 'den clean' first)"
   fi
 
@@ -29,6 +30,7 @@ den_cmd_new() {
   pd="$(_scaffold_project "$name" "$preset")"
 
   if [ -n "$from" ]; then
+    _reject_hidden_project "$from"
     local from_pd
     from_pd="$(_project_dir_for "$from")"
     [ -d "$from_pd" ] || _err 2 "source project not found: $from"

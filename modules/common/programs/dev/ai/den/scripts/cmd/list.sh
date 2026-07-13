@@ -15,6 +15,8 @@ den_cmd_list() {
     local arr="[]"
     for d in "$DEN_PROJECTS"/*/; do
       [ -d "$d" ] || continue
+      local base="${d%/}"; base="${base##*/}"   # immediate projects/ child name
+      _project_name_is_archived "$base" && continue   # '.'-prefixed = archived, invisible
       local manifest="$d/.den-project.toml"
       [ -f "$manifest" ] || continue
       local data
@@ -30,6 +32,8 @@ den_cmd_list() {
   else
     for d in "$DEN_PROJECTS"/*/; do
       [ -d "$d" ] || continue
+      local base="${d%/}"; base="${base##*/}"   # immediate projects/ child name
+      _project_name_is_archived "$base" && continue   # '.'-prefixed = archived, invisible
       local manifest="$d/.den-project.toml"
       [ -f "$manifest" ] || continue
       local data name vis preset

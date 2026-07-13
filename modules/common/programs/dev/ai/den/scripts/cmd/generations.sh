@@ -1,9 +1,7 @@
 # shellcheck shell=bash
 den_cmd_generations() {
-  local out
-  out="$(_require_bound)"
-  local root
-  root="$(echo "$out" | sed -n 1p)"
+  _bind_ctx
+  local root="$BOUND_ROOT"
   local gd
   gd="$(_gen_dir "$root")"
   [ -d "$gd" ] || { echo "(no generations)"; return 0; }

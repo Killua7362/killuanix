@@ -11,7 +11,7 @@ den_cmd_reflog() {
   done
   local root
   root="$(_find_binding_root)" || _err 64 "unbound"
-  local rl="$root/.den-meta.json.reflog"
+  local rl; rl="$(_reflog_path "$root")"
   [ -f "$rl" ] || { echo "(empty reflog)"; return 0; }
   "$DEN_HELPER_BIN" read-jsonl --path "$rl" \
     | jq -r '.[] | "\(.ts)  \(.op)  prev=\(.prev_project)  new=\(.new_project)"'
@@ -24,7 +24,7 @@ _do_reflog_expire() {
   days="${days%d}"
   local root
   root="$(_find_binding_root)" || _err 64 "unbound"
-  local rl="$root/.den-meta.json.reflog"
+  local rl; rl="$(_reflog_path "$root")"
   [ -f "$rl" ] || return 0
   local cutoff
   cutoff="$(date -Iseconds -d "$days days ago")"

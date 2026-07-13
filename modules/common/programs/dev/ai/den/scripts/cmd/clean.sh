@@ -2,11 +2,8 @@
 den_cmd_clean() {
   local force=0
   case "${1:-}" in --yes|-y) force=1;; esac
-  local out
-  out="$(_require_bound)"
-  local root proj
-  root="$(echo "$out" | sed -n 1p)"
-  proj="$(echo "$out" | sed -n 2p)"
+  _bind_ctx
+  local root="$BOUND_ROOT" proj="$BOUND_PROJECT"
 
   if [ "$force" -ne 1 ]; then
     _yesno "remove all den-managed links for project '$proj' from $root?" || _err 2 "cancelled"
@@ -59,11 +56,11 @@ _do_clean() {
         ;;
     esac
   done < <(jq -c '.symlinks[]' "$meta")
-  rm -f "$meta" "$root/.den-meta.json.lock"
-  # leave .den-meta.json.reflog as recovery breadcrumb
+  rm -f "$meta" "$(_lock_path "$root")"
+  # leave .den/reflog.jsonl as recovery breadcrumb
   _record_activity "$proj" clean 0 0
   _append_reflog "$root" clean "$proj" ""
   _bindings_remove "$proj" "$root"
   echo "removed $removed link(s); binding cleared"
-  echo "(reflog kept at $root/.den-meta.json.reflog for recovery)"
+  echo "(reflog kept at $(_reflog_path "$root") for recovery)"
 }
