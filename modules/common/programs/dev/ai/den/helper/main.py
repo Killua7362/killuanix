@@ -12,6 +12,8 @@ from cmd.manifest_hash import cmd_manifest_hash
 from cmd.status import cmd_status, cmd_render_status
 from cmd.jsonl import cmd_append_jsonl, cmd_read_jsonl
 from cmd.toml import cmd_parse_toml, cmd_write_toml
+from cmd.hidden import cmd_hidden_plan, cmd_ignore_match
+from cmd.clones import cmd_clone_plan
 
 
 def main():
@@ -51,6 +53,20 @@ def main():
     sp = sub.add_parser("write-toml")
     sp.add_argument("--path", required=True)
     sp.set_defaults(func=cmd_write_toml)
+
+    sp = sub.add_parser("hidden-plan")
+    sp.add_argument("--denhidden", required=True)
+    sp.add_argument("--clones", required=True)
+    sp.set_defaults(func=cmd_hidden_plan)
+
+    sp = sub.add_parser("ignore-match")
+    sp.add_argument("--project-dir", required=True)
+    sp.add_argument("--rel", required=True)
+    sp.set_defaults(func=cmd_ignore_match)
+
+    sp = sub.add_parser("clone-plan")
+    sp.add_argument("--clones", required=True)
+    sp.set_defaults(func=cmd_clone_plan)
 
     args = p.parse_args()
     sys.exit(args.func(args))

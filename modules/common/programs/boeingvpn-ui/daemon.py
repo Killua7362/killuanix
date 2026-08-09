@@ -12,11 +12,13 @@ Substituted at build time by pkgs.replaceVars:
   ocproxy     -- ocproxy store path (bin dir on PATH)
   static      -- directory containing index.html, style.css, app.js, wallpaper.svg
   useridfile  -- sops-decrypted file holding the default userid (boeing/vpn_userid)
+  bastiontools-- makeBinPath of az/ssh/sshpass/proxychains/coreutils for `bastion all`
 """
 
 import json
 import mimetypes
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -91,6 +93,83 @@ def default_userid() -> str:
         except OSError:
             pass
     return ""
+
+
+# ---- Bastion (Azure DB tunnels) -------------------------------------------
+#
+# The second window drives `bastion all` (DotFiles/scripts/boeing) which opens
+# one az bastion tunnel + one ssh -N carrying three -L forwards (Oracle/PG/
+# Cosmos). Tools it shells out to (az, ssh, sshpass, proxychains4, coreutils)
+# are put on PATH via @bastiontools@ (lib.makeBinPath, substituted at build).
+_BASTION_TOOLS = os.environ.get("BOEINGVPN_BASTION_TOOLS") or "@bastiontools@"
+if _BASTION_TOOLS.startswith("@"):
+    _BASTION_TOOLS = ""  # worktree run: fall back to ambient PATH
+
+HOME = os.environ.get("HOME", str(Path.home()))
+
+# Where `bastion all` binds each forward locally — must match the LOCAL_*_PORT
+# defaults in DotFiles/scripts/boeing/bastion.d/bastion-all.
+BASTION_LOCAL_PORTS = {"oracle": 1521, "pg": 5433, "cosmos": 8443}
+
+# Path to the `bastion` dispatcher (a DotFiles script, not a nix binary).
+def bastion_bin() -> str:
+    override = os.environ.get("BASTION_BIN")
+    if override:
+        return override
+    found = shutil.which("bastion")
+    if found:
+        return found
+    return f"{HOME}/killuanix/DotFiles/scripts/boeing/bastion"
+
+
+# Env file the bastion scripts source (sops-rendered on nix). Credentials shown
+# in the window are parsed straight from it.
+BASTION_ENV_FILE = os.environ.get("BASTION_ENV_FILE") or f"{HOME}/.config/azure-bastion.env"
+
+
+def bastion_creds() -> dict:
+    """Parse the AZURE_* creds out of the bastion env file for display.
+
+    Loopback-only server, same trust model as the rest of the app. Missing keys
+    render as empty strings (the window shows a placeholder)."""
+    vals: dict[str, str] = {}
+    try:
+        for line in Path(BASTION_ENV_FILE).read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            vals[k.strip()] = v.strip()
+    except OSError:
+        pass
+
+    def g(key: str) -> str:
+        return vals.get(key, "")
+
+    return {
+        "oracle": {
+            "local": f"127.0.0.1:{BASTION_LOCAL_PORTS['oracle']}",
+            "user": g("AZURE_ORACLE_USERNAME"),
+            "password": g("AZURE_ORACLE_PASSWORD"),
+            "url": g("AZURE_ORACLE_VNET_URL"),
+        },
+        "pg": {
+            "local": f"127.0.0.1:{BASTION_LOCAL_PORTS['pg']}",
+            "user": g("AZURE_PG_DB_USER"),
+            "password": g("AZURE_PG_DB_PASS"),
+            "url": g("AZURE_PG_VNET_URL"),
+        },
+        "cosmos": {
+            "local": f"127.0.0.1:{BASTION_LOCAL_PORTS['cosmos']}",
+            "auth_key": g("AZURE_COSMOS_AUTH_KEY"),
+            "url": g("AZURE_COSMOS_VNET_URL"),
+        },
+    }
+
+
+# az device-code line: "...open the page https://microsoft.com/device and enter
+# the code F4CLUJ7N7 to authenticate."
+_DEVICE_CODE_RE = re.compile(r"open the page\s+(\S+)\s+and enter the code\s+([A-Z0-9]+)")
 
 
 # Number of TCP-connect samples per gateway; the median is taken so a single
@@ -288,6 +367,13 @@ class VpnManager:
             self._state = "idle"
             self._started_at = None
             self._proc = None
+
+        # Bastion tunnels ride this VPN's SOCKS listener — once it's gone they're
+        # dead weight (az/ssh can't route), so tear them down too. Referenced via
+        # globals() because BASTION is defined after this class.
+        bastion = globals().get("BASTION")
+        if bastion is not None:
+            bastion.disconnect()
         return True, "stopped"
 
     def reconnect(self) -> tuple[bool, str]:
@@ -358,7 +444,191 @@ class VpnManager:
                 time.sleep(0.5)
 
 
+class BastionManager:
+    """Owns the `bastion all` child process and mirrors its lifecycle.
+
+    States:
+        idle → connecting → connected            (local Oracle port bound)
+                          → login-required        (az device code emitted)
+                          → error                 (child exits non-zero)
+        connected → disconnecting → idle          (SIGTERM the process group)
+
+    `login-required` carries the device code + URL for the window to display;
+    once the tunnels come up it flips to `connected`. Because `bastion all`
+    ends in `exec ssh`, the backgrounded az tunnel and ssh share the child's
+    process group — killpg() on the session leader tears both down.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._proc: subprocess.Popen | None = None
+        self._state = "idle"
+        self._error = ""
+        self._code = ""
+        self._url = ""
+        self._started_at: float | None = None
+        self._tail: list[str] = []
+
+    def snapshot(self) -> dict:
+        with self._lock:
+            return {
+                "state": self._state,
+                "code": self._code,
+                "url": self._url,
+                "error": self._error,
+                "started_at": self._started_at,
+                "pid": self._proc.pid if self._proc and self._proc.poll() is None else None,
+                "ports": BASTION_LOCAL_PORTS,
+            }
+
+    def connect(self) -> tuple[bool, str]:
+        with self._lock:
+            if self._proc and self._proc.poll() is None:
+                return False, "already running"
+
+            env = os.environ.copy()
+            if _BASTION_TOOLS:
+                env["PATH"] = f"{_BASTION_TOOLS}:{env.get('PATH', '')}"
+            # Route az through the boeingvpn-ui SOCKS listener (VPN must be up).
+            env.setdefault("BASTION_SSH_VIA_SOCKS", "1")
+            env["BASTION_ENV_FILE"] = BASTION_ENV_FILE
+
+            try:
+                self._proc = subprocess.Popen(
+                    [bastion_bin(), "all"],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    env=env,
+                    start_new_session=True,
+                )
+            except (FileNotFoundError, PermissionError) as exc:
+                self._state = "error"
+                self._error = f"spawn failed: {exc}"
+                return False, self._error
+
+            self._state = "connecting"
+            self._error = ""
+            self._code = ""
+            self._url = ""
+            self._started_at = time.time()
+            self._tail = []
+
+        threading.Thread(target=self._watch, daemon=True).start()
+        threading.Thread(target=self._poll_ports, daemon=True).start()
+        return True, "spawned"
+
+    def disconnect(self) -> tuple[bool, str]:
+        with self._lock:
+            proc = self._proc
+            if not proc or proc.poll() is not None:
+                self._state = "idle"
+                self._code = ""
+                self._url = ""
+                return True, "already stopped"
+            self._state = "disconnecting"
+
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            proc.wait(timeout=6)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait(timeout=2)
+
+        with self._lock:
+            self._state = "idle"
+            self._started_at = None
+            self._proc = None
+            self._code = ""
+            self._url = ""
+        return True, "stopped"
+
+    def _watch(self) -> None:
+        proc = self._proc
+        if proc is None or proc.stdout is None:
+            return
+        for raw in iter(proc.stdout.readline, b""):
+            line = raw.decode(errors="replace").rstrip()
+            if not line:
+                continue
+            print(f"bastion: {line}", file=sys.stderr, flush=True)
+            with self._lock:
+                self._tail.append(line)
+                if len(self._tail) > 80:
+                    self._tail = self._tail[-80:]
+                m = _DEVICE_CODE_RE.search(line)
+                if m and self._state in ("connecting", "login-required"):
+                    self._url, self._code = m.group(1), m.group(2)
+                    self._state = "login-required"
+                # Login approved (or never needed): az has moved on to selecting
+                # the subscription / opening the tunnel. Drop the "waiting for
+                # approval" panel back to a plain connecting state so it doesn't
+                # sit on the device code forever.
+                elif self._state == "login-required" and (
+                    "Retrieving subscriptions" in line
+                    or "Opening bastion tunnel" in line
+                    or "Bastion tunnel ready" in line
+                    or "Ensuring az login" in line
+                    or line.lstrip().startswith(("[2/3]", "[3/3]"))
+                ):
+                    self._state = "connecting"
+                    self._code = ""
+                    self._url = ""
+
+        rc = proc.wait()
+        with self._lock:
+            if self._state == "disconnecting":
+                self._state = "idle"
+            elif rc == 0:
+                self._state = "idle"
+            else:
+                self._state = "error"
+                self._error = " | ".join(self._tail[-4:]) if self._tail else f"exit {rc}"
+            self._started_at = None
+            self._proc = None
+            self._code = ""
+            self._url = ""
+
+    def _poll_ports(self) -> None:
+        """Authoritative connect signal: the local Oracle forward is bound.
+
+        ssh binds its -L listeners as soon as the session is up, so a successful
+        TCP connect to 127.0.0.1:<oracle> means the tunnel is carrying traffic.
+        Long deadline because a device-code login can sit unanswered a while.
+        """
+        proc = self._proc
+        port = BASTION_LOCAL_PORTS["oracle"]
+        deadline = time.time() + 600
+        while proc is not None and proc.poll() is None and time.time() < deadline:
+            with self._lock:
+                if self._state in ("idle", "disconnecting", "error", "connected"):
+                    return
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+                    pass
+                with self._lock:
+                    if self._state in ("connecting", "login-required"):
+                        self._state = "connected"
+                        self._code = ""
+                        self._url = ""
+                        print(
+                            "boeingvpn-ui: bastion tunnels up, state=connected",
+                            file=sys.stderr,
+                            flush=True,
+                        )
+                return
+            except OSError:
+                time.sleep(0.7)
+
+
 VPN = VpnManager()
+BASTION = BastionManager()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -398,6 +668,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         if self.path == "/api/status":
             self._json(200, VPN.snapshot())
+            return
+        if self.path == "/api/bastion/status":
+            self._json(200, BASTION.snapshot())
+            return
+        if self.path == "/api/bastion/creds":
+            self._json(200, bastion_creds())
             return
         if self.path == "/api/config":
             self._json(200, {
@@ -451,6 +727,14 @@ class Handler(BaseHTTPRequestHandler):
             ok, msg = VPN.reconnect()
             self._json(200 if ok else 409, {"ok": ok, "msg": msg, **VPN.snapshot()})
             return
+        if self.path == "/api/bastion/connect":
+            ok, msg = BASTION.connect()
+            self._json(200 if ok else 409, {"ok": ok, "msg": msg, **BASTION.snapshot()})
+            return
+        if self.path == "/api/bastion/disconnect":
+            ok, msg = BASTION.disconnect()
+            self._json(200 if ok else 500, {"ok": ok, "msg": msg, **BASTION.snapshot()})
+            return
 
         self.send_error(404)
 
@@ -470,7 +754,10 @@ def main() -> int:
     def _shutdown(*_a):
         # server.shutdown() blocks until serve_forever returns, so it must run
         # off the signal-handling main thread or we deadlock.
-        threading.Thread(target=lambda: (VPN.disconnect(), server.shutdown()), daemon=True).start()
+        threading.Thread(
+            target=lambda: (VPN.disconnect(), BASTION.disconnect(), server.shutdown()),
+            daemon=True,
+        ).start()
 
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
@@ -479,6 +766,7 @@ def main() -> int:
         server.serve_forever()
     finally:
         VPN.disconnect()
+        BASTION.disconnect()
     return 0
 
 

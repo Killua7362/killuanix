@@ -2,7 +2,8 @@
   imports = [
     ./opencode.nix
     ./claude.nix
-    ./claude-hooks.nix
+    ./cc-hooks-ts.nix
+    ./pkexec-broker
     ./rtk.nix
     # ./claudio.nix  # disabled — no contextual hook sounds
     ./claude-resources

@@ -2,10 +2,11 @@
   imports = [
     ./ghostty.nix
     ./kitty.nix
-    # tmux + zellij replaced by wezterm (terminal + native mux); files
-    # retained for revert. wezterm.nix is gated to chrollo/killua.
-    # ./zellij.nix
+    # zellij (multiplexer) is active; ghostty/kitty host it. wezterm
+    # disabled — retained on disk for revert. wezterm.nix was gated to
+    # chrollo/killua.
+    ./zellij.nix
     # ./tmux.nix
-    ./wezterm.nix
+    # ./wezterm.nix
   ];
 }

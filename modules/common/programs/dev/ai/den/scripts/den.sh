@@ -47,11 +47,15 @@ main() {
     explain)                den_cmd_explain "$@";;
     new)                    den_cmd_new "$@";;
     init)                   den_cmd_init "$@";;
+    clone)                  den_cmd_clone "$@";;
+    bootstrap)              den_cmd_bootstrap "$@";;
     list)                   den_cmd_list "$@";;
     ls)                     den_cmd_ls "$@";;
     status|st)              den_cmd_status "$@";;
     add)                    den_cmd_add "$@";;
     ignore)                 den_cmd_ignore "$@";;
+    hide)                   den_cmd_hide "$@";;
+    unhide)                 den_cmd_unhide "$@";;
     rm)                     den_cmd_rm "$@";;
     re-add)                 den_cmd_re_add "$@";;
     restore)                den_cmd_restore "$@";;

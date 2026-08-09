@@ -1,18 +1,12 @@
 #!/usr/bin/env bash
 _lazy_show() {
-  _lazy_parse_target "$@" || die "usage: claude-kit lazy show <type> <name>  |  show <catalog>/<type>/<name>"
-  local matches
-  matches=$(_lazy_find "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT")
-  local n; n=$(printf '%s' "$matches" | grep -c . 2>/dev/null || true)
-  if [ "$n" = 0 ] || [ -z "$matches" ]; then die "not found: $PARSED_TYPE/$PARSED_NAME"; fi
-  if [ "$n" -gt 1 ]; then
-    echo "lazy: multiple matches:" >&2
-    printf '%s\n' "$matches" | awk '{print "  " $1 "/" }' >&2
-    die "use <catalog>/$PARSED_TYPE/$PARSED_NAME to disambiguate"
-  fi
+  _lazy_parse_target "$@" || die "usage: claude-kit lazy show <type> <name>  |  show [<catalog>:]<name>  |  show <catalog>/<type>/<name>"
+  local rc=0
+  _lazy_resolve_one "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT" || rc=$?
+  [ "$rc" = 0 ] || { _lazy_explain_rc "$rc" "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT"; exit 1; }
   local cat path
-  cat=$(printf '%s' "$matches" | awk '{print $1}')
-  path=$(printf '%s' "$matches" | awk '{print $2}')
+  cat="$RES_CAT"
+  path="$RES_PATH"
   echo "catalog: $cat"
   echo "path:    $path"
   echo

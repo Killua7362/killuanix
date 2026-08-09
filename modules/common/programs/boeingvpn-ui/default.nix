@@ -18,6 +18,27 @@
     cp ${./static}/* $out/
   '';
 
+  # azure-cli with the ssh + bastion extensions — same build the azure-bastion
+  # module uses; the Bastion window's `bastion all` needs `az network bastion`.
+  azCli = pkgs.azure-cli.withExtensions [
+    pkgs.azure-cli.extensions.ssh
+    pkgs.azure-cli.extensions.bastion
+  ];
+
+  # PATH the daemon injects when it spawns `bastion all` (systemd user services
+  # don't inherit the login shell's PATH). Covers every bare-name tool the
+  # bastion.d scripts call.
+  bastionTools = lib.makeBinPath [
+    azCli
+    pkgs.openssh
+    pkgs.sshpass
+    pkgs.proxychains-ng
+    pkgs.coreutils
+    pkgs.bash
+    pkgs.gnugrep
+    pkgs.gnused
+  ];
+
   daemon = pkgs.replaceVars ./daemon.py {
     python3 = pkgs.python3;
     openconnect = pkgs.openconnect;
@@ -26,6 +47,7 @@
     # Default userid is read at runtime from this sops-decrypted path; the UI
     # field is prefilled from it and can be overridden per-connect.
     useridfile = config.sops.secrets."boeing/vpn_userid".path;
+    bastiontools = bastionTools;
   };
 
   boeingvpnUi =

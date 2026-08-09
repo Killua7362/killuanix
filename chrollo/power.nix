@@ -22,6 +22,20 @@
   # (device-level PM, not CPU governor) rather than conflicting with it.
   powerManagement.powertop.enable = true;
 
+  # powertop --auto-tune flips power/control=auto on EVERY USB device, which
+  # runs After=multi-user.target — i.e. AFTER the udev rule in
+  # configuration.nix pins the Logitech G502 HERO to power/control=on. So the
+  # mouse re-suspends on every boot despite the udev rule. Re-assert the pin as
+  # an ExecStartPost on the powertop unit itself (matched by VID/PID so it's
+  # port-path independent) so it always wins the race.
+  systemd.services.powertop.serviceConfig.ExecStartPost = pkgs.writeShellScript "pin-mouse-no-autosuspend" ''
+    for d in /sys/bus/usb/devices/*; do
+      [ "$(cat "$d/idVendor" 2>/dev/null)" = "046d" ] || continue
+      [ "$(cat "$d/idProduct" 2>/dev/null)" = "c08b" ] || continue
+      echo on > "$d/power/control" 2>/dev/null || true
+    done
+  '';
+
   # Lid close locks the session instead of suspending. Default
   # HandleLidSwitch=suspend cut the screen and dropped wifi (suspend tears down
   # the radio); "lock" keeps the machine running with the network up and just

@@ -13,31 +13,45 @@
   const userid = document.getElementById("userid");
   const gateway = document.getElementById("gateway");
 
-  // ---- Draggable window ---------------------------------------------------
+  // ---- Draggable windows --------------------------------------------------
+  //
+  // Shared, no-library drag. Clicking a titlebar raises that window (z-index)
+  // and lets it be dragged within the viewport. Applied to both windows.
 
   let drag = null;
-  titlebar.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
-    const rect = win.getBoundingClientRect();
-    drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
-    e.preventDefault();
-  });
+  let zTop = 10;
+
+  function makeDraggable(winEl, barEl) {
+    barEl.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      const rect = winEl.getBoundingClientRect();
+      winEl.style.zIndex = String(++zTop);
+      drag = { win: winEl, dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+      e.preventDefault();
+    });
+  }
 
   document.addEventListener("mousemove", (e) => {
     if (!drag) return;
-    const w = win.offsetWidth;
-    const h = win.offsetHeight;
+    const w = drag.win.offsetWidth;
+    const h = drag.win.offsetHeight;
     let x = e.clientX - drag.dx;
     let y = e.clientY - drag.dy;
     x = Math.max(0, Math.min(window.innerWidth - w, x));
     y = Math.max(0, Math.min(window.innerHeight - h, y));
-    win.style.left = x + "px";
-    win.style.top = y + "px";
+    drag.win.style.left = x + "px";
+    drag.win.style.top = y + "px";
   });
 
   document.addEventListener("mouseup", () => {
     drag = null;
   });
+
+  makeDraggable(win, titlebar);
+  makeDraggable(
+    document.getElementById("bastion-window"),
+    document.getElementById("bastion-titlebar"),
+  );
 
   // ---- UI state machine ---------------------------------------------------
   //
@@ -215,5 +229,132 @@
 
   setInterval(() => {
     api("/api/status").then(applyDaemonState).catch(() => {});
+  }, 2000);
+
+  // ---- Bastion window (DB tunnels) ----------------------------------------
+
+  const bDot = document.getElementById("b-status-dot");
+  const bLabel = document.getElementById("b-status-label");
+  const bErr = document.getElementById("b-error-line");
+  const bConnect = document.getElementById("b-btn-connect");
+  const bDisconnect = document.getElementById("b-btn-disconnect");
+  const bLogin = document.getElementById("b-login");
+  const bLoginUrl = document.getElementById("b-login-url");
+  const bLoginCode = document.getElementById("b-login-code");
+  const bCopyCode = document.getElementById("b-copy-code");
+
+  const B_STYLES = {
+    idle:            { dot: "dot-grey",   text: "Disconnected" },
+    connecting:      { dot: "dot-yellow", text: "Connecting…" },
+    "login-required":{ dot: "dot-yellow", text: "Sign in to continue" },
+    connected:       { dot: "dot-green",  text: "Connected — tunnels up" },
+    disconnecting:   { dot: "dot-yellow", text: "Disconnecting…" },
+    error:           { dot: "dot-red",    text: "Error" },
+  };
+
+  // Copy helper (loopback + http, so navigator.clipboard may be unavailable —
+  // fall back to a hidden textarea + execCommand).
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).catch(() => {});
+      return;
+    }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) { /* ignore */ }
+    document.body.removeChild(ta);
+  }
+
+  function renderBastion(snap) {
+    const state = snap.state || "idle";
+    const s = B_STYLES[state] || B_STYLES.idle;
+    bDot.className = "dot " + s.dot;
+    bLabel.textContent = s.text;
+    bErr.textContent = state === "error" && snap.error ? snap.error : "";
+
+    const loggingIn = state === "login-required";
+    bLogin.hidden = !loggingIn;
+    if (loggingIn) {
+      if (snap.url) {
+        bLoginUrl.textContent = snap.url.replace(/^https?:\/\//, "");
+        bLoginUrl.href = snap.url;
+      }
+      bLoginCode.textContent = snap.code || "--------";
+    }
+
+    const busy = state === "connecting" || state === "login-required" ||
+                 state === "connected" || state === "disconnecting";
+    bConnect.disabled = busy;
+    bDisconnect.disabled = !(state === "connecting" || state === "login-required" ||
+                             state === "connected");
+  }
+
+  bCopyCode.addEventListener("click", () => {
+    if (bLoginCode.textContent) copyText(bLoginCode.textContent.trim());
+  });
+
+  bConnect.addEventListener("click", async () => {
+    renderBastion({ state: "connecting" });
+    try {
+      const snap = await api("/api/bastion/connect", {});
+      if (!snap.ok && snap.error) renderBastion({ state: "error", error: snap.error });
+      else renderBastion(snap);
+    } catch (e) {
+      renderBastion({ state: "error", error: String(e) });
+    }
+  });
+
+  bDisconnect.addEventListener("click", async () => {
+    renderBastion({ state: "disconnecting" });
+    try {
+      const snap = await api("/api/bastion/disconnect", {});
+      renderBastion(snap);
+    } catch (e) {
+      renderBastion({ state: "error", error: String(e) });
+    }
+  });
+
+  // Credentials — parsed from the env file by the daemon. Fetched on boot and
+  // refreshed periodically (values change only on a nix_switch).
+  function fillCred(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = value || "—";
+    el.classList.toggle("empty", !value);
+  }
+
+  function loadCreds() {
+    api("/api/bastion/creds")
+      .then((c) => {
+        fillCred("b-ora-local", c.oracle && c.oracle.local);
+        fillCred("b-ora-user", c.oracle && c.oracle.user);
+        fillCred("b-ora-pass", c.oracle && c.oracle.password);
+        fillCred("b-ora-url", c.oracle && c.oracle.url);
+        fillCred("b-pg-local", c.pg && c.pg.local);
+        fillCred("b-pg-user", c.pg && c.pg.user);
+        fillCred("b-pg-pass", c.pg && c.pg.password);
+        fillCred("b-pg-url", c.pg && c.pg.url);
+        fillCred("b-cos-local", c.cosmos && c.cosmos.local);
+        fillCred("b-cos-key", c.cosmos && c.cosmos.auth_key);
+        fillCred("b-cos-url", c.cosmos && c.cosmos.url);
+      })
+      .catch(() => {});
+  }
+
+  // Click any cred value to copy it.
+  document.getElementById("b-creds").addEventListener("click", (e) => {
+    const el = e.target.closest("code");
+    if (el && el.textContent && el.textContent !== "—") copyText(el.textContent.trim());
+  });
+
+  loadCreds();
+  api("/api/bastion/status").then(renderBastion).catch(() => renderBastion({ state: "idle" }));
+
+  setInterval(() => {
+    api("/api/bastion/status").then(renderBastion).catch(() => {});
   }, 2000);
 })();

@@ -28,6 +28,9 @@
 
   den-helper =
     pkgs.writers.writePython3Bin "den-helper" {
+      # pathspec → exact gitignore (gitwildmatch) semantics for .denignore
+      # matching and .denhidden pattern→repo mapping.
+      libraries = [pkgs.python3Packages.pathspec];
       flakeIgnore = ["E501" "E302" "E305" "E306" "W503" "E402" "E741"];
     } ''
       import sys

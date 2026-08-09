@@ -255,7 +255,9 @@ in {
       };
       extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
         bluetooth
-        nix
+        # nix  # DISABLED — upstream extension refs pkgs/development/web/nodejs/symlink.nix,
+        #        removed in vicinae-extensions' pinned nixpkgs (64c08a7) → eval fails.
+        #        Re-enable after `nix flake update vicinae-extensions` ships a compatible build.
         power-profile
       ];
     };

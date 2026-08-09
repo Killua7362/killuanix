@@ -18,6 +18,7 @@ in {
     ../modules/common/programs/boeingvpn-ui/nixos.nix
     ../modules/containers
     ../modules/vms/system.nix
+    ../modules/nixos/claude-sudo.nix
   ];
 
   virtualisation.docker = {
@@ -358,6 +359,24 @@ in {
         "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
         "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       ];
+      # Download/substitution parallelism. Large closures spend most of their
+      # wall-clock fetching many small paths, not building — the defaults
+      # (max-substitution-jobs=16, http-connections=25) under-use a fast link.
+      # narinfo-cache-negative-ttl is cut from the 3600s default so a path that
+      # was cached moments ago (e.g. just after a chaotic-nyx build finished
+      # populating a cache) is re-checked within the same session instead of
+      # being treated as a miss for a full hour.
+      max-substitution-jobs = 32;
+      http-connections = 50;
+      connect-timeout = 10;
+      narinfo-cache-negative-ttl = 60;
+      # Default is a mere 1 MiB — large NARs (chromium, cuda, electron apps)
+      # overflow it and stall the download thread ("download buffer is full").
+      # 256 MiB lets big paths stream without back-pressure.
+      download-buffer-size = 268435456;
+      # Deliberately NOT enabling auto-optimise-store: on NixOS it runs the
+      # hardlink-dedupe pass inside the activation critical path, slowing every
+      # switch. Optimise out-of-band instead (`nix store optimise`, or a timer).
     };
     channel.enable = false;
     registry = lib.mapAttrs (_: flake: {inherit flake;}) flakeInputs;
@@ -422,6 +441,10 @@ in {
 
   # Stop the Logitech G502 HERO mouse from USB-autosuspending (kernel powers it
   # down after idle, forcing a button press to wake it). Pin power/control=on.
+  # NOTE: this udev rule fires at boot but is later clobbered by powertop
+  # --auto-tune (power.nix) which sets control=auto on all USB devices. The
+  # actual fix that survives boot is the ExecStartPost re-pin on powertop.service
+  # in power.nix — this rule alone is not enough.
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="046d", ATTR{idProduct}=="c08b", ATTR{power/control}="on"
   '';

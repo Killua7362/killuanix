@@ -10,19 +10,22 @@
     # When enabled, DMS regenerates per-app theme files whenever the wallpaper /
     # palette changes. Each `matugenTemplate*` toggle controls one target.
     runDmsMatugenTemplates = true;
-    matugenTemplateGtk = true;
+    # kitty/GTK/Qt5ct/Qt6ct configs are owned by nix as read-only symlinks
+    # (static theme/palette modules), so DMS's matugen output for them lands in
+    # orphaned sidecar files nothing reads. Disabled to stop generating dead files.
+    matugenTemplateGtk = false;
     matugenTemplateNiri = true;
     matugenTemplateHyprland = true;
     matugenTemplateMangowc = true;
-    matugenTemplateQt5ct = true;
-    matugenTemplateQt6ct = true;
+    matugenTemplateQt5ct = false;
+    matugenTemplateQt6ct = false;
     matugenTemplateFirefox = true;
     matugenTemplatePywalfox = true;
     matugenTemplateZenBrowser = true;
     matugenTemplateVesktop = true;
     matugenTemplateEquibop = true;
     matugenTemplateGhostty = true;
-    matugenTemplateKitty = true;
+    matugenTemplateKitty = false;
     matugenTemplateFoot = true;
     matugenTemplateAlacritty = true;
     matugenTemplateNeovim = false;

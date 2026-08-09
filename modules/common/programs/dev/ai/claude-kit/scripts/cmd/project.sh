@@ -117,6 +117,141 @@ _project_sync() {
   _say() { [ "$quiet" = "1" ] || echo "$1"; }
   _do()  { [ "$dryrun" = "1" ] && echo "would: $*" || eval "$*"; }
 
+  # ---- Tag normalization + batched ambiguity check (resource types) ----
+  # For skills/agents/commands each list entry is resolved up front:
+  #   * untagged + unique   -> rewritten in claude-kit.nix to its qualified
+  #                            "<catalog>:<name>" form (future-proofs legacy
+  #                            configs so a later duplicate can't break them).
+  #   * untagged + in >1 cat (ambiguous) OR a wrong "<catalog>:" tag
+  #                         -> collected and reported *together* at the end,
+  #                            then the sync aborts — so every broken entry is
+  #                            fixed in a single pass, not one re-run at a time.
+  #   * not found anywhere  -> left for the reconcile loop's soft skip.
+  local _tagerrs="" _tagchanged=0
+  local _t _tlist _traw _tbare _thint _trc
+  for _t in skills agents commands; do
+    case "$_t" in
+      skills)   _tlist="$skills" ;;
+      agents)   _tlist="$agents" ;;
+      commands) _tlist="$commands" ;;
+    esac
+    while IFS= read -r _traw; do
+      [ -n "$_traw" ] || continue
+      _thint=$(_lazy_hint "$_traw")
+      _tbare=$(_lazy_barename "$_traw")
+      _trc=0
+      _lazy_resolve_one "$_t" "$_tbare" "$_thint" || _trc=$?
+      case "$_trc" in
+        0)
+          [ -n "$_thint" ] && continue   # already tagged and valid
+          if [ "$dryrun" = "1" ]; then
+            _say "would tag $_t: $_traw -> $RES_CAT:$_tbare"
+          else
+            # Retag = rm the bare entry then add the qualified one. Only
+            # attempt the add once rm actually removed it, so we never drop
+            # an entry we couldn't re-add. rc 3 = single-line list (can't be
+            # line-edited): note it and leave the entry untagged — it still
+            # resolves in-memory for this run.
+            local _rrc=0
+            _project_edit_list "$cfg" rm "$_t" "$_traw" 2>/dev/null || _rrc=$?
+            if [ "$_rrc" = "3" ]; then
+              _say "  i $_t is a single-line list; reformat to one entry per line to auto-tag '$_traw'"
+            elif [ "$_rrc" = "0" ]; then
+              _project_edit_list "$cfg" add "$_t" "$RES_CAT:$_tbare" 2>/dev/null || true
+              _tagchanged=1
+              _say "~ $_t: $_traw -> $RES_CAT:$_tbare (tagged in claude-kit.nix)"
+            fi
+          fi
+          ;;
+        65|66) _tagerrs+="${_t}"$'\t'"${_traw}"$'\t'"${_trc}"$'\n' ;;
+        *) : ;;
+      esac
+    done < <(echo "$_tlist" | jq -r '.[]')
+  done
+
+  if [ -n "$_tagerrs" ]; then
+    echo "claude-kit: project sync — these claude-kit.nix entries need manual disambiguation:" >&2
+    while IFS=$'\t' read -r _t _traw _trc; do
+      [ -n "$_t" ] || continue
+      echo >&2
+      _lazy_explain_rc "$_trc" "$_t" "$(_lazy_barename "$_traw")" "$(_lazy_hint "$_traw")"
+    done <<<"$_tagerrs"
+    die "project sync aborted: fix every entry listed above in claude-kit.nix, then re-run (all reported together so one pass fixes them)."
+  fi
+
+  # Re-read after in-place tagging so state + reconcile use the tagged names.
+  if [ "$_tagchanged" = "1" ]; then
+    json=$(_project_eval) || return 0
+    skills=$(  echo "$json" | jq -c '.skills   // []')
+    agents=$(  echo "$json" | jq -c '.agents   // []')
+    commands=$(echo "$json" | jq -c '.commands // []')
+  fi
+
+  # ---- inheritCatalogs: pull whole catalogs into this project ----
+  # `inheritCatalogs` (or a quoted "inherit") in claude-kit.nix is a plain
+  # list of catalog NAMES; every skill/agent/command/plugin of each named
+  # catalog (its full effective set) is inherited — no per-catalog filters.
+  # Catalogs simply MERGE: overlapping names (including one catalog that
+  # partially inherits another) are unioned + deduped, not errored, so
+  # listing a base catalog alongside a partial-inheritor yields the union of
+  # both. Expanded per sync (never written into the file) into
+  # "<catalog>:<name>" tags layered UNDER the explicit lists (explicit wins
+  # by bare name). A repeated catalog name is collapsed in the file. The
+  # only hard error is naming a catalog that doesn't exist.
+  local _inh; _inh=$(echo "$json" | jq -c \
+    'if has("inheritCatalogs") then .inheritCatalogs elif has("inherit") then .inherit else [] end')
+  if [ "$(echo "$_inh" | jq 'length')" != "0" ]; then
+    # Collapse duplicate catalog names in the file (rm removes every
+    # occurrence, add restores one). Guarded like the tag pre-pass: a
+    # single-line list can't be line-edited, so just note it.
+    if [ "$dryrun" != "1" ]; then
+      local _dupcat _idedup=0
+      while IFS= read -r _dupcat; do
+        [ -n "$_dupcat" ] || continue
+        local _drc=0
+        _project_edit_list "$cfg" rm inheritCatalogs "$_dupcat" 2>/dev/null || _drc=$?
+        if [ "$_drc" = "3" ]; then
+          _say "  i inheritCatalogs is a single-line list; reformat to one entry per line to dedup '$_dupcat'"
+        elif [ "$_drc" = "0" ]; then
+          _project_edit_list "$cfg" add inheritCatalogs "$_dupcat" 2>/dev/null || true
+          _idedup=1
+          _say "~ inheritCatalogs: removed duplicate '$_dupcat'"
+        fi
+      done < <(echo "$_inh" | jq -r '.[]' | sort | uniq -d)
+      if [ "$_idedup" = "1" ]; then
+        json=$(_project_eval) || return 0
+        _inh=$(echo "$json" | jq -c 'if has("inheritCatalogs") then .inheritCatalogs elif has("inherit") then .inherit else [] end')
+        skills=$(  echo "$json" | jq -c '.skills   // []')
+        agents=$(  echo "$json" | jq -c '.agents   // []')
+        commands=$(echo "$json" | jq -c '.commands // []')
+        plugins=$( echo "$json" | jq -c '.plugins  // []')
+      fi
+    fi
+
+    local _plan; _plan=$(_lazy_inherit_plan "$_inh")
+    local _ierr; _ierr=$(echo "$_plan" | jq -r '.errors[]?')
+    if [ -n "$_ierr" ]; then
+      echo "claude-kit: project sync — inheritCatalogs problems in claude-kit.nix:" >&2
+      printf '%s\n' "$_ierr" | sed 's/^/  ✗ /' >&2
+      die "project sync aborted: fix the inheritCatalogs entries above in claude-kit.nix."
+    fi
+    # Merge synth tokens under the explicit lists (explicit wins by bare name).
+    local _mt _add _cur
+    for _mt in skills agents commands; do
+      _add=$(echo "$_plan" | jq -c --arg t "$_mt" '.[$t]')
+      case "$_mt" in skills) _cur="$skills" ;; agents) _cur="$agents" ;; commands) _cur="$commands" ;; esac
+      _cur=$(jq -cn --argjson cur "$_cur" --argjson add "$_add" '
+        def bare: sub("^[^:]+:"; "");
+        ($cur | map(bare)) as $cb
+        | $cur + [ $add[] | select((bare) as $b | ($cb | index($b)) | not) ]')
+      case "$_mt" in skills) skills="$_cur" ;; agents) agents="$_cur" ;; commands) commands="$_cur" ;; esac
+    done
+    # Plugins: bare slugs, dedup exact (order preserved, explicit first).
+    _add=$(echo "$_plan" | jq -c '.plugins')
+    plugins=$(jq -cn --argjson cur "$plugins" --argjson add "$_add" \
+      '$cur + [ $add[] | select(. as $x | ($cur | index($x)) | not) ]')
+  fi
+
   # ---- Resource reconcile (skills/agents/commands) ----
   local type ext kind_dir
   for type in skills agents commands; do
@@ -127,11 +262,14 @@ _project_sync() {
       commands) list_var="$commands"; ext=".md";  kind_dir="$pdir/commands" ;;
     esac
 
-    # Add items in the new list that aren't already symlinked.
-    local item
+    # Add items in the new list that aren't already symlinked. A list
+    # entry may carry a "<catalog>:" tag; the symlink lives under the
+    # bare name, so resolve that before probing / applying.
+    local item barename
     while IFS= read -r item; do
       [ -n "$item" ] || continue
-      local target="$kind_dir/$item$ext"
+      barename=$(_lazy_barename "$item")
+      local target="$kind_dir/$barename$ext"
       if [ -e "$target" ] || [ -L "$target" ]; then continue; fi
       if [ "$dryrun" = "1" ]; then
         _say "would add $type: $item"
@@ -142,18 +280,27 @@ _project_sync() {
           0)  _say "+ $type: $item" ;;
           2)  : ;;   # already present (race vs. above test)
           64) _say "  ! $type/$item: not in any catalog (skipped)" ;;
-          65) _say "  ! $type/$item: ambiguous (use catalog/type/name in flake)" ;;
+          65|66)
+            # Ambiguous or wrong catalog tag in claude-kit.nix — hard
+            # stop with the same guidance the CLI prints.
+            _lazy_explain_rc "$rc" "$type" "$barename" "$(_lazy_hint "$item")"
+            die "project sync aborted: fix $type entry '$item' in claude-kit.nix" ;;
         esac
       fi
     done < <(echo "$list_var" | jq -r '.[]')
 
     # Remove items that were previously synced but are no longer listed.
-    # Hand-added symlinks (not in prev_state) are left alone.
+    # Hand-added symlinks (not in prev_state) are left alone. Compare on the
+    # BARE name so a legacy entry this run rewrote from "<name>" to
+    # "<catalog>:<name>" isn't mistaken for a removal (identical symlink).
     local prev_list; prev_list=$(echo "$prev_state" | jq -r --arg t "$type" '(.[$t] // [])[]' 2>/dev/null || true)
+    local cur_bares; cur_bares=$(echo "$list_var" | jq -r '.[]' \
+      | while IFS= read -r _x; do [ -n "$_x" ] && { _lazy_barename "$_x"; echo; }; done)
     while IFS= read -r item; do
       [ -n "$item" ] || continue
-      if ! echo "$list_var" | jq -e --arg n "$item" 'index($n)' >/dev/null 2>&1; then
-        local target="$kind_dir/$item$ext"
+      local ib; ib=$(_lazy_barename "$item")
+      if ! printf '%s\n' "$cur_bares" | grep -qxF -- "$ib"; then
+        local target="$kind_dir/$ib$ext"
         if [ -L "$target" ]; then
           _do "rm -f $(printf %q "$target")"
           _say "- $type: $item"

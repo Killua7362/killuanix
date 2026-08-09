@@ -15,6 +15,9 @@ den_cmd_sync() {
     "$from_pd/files/" "$pd/files/"
   cp -f "$from_pd/.denignore" "$pd/.denignore" 2>/dev/null || true
   rsync -a "$from_pd/hooks/" "$pd/hooks/" 2>/dev/null || true
+  # carry the host-bootstrap registries (which repos to clone + what to hide)
+  cp -f "$from_pd/clones.json" "$pd/clones.json" 2>/dev/null || true
+  cp -f "$from_pd/.denhidden" "$pd/.denhidden" 2>/dev/null || true
   rm -rf "$pd/patches"; mkdir -p "$pd/patches"
   _run_hook "$pd" "$root" post-sync || true
   echo "synced from $other (patches reset to empty)"

@@ -219,3 +219,123 @@ body {
   min-height: 14px;
   word-break: break-word;
 }
+
+/* ---- Second window: Bastion (DB tunnels) -------------------------------- */
+
+#bastion-window {
+  left: 470px;
+  width: 400px;
+}
+
+.login-box {
+  border: 1px solid var(--btn-border);
+  border-radius: 6px;
+  background: #fbfbfb;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.login-title {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.login-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-row a {
+  color: var(--accent);
+}
+
+.code-chip {
+  font-family: "Cascadia Code", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  background: #eef3fa;
+  border: 1px solid #cdddef;
+  border-radius: 4px;
+  padding: 2px 8px;
+  user-select: text;
+}
+
+.mini-btn {
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.mini-btn:hover {
+  background: var(--btn-hover);
+}
+
+.login-hint {
+  color: var(--yellow);
+  font-size: 11px;
+}
+
+.creds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cred-group {
+  border: 1px solid var(--window-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fbfbfb;
+}
+
+.cred-head {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.cred-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cred-row span {
+  width: 42px;
+  flex: none;
+  color: #6a6a6a;
+}
+
+.cred-row code {
+  flex: 1;
+  min-width: 0;
+  font-family: "Cascadia Code", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+  color: #1a1a1a;
+  word-break: break-all;
+  cursor: copy;
+}
+
+.cred-row code:hover {
+  color: var(--accent);
+}
+
+.cred-row code.empty {
+  color: #b0b0b0;
+  cursor: default;
+  font-style: italic;
+}

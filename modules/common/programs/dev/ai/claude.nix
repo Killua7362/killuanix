@@ -1,23 +1,27 @@
 # Claude Code — declarative skills + MCP server configuration (Home Manager).
 #
 # ── Skills ────────────────────────────────────────────────────────────────
-# `skillRoots` below is a list of directories. Every subdirectory inside each
-# root becomes a skill under ~/.claude/skills/<name>/. No manual copying, no
-# SHA256 hashes.
+# Two registration paths, no SHA256 hashes on either:
 #
-# To add skills from another GitHub repo:
-#   1. In flake.nix, add a new input with `flake = false`:
-#        inputs.my-skills = { url = "github:owner/repo"; flake = false; };
-#   2. Append to `skillRoots` below the path inside that repo that contains
-#      the skill subdirectories, e.g. `"${inputs.my-skills}"` or
-#      `"${inputs.my-skills}/skills"`.
-#   3. `nix flake update my-skills` to bump; the lockfile pins the revision,
-#      so there is no hash to maintain.
+#   1. Local hand-authored, always-on — live out-of-store symlinks.
+#      Skills under Notes/claude/skills/ are listed by name in the
+#      `skillNames` array (in the `home.file` block far below) and wired via
+#      `mkOutOfStoreSymlink` → ~/.claude/skills/<name>/. Content edits to an
+#      existing skill are live with no rebuild; *adding* a skill means dropping
+#      the dir into the vault AND appending its name to `skillNames`, then
+#      `nix_switch`. The list is explicit (NOT `builtins.readDir` on the vault)
+#      because readDir on that out-of-tree path forces `nix --impure`, which
+#      disables eval-cache and re-evaluates the whole config on every switch.
 #
-# If you want a one-off fetch without touching flake.nix, you can use
-#   (builtins.fetchGit { url = "https://github.com/owner/repo"; ref = "main"; shallow = true; }).outPath
-# as a root entry. This is impure (requires `--impure` or just works inside HM
-# activation), but also avoids hashes.
+#   2. Nix-store-pinned, always-on, cherry-picked from flake inputs — the
+#      `extraSkills` attrset (below), passed through `programs.claude-code.skills`.
+#      Key = skill name, value = nix-store path (e.g. "${inputs.my-skills}/foo").
+#      Add a `flake = false` input in flake.nix, add an `extraSkills` entry, then
+#      `nix_switch`. Read-only; requires a rebuild to update. Currently empty.
+#
+# Upstream bundles (anthropics/skills, ruflo, wshobson) are NOT always-on —
+# they live in per-project lazy sub-catalogs under Notes/claude/lazy/ and are
+# opted in via `claude-kit lazy add skill <name>`.
 #
 # ── MCP servers ──────────────────────────────────────────────────────────
 # Servers come from the canonical registry at modules/common/mcp-servers.nix.
@@ -333,7 +337,35 @@
         export CLAUDE_CONFIG_DIR="$state_dir"
       fi
 
-      ${pkgs.claude-code}/bin/claude "$@"
+      ${
+        if pkgs.stdenv.isLinux
+        then ''
+          # ── Option B: mask the secret dirs via a mount namespace ────────
+          # Every `claude` on this host (bare, ccmanager, or a launcher)
+          # resolves to this wrapper, so running claude under bwrap here makes
+          # /home/killua/killuanix/secrets and ~/.config/sops/age
+          # kernel-inaccessible to claude AND every child it spawns (bash, bun,
+          # MCP servers, hooks) — adversary-resistant and same-UID-proof, since
+          # no passwordless-root command exists to tear the namespace down.
+          # `--dev-bind / /` keeps every OTHER file reachable; an empty tmpfs
+          # over each secret dir hides it. NOT `exec`, so the EXIT trap above
+          # (credentials copy-back) still fires when claude quits. Requires
+          # unprivileged user namespaces (NixOS default); if bwrap ever fails
+          # to start, claude fails closed rather than exposing the dirs.
+          _mask_args=(--dev-bind / / --die-with-parent --chdir "$PWD")
+          for _d in "$HOME/killuanix/secrets" "$HOME/.config/sops/age"; do
+            [ -d "$_d" ] && _mask_args+=(--tmpfs "$_d")
+          done
+          ${lib.optionalString (config.local.claudeExtraPath != []) ''
+            # Prepend sandbox-only dirs (e.g. the pkexec broker shim) to PATH so
+            # `pkexec` inside the sandbox resolves to the client that forwards to
+            # the out-of-namespace broker. Only affects claude, not the user shell.
+            _mask_args+=(--setenv PATH "${lib.concatStringsSep ":" config.local.claudeExtraPath}:$PATH")
+          ''}
+          ${pkgs.bubblewrap}/bin/bwrap "''${_mask_args[@]}" -- ${pkgs.claude-code}/bin/claude "$@"
+        ''
+        else ''${pkgs.claude-code}/bin/claude "$@"''
+      }
     '';
   };
 
@@ -376,6 +408,15 @@ in {
     description = "Claude Code hook entries contributed by sibling modules, keyed by event name.";
   };
 
+  # Dirs prepended to PATH *inside Claude's bwrap sandbox only* (via
+  # overlayClaude's --setenv PATH), never the user's global PATH. Used by
+  # pkexec-broker to shadow `pkexec` with its client shim for claude alone.
+  options.local.claudeExtraPath = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    default = [];
+    description = "Dirs prepended to PATH inside Claude's bwrap sandbox only.";
+  };
+
   config = {
     programs.claude-code = {
       enable = true;
@@ -411,6 +452,39 @@ in {
         skipDangerousModePermissionPrompt = true;
         permissions.defaultMode = "bypassPermissions";
 
+        # Disable Claude Code 2.x's built-in Bash command sandbox (bubblewrap
+        # on Linux). On NixOS it blocks recursive `find`/`grep -r` traversal
+        # (esp. `find -L` symlink follows) → Claude falls back to absolute
+        # `/usr/bin/find`, which does NOT exist on NixOS (no FHS) → the error
+        # is swallowed by `2>/dev/null` and the command silently returns 0
+        # matches, so Claude wrongly concludes "recursion is broken / no files
+        # exist" when the files are right there. Turning the sandbox off means
+        # Claude uses the bare (bundled) `find`/`grep`, which traverse fine.
+        # Isolation is provided by the overlayClaude bwrap mount namespace
+        # (secret-dir mask), not this per-command sandbox.
+        sandbox.enabled = false;
+
+        # Strip Claude's git attribution: no `Co-Authored-By: Claude` trailer
+        # and no "Generated with Claude Code" line on commits/PRs.
+        includeCoAuthoredBy = false;
+        gitAttribution = false;
+        attribution.commit = "";
+
+        # Defense-in-depth over the bwrap mount namespace (overlayClaude
+        # above), which is the real wall. `deny` is highest-precedence and
+        # applies even under bypassPermissions, so the Read/Grep/Glob tool
+        # surface is blocked from the secret dirs regardless of mode. Absolute
+        # + repo-relative forms; the namespace covers the Bash surface the
+        # tool-path globs can't.
+        permissions.deny = [
+          "Read(/home/killua/killuanix/secrets/**)"
+          "Edit(/home/killua/killuanix/secrets/**)"
+          "Read(/home/killua/.config/sops/age/**)"
+          "Edit(/home/killua/.config/sops/age/**)"
+          "Read(secrets/**)"
+          "Edit(secrets/**)"
+        ];
+
         # Pin to the nix-managed binary. Claude Code's built-in updater
         # drops a fresh `claude` into ~/.local/bin/ on each launch, which
         # shadows ~/.nix-profile/bin/claude on PATH and bypasses the
@@ -441,7 +515,7 @@ in {
 
         # (Stop hook for the per-session caveman savings badge has been
         # relocated to `local.extraHooks.Stop` below, so that claudio +
-        # claude-hooks can co-contribute hook entries for the same events
+        # cc-hooks-ts can co-contribute hook entries for the same events
         # without clobbering one another.)
 
         # Declaratively register the ruflo marketplace. Equivalent to running
@@ -503,14 +577,14 @@ in {
     # Aggregate every sibling module's `local.extraHooks` contribution into
     # the real `programs.claude-code.settings.hooks` attr. The `listOf` element
     # type on the option means duplicate event keys from different files (e.g.
-    # claudio + claude-hooks both defining `PreToolUse`) are list-concatenated
+    # claudio + cc-hooks-ts both defining `PreToolUse`) are list-concatenated
     # by the module system — no clobbering. This is the only writer to
     # `settings.hooks`; everything else feeds the side-channel.
     programs.claude-code.settings.hooks = config.local.extraHooks;
 
     # Caveman per-session savings badge — relocated from the inline `settings`
     # literal above into the shared `local.extraHooks` side-channel so other
-    # modules (claudio, claude-hooks) can co-register Stop entries without
+    # modules (claudio, cc-hooks-ts) can co-register Stop entries without
     # overwriting this one. Reads the Stop hook stdin payload (Claude Code
     # passes `{transcript_path, session_id, …}`), parses *only that session's*
     # jsonl to sum output tokens, looks up the live mode from the overlay's
@@ -608,39 +682,38 @@ in {
     # Obsidian's `Obsidian Git: Create backup` command (auto-intervals are
     # intentionally 0).
     #
-    # Skills and commands are auto-discovered via builtins.readDir on the
-    # vault path: each subdir of Notes/claude/skills/ becomes
-    # ~/.claude/skills/<name>, each .md file under Notes/claude/commands/
-    # becomes ~/.claude/commands/<file>.md. Adding a new dir/file requires
-    # `nix_switch` (re-evaluates readDir); content edits inside
-    # existing entries don't. Commands sit alongside the flattened
-    # ruflo--*/wshobson--* bundle (claude-resources.nix uses `recursive =
-    # true` so per-file additions don't conflict).
+    # Skills and commands are listed EXPLICITLY below (not auto-discovered via
+    # builtins.readDir) so this whole HM evaluation stays PURE. readDir on the
+    # out-of-tree live vault path would force `nix --impure`, which disables
+    # eval-cache — every `nix_switch` would then re-evaluate the entire config
+    # from scratch instead of reusing the persisted eval. Trade-off: adding a
+    # new skill/command means dropping the dir/file into the vault AND adding
+    # its name to `skillNames`/`commandFiles` here, then `nix_switch`. Content
+    # edits inside existing entries still need no rebuild (mkOutOfStoreSymlink
+    # points at the live path).
     home.file = let
-      # Absolute path constructed from a string so Nix doesn't try to
-      # treat it as part of the flake source tree (which would require
-      # every entry inside the Notes submodule to be tracked at the
-      # parent repo level — impossible by definition). Requires
-      # `nix --impure` at build time; nix_switch passes it.
+      # Live vault base — a plain string, never coerced to a Nix `path` value,
+      # so nothing here reads outside the flake source tree at eval time.
+      # mkOutOfStoreSymlink resolves it at activation, not eval, keeping the
+      # symlink targets live while the eval stays pure.
       liveBase = "${config.home.homeDirectory}/killuanix/Notes/claude";
-      notesSkills = /. + "${liveBase}/skills";
-      notesCommands = /. + "${liveBase}/commands";
 
-      mkSkill = name: _:
+      # ── Always-on local resources (keep in sync with the vault dirs) ──
+      skillNames = [
+        # "memory-load"
+      ];
+      commandFiles = [
+        # "save-chat.md"
+      ];
+
+      mkSkill = name:
         lib.nameValuePair ".claude/skills/${name}" {
           source = config.lib.file.mkOutOfStoreSymlink "${liveBase}/skills/${name}";
         };
-      mkCommand = name: _:
+      mkCommand = name:
         lib.nameValuePair ".claude/commands/${name}" {
           source = config.lib.file.mkOutOfStoreSymlink "${liveBase}/commands/${name}";
         };
-
-      skillDirs =
-        lib.filterAttrs (_: t: t == "directory")
-        (builtins.readDir notesSkills);
-      commandFiles =
-        lib.filterAttrs (n: t: t == "regular" && lib.hasSuffix ".md" n)
-        (builtins.readDir notesCommands);
     in
       {
         ".claude/CLAUDE.md".source =
@@ -648,8 +721,8 @@ in {
         ".claude/projects/-home-killua-killuanix/memory".source =
           config.lib.file.mkOutOfStoreSymlink "${liveBase}/memory";
       }
-      // (lib.mapAttrs' mkSkill skillDirs)
-      // (lib.mapAttrs' mkCommand commandFiles);
+      // builtins.listToAttrs (map mkSkill skillNames)
+      // builtins.listToAttrs (map mkCommand commandFiles);
 
     # One-shot cleanup: HM activation refuses to replace a real file/dir with
     # a symlink. Pre-2026-04-29:

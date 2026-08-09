@@ -167,6 +167,24 @@ in {
         return { key = key, mods = "ALT", action = act.ActivatePaneDirection(nav_dir[key]) }
       end
 
+      -- Ctrl-Tab cycles tabs, but WezTerm processes every OS key-repeat event
+      -- as a fresh press — holding the chord a beat too long autorepeats and
+      -- cycles through tabs "like a robot". Debounce: swallow re-fires within
+      -- a short window of the last one. Hyprland's default repeat_rate (25/s)
+      -- fires autorepeat every ~40ms, so 90ms kills the robot; a deliberate
+      -- double/triple-tap is ~100ms+ apart, so each tap still lands.
+      local last_tab_cycle = 0
+      local function debounced_tab_cycle(delta)
+        return wezterm.action_callback(function(win, pane)
+          -- %s = unix seconds, %.3f = dotted fractional millis -> "SECONDS.mmm".
+          local now = wezterm.time.now():format("%s%.3f")
+          local ms = math.floor(tonumber(now) * 1000)
+          if ms - last_tab_cycle < 90 then return end
+          last_tab_cycle = ms
+          win:perform_action(act.ActivateTabRelative(delta), pane)
+        end)
+      end
+
       -- Dump this pane's scrollback (last 20k lines) into nvim in a new tab.
       -- Temp file may hold secrets — removed on exit.
       local scrollback_edit = wezterm.action_callback(function(win, pane)
@@ -234,8 +252,10 @@ in {
         { key = "]", mods = "ALT", action = act.SwitchWorkspaceRelative(1) },
         { key = "i", mods = "ALT|SHIFT", action = act.MoveTabRelative(-1) },
         { key = "o", mods = "ALT|SHIFT", action = act.MoveTabRelative(1) },
-        { key = "Tab", mods = "CTRL", action = act.ActivateTabRelative(1) },
-        { key = "Tab", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
+        { key = "n", mods = "CTRL|SHIFT", action = act.MoveTabRelative(-1) },
+        { key = "o", mods = "CTRL|SHIFT", action = act.MoveTabRelative(1) },
+        { key = "Tab", mods = "CTRL", action = debounced_tab_cycle(1) },
+        { key = "Tab", mods = "CTRL|SHIFT", action = debounced_tab_cycle(-1) },
 
         -- Leader (C-a) prefix binds
         { key = "h", mods = "LEADER", action = act.SplitPane({ direction = "Right", size = { Percent = 50 } }) },

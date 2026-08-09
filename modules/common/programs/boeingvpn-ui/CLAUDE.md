@@ -9,16 +9,29 @@ The userid and gateway are no longer hardcoded:
 
 Same `openconnect` + `ocproxy` pair the zsh `boeingvpn` function uses (`modules/common/programs/shells/zsh.nix:148-156`); no privilege escalation because `--script-tun` keeps everything in userspace (no TUN device, ocproxy provides the SOCKS5 listener on `:1080`).
 
+## Second window — Bastion (DB tunnels)
+
+The same fake-desktop page hosts a **second draggable window** ("Boeing Bastion") that drives `bastion all` (`DotFiles/scripts/boeing/bastion.d/bastion-all` — one az bastion tunnel + one `ssh -N` carrying the Oracle/Postgres/Cosmos `-L` forwards). It has **Connect / Disconnect**, a status pill, an in-panel **device-code login** box, and a **credentials table** (Oracle/PG/Cosmos user·pass·url·local-port) parsed live from the bastion env file. Click any credential value to copy it.
+
+- **Connect** → `POST /api/bastion/connect` spawns `bastion all` (background, own process group). The daemon injects `PATH=@bastiontools@` (az + ssh + sshpass + proxychains + coreutils, since a `systemd --user` service doesn't inherit the login-shell PATH), `BASTION_SSH_VIA_SOCKS=1`, and `BASTION_ENV_FILE`. Requires the VPN window to be connected first (az routes through the `:1080` SOCKS listener).
+- **Device-code login**: when `bastion all` (→ `ensure_subscription` → `bastion login`) emits `az login --use-device-code`, `_watch` regex-matches the "open the page … enter the code …" line, flips state to `login-required`, and the panel shows the URL + code. You approve in the browser; the daemon keeps running.
+- **Connected signal**: `_poll_ports` TCP-connects `127.0.0.1:1521` (the Oracle forward) — bound as soon as ssh is up — and flips to `connected`. Mirrors `VpnManager._poll_socks`.
+- **Disconnect** → `POST /api/bastion/disconnect` → `os.killpg(SIGTERM)`. Because `bastion all` ends in `exec ssh`, the backgrounded az tunnel and ssh share the child's process group, so one killpg tears both down (SIGKILL fallback after 6s). **Disconnecting the VPN also stops bastion** — `VpnManager.disconnect` calls `BASTION.disconnect()` (bastion rides the VPN's `:1080` SOCKS listener, so it's dead weight once the VPN drops).
+- **`login-required` auto-clears**: `_watch` drops the state back to `connecting` when az moves past the device code (`Retrieving subscriptions`, `[2/3]`, `Opening bastion tunnel`, …), so the "waiting for approval" box doesn't linger after you approve (or when no login was needed).
+- **Credentials**: `GET /api/bastion/creds` parses `AZURE_ORACLE_*` / `AZURE_PG_*` / `AZURE_COSMOS_*` out of `~/.config/azure-bastion.env` (override `$BASTION_ENV_FILE`). Loopback-only, same trust model as everything else here. Missing keys render as an italic placeholder.
+
+The `bastion` dispatcher itself is a DotFiles script (not a nix binary): resolved at runtime via `$BASTION_BIN` → `PATH` → `~/killuanix/DotFiles/scripts/boeing/bastion`. Local forward ports (`BASTION_LOCAL_PORTS` = 1521/5433/8443) must match the `LOCAL_*_PORT` defaults in `bastion-all`.
+
 ## Files
 
 | File | Description |
 |---|---|
-| `default.nix` | HM module: builds `boeingvpn-ui` derivation from `daemon.py` + `static/`, installs systemd **user** service `boeingvpn-ui` (autostart on login). Linux-only. |
+| `default.nix` | HM module: builds `boeingvpn-ui` derivation from `daemon.py` + `static/`, installs systemd **user** service `boeingvpn-ui` (autostart on login). Also builds `azCli` (`azure-cli.withExtensions [ssh bastion]`) + `bastionTools` (`lib.makeBinPath` of az/ssh/sshpass/proxychains/coreutils) and substitutes the latter as `@bastiontools@` so the Bastion window can run `bastion all`. Linux-only. |
 | `nixos.nix` | NixOS module: writes `/etc/opt/chrome/policies/managed/boeingvpn-ui.json` with a `ManagedBookmarks` policy adding a "Boeing → VPN" bookmark pointing at `http://127.0.0.1:7777/`. System-scope, applies to every Chrome profile (including the chrome-socks `--user-data-dir`). |
-| `daemon.py` | Python 3 stdlib HTTP server. Endpoints: `GET /api/status`, `GET /api/config` (default userid + gateway list), `GET /api/fastest` (concurrent RTT probe → ranked gateways), `POST /api/connect {secret, userid, gateway}` (`gateway: "auto"` probes + picks fastest server-side), `POST /api/disconnect`, `POST /api/reconnect`. `GATEWAYS` is the gateway catalog. `@var@` placeholders (incl. `@useridfile@`) are filled by `pkgs.replaceVars` in `default.nix`. |
-| `static/index.html` | Fake-desktop page + window markup. |
-| `static/style.css` | Wallpaper backdrop, Windows-y window chrome, status pill colors. |
-| `static/app.js` | Drag implementation (no library), state machine, fetch wiring, 2s status poll. |
+| `daemon.py` | Python 3 stdlib HTTP server. VPN endpoints: `GET /api/status`, `GET /api/config`, `GET /api/fastest`, `POST /api/connect {secret, userid, gateway}`, `POST /api/disconnect`, `POST /api/reconnect`. Bastion endpoints: `GET /api/bastion/status`, `GET /api/bastion/creds`, `POST /api/bastion/connect`, `POST /api/bastion/disconnect`. `VpnManager` owns openconnect; `BastionManager` owns `bastion all`. `@var@` placeholders (`@useridfile@`, `@bastiontools@`, …) filled by `pkgs.replaceVars`. |
+| `static/index.html` | Fake-desktop page + markup for **both** windows (VPN + Bastion). |
+| `static/style.css` | Wallpaper backdrop, Windows-y window chrome, status pill colors, plus Bastion window styles (login box, code chip, credentials table). |
+| `static/app.js` | Shared no-library drag (`makeDraggable`, z-index raise) for both windows, VPN + Bastion state machines, fetch wiring, click-to-copy, 2s status polls. |
 | `static/wallpaper.svg` | Static blue gradient + faint 747 silhouette; shipped to avoid any external fetch. |
 
 ## State machine
@@ -29,6 +42,16 @@ Daemon state (server-side, in `daemon.py`'s `VpnManager`):
 idle → connecting → connected      (when openconnect prints "Connected as …")
                   → error          (subprocess exits non-zero)
 connected → disconnecting → idle   (after SIGTERM / wait / SIGKILL fallback)
+```
+
+`BastionManager` (second window) state:
+
+```
+idle → connecting → connected            (127.0.0.1:1521 forward bound)
+                  → login-required        (az device code emitted; code+url shown)
+                  → error                 (bastion all exits non-zero)
+login-required → connected               (once tunnels come up)
+connected → disconnecting → idle          (killpg the process group)
 ```
 
 Frontend adds two UI-only states the daemon has no concept of: `awaiting-secret` (between pressing Connect and submitting the secret) and `probing` (while Connect-fastest runs `/api/fastest`). The 2s status poll explicitly does not overwrite either.

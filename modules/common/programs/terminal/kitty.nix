@@ -26,7 +26,8 @@ in {
       shell_integration = "enabled";
     };
     keybindings = {
-      "ctrl+shift+n" = "new_window";
+      "ctrl+shift+n" = "no_op";
+      "ctrl+shift+o" = "no_op";
       "ctrl+plus" = "change_font_size all +1.0";
       "ctrl+minus" = "change_font_size all -1.0";
       "ctrl+0" = "change_font_size all 0";

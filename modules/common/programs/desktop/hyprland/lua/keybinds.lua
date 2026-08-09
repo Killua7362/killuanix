@@ -183,7 +183,7 @@ M.binds = {
   -- ============================================================
   -- Apps / launchers
   -- ============================================================
-  { keys = "Super, Return",  action = A.exec("uwsm-app -- wezterm connect unix") },
+  { keys = "Super, Return",  action = A.exec("uwsm-app -- kitty") },
   { keys = "Ctrl+Super, Backslash", action = A.resize_exact(640, 480) },
   { keys = "Super, W",       action = A.exec("vicinae toggle") },
   { keys = "Super, V",       action = A.exec("uwsm-app -- clipboard-history") },

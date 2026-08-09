@@ -4,6 +4,7 @@
     (with pkgs; [
       # File utilities
       fd
+      ripgrep # real `rg` binary — rtk's `rg`/search subcommand shells out to it (shell `rg` is a Claude Code function, invisible to subprocesses)
       fzf
       eza
       file
@@ -58,6 +59,7 @@
       zplug
       eza
       proxychains-ng
+      sshpass # non-interactive ssh password for `bastion` DB tunnels (DA_SSH_PASSWORD)
       (writeShellApplication {
         name = "ns";
         runtimeInputs = with pkgs; [
@@ -122,6 +124,7 @@
       mpv
       papers
       vial
+      dbeaver-bin # GUI DB client
     ];
 
   # Development packages
@@ -129,6 +132,8 @@
     with pkgs; [
       luarocks-nix
       trackma
+      postgresql # provides `psql` client (+ server bins, unused)
+      sqlite # provides `sqlite3` CLI
     ];
 
   # Mac-specific packages

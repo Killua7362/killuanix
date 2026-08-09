@@ -4,7 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-from lib.ignore import _matches_ignore, _read_denignore
+from lib.ignore import load_ignore_spec
 from lib.manifest import _walk_files
 from lib.toml_io import tomllib
 
@@ -55,7 +55,7 @@ def cmd_status(args):
     meta = json.loads(meta_file.read_text()) if meta_file.exists() else {"symlinks": [], "host_only": []}
     host_only = set(meta.get("host_only", []))
     symlinks_index = {s["target"]: s for s in meta.get("symlinks", [])}
-    ignore_patterns = _read_denignore(project_dir)
+    ignore_spec = load_ignore_spec(project_dir)
     kinds = _load_manifest_kinds(project_dir)
 
     files_dir = project_dir / "files"
@@ -68,7 +68,7 @@ def cmd_status(args):
     ok = []
 
     for rel in project_files:
-        if _matches_ignore(rel, ignore_patterns):
+        if ignore_spec.match_file(rel):
             continue
         target = cwd / rel
         expected_src = files_dir / rel
@@ -132,7 +132,7 @@ def cmd_status(args):
                 continue
             if rel in {f for f in project_files}:
                 continue
-            if _matches_ignore(rel, ignore_patterns):
+            if ignore_spec.match_file(rel):
                 continue
             untracked.append(rel)
 

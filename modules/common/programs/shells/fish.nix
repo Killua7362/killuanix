@@ -3,8 +3,16 @@
   pkgs,
   ...
 }: {
+  # `programs.fish` pulls in `programs.man.generateCaches = mkDefault true`
+  # to back `apropos`, which rebuilds the mandb whatis index (the slow
+  # `man-cache>` build) on every switch whose man paths change. We don't use
+  # keyword search; disable it. Fish tab-completions come from
+  # generated_completions and are unaffected.
+  programs.man.generateCaches = false;
+
   programs.fish = {
-    enable = true;
+    # Disabled — zsh is the login shell. Config kept for reference / re-enable.
+    enable = false;
     plugins = [
       # pkgs.fishPlugins.z
       # pkgs.fishPlugins.fifc

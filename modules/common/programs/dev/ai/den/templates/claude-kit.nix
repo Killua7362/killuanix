@@ -54,6 +54,22 @@
     # "basic-memory"
   ];
 
+  # Inherit whole lazy catalogs into this project — a plain list of catalog
+  # NAMES. Every skill / agent / command / plugin of each named catalog (its
+  # full effective set, including what that catalog itself inherits) is
+  # pulled in. No per-catalog filtering: list a catalog to get all of it.
+  # Overlapping catalogs simply MERGE (union, deduped) — listing a base
+  # catalog next to one that partially inherits it yields the union of both.
+  # Expanded on every `project sync` (never written back here) and layered
+  # UNDER the explicit lists above (an explicit entry with the same bare
+  # name wins). `inherit` is a Nix keyword, so this attr is spelled
+  # `inheritCatalogs` (a quoted "inherit" also works). A repeated name is
+  # collapsed in this file; the only hard error is an unknown catalog name.
+  inheritCatalogs = [
+    # "claude-code-java"
+    # "personal"
+  ];
+
   # ----------------------------------------------------------------------
   # Exclusion + per-project permissions + hooks + filesystem narrowing.
   #

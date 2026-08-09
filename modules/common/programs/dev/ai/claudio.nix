@@ -86,7 +86,7 @@ in {
   home.packages = [claudio];
 
   # Contribute through the shared `local.extraHooks` side-channel (declared in
-  # ./claude.nix) so claude-hooks and any future hook source can co-register
+  # ./claude.nix) so cc-hooks-ts and any future hook source can co-register
   # entries for the same events without clobbering us.
   local.extraHooks = {
     PreToolUse = claudioHook "*";

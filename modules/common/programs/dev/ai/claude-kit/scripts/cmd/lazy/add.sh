@@ -13,32 +13,38 @@ _lazy_apply_plugin() {
   jq --arg n "$name" '.enabledPlugins[$n] = true' "$sjson" > "$tmp" && mv "$tmp" "$sjson"
 }
 
-# _lazy_apply_one <type> <name> [catalog-hint]
+# _lazy_apply_one <type-or-empty> <rawname> [catalog-hint]
 # Resolves a catalog item and symlinks it into ./.claude/<type>/.
-# Returns 0 on success (new symlink), 2 if already present, 64 on
-# not-found, 65 on ambiguous match. Caller decides exit policy.
+# <rawname> may carry a "<catalog>:" tag (used as the hint when no
+# explicit hint arg is passed); the symlink is always created under the
+# bare resource name. An empty <type> auto-detects across skill/agent/
+# command. Returns 0 (new symlink), 2 (already present), or the
+# _lazy_resolve_one code (64 not-found, 65 ambiguous, 66 wrong-tag).
 # `plugin` is delegated to _lazy_apply_plugin (always returns 0).
 _lazy_apply_one() {
-  local type="$1" name="$2" hint="${3:-}"
-  [ -n "$type" ] && [ -n "$name" ] || return 64
+  local type="$1" rawname="$2" hint="${3:-}"
+  [ -n "$rawname" ] || return 64
   case "$type" in
-    plugin|plugins) _lazy_apply_plugin "$name"; return 0 ;;
+    plugin|plugins) _lazy_apply_plugin "$rawname"; return 0 ;;
   esac
+  local name="$rawname"
+  if [ -z "$hint" ]; then
+    hint=$(_lazy_hint "$rawname")
+    name=$(_lazy_barename "$rawname")
+  fi
+  local rc=0
+  _lazy_resolve_one "$type" "$name" "$hint" || rc=$?
+  [ "$rc" = 0 ] || return "$rc"
   local pdir; pdir=$(_lazy_project_dir)
-  local matches; matches=$(_lazy_find "$type" "$name" "$hint")
-  local n; n=$(printf '%s' "$matches" | grep -c . 2>/dev/null || true)
-  if [ "$n" = 0 ] || [ -z "$matches" ]; then return 64; fi
-  if [ "$n" -gt 1 ]; then return 65; fi
-  local path; path=$(printf '%s' "$matches" | awk '{print $2}')
   local target=""
-  case "$type" in
-    skill|skills)     mkdir -p "$pdir/skills";   target="$pdir/skills/$name" ;;
-    agent|agents)     mkdir -p "$pdir/agents";   target="$pdir/agents/$name.md" ;;
-    command|commands) mkdir -p "$pdir/commands"; target="$pdir/commands/$name.md" ;;
+  case "$RES_TYPE" in
+    skills)   mkdir -p "$pdir/skills";   target="$pdir/skills/$name" ;;
+    agents)   mkdir -p "$pdir/agents";   target="$pdir/agents/$name.md" ;;
+    commands) mkdir -p "$pdir/commands"; target="$pdir/commands/$name.md" ;;
     *) return 64 ;;
   esac
   if [ -e "$target" ] || [ -L "$target" ]; then return 2; fi
-  ln -s "$path" "$target"
+  ln -s "$RES_PATH" "$target"
   return 0
 }
 
@@ -51,42 +57,45 @@ _lazy_add() {
       *) break ;;
     esac
   done
-  _lazy_parse_target "$@" || die "usage: claude-kit lazy add [--imperative] <type> <name>  |  add <catalog>/<type>/<name>"
+  _lazy_parse_target "$@" || die "usage: claude-kit lazy add [--imperative] <type> <name>  |  add [<catalog>:]<name>  |  add <catalog>/<type>/<name>"
 
   # Declarative path: if a claude-kit.nix sits above $PWD, edit it
   # instead of writing symlinks/json straight into ./.claude/.
   local cfg
   if [ "$imperative" = 0 ] && cfg=$(_lazy_find_project_config); then
-    local key; key=$(_lazy_type_to_key "$PARSED_TYPE") \
-      || die "unknown type: $PARSED_TYPE (try skill|agent|command|plugin|mcp)"
-    # Validate catalog membership for resource-shaped types so we don't
-    # write unknown names into the nix file. Plugins and MCP are
-    # registry-less by design — trust the user.
+    local key nixitem
     case "$PARSED_TYPE" in
-      skill|skills|agent|agents|command|commands)
-        local matches; matches=$(_lazy_find "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT")
-        local n; n=$(printf '%s' "$matches" | grep -c . 2>/dev/null || true)
-        case "$n" in
-          0) die "not found: $PARSED_TYPE/$PARSED_NAME" ;;
-          1) ;;
-          *)
-            echo "lazy: multiple matches:" >&2
-            printf '%s\n' "$matches" | awk '{print "  " $1 "/" }' >&2
-            die "use <catalog>/$PARSED_TYPE/$PARSED_NAME to disambiguate"
-            ;;
-        esac
+      plugin|plugins|mcp|mcps)
+        # Registry-less types — trust the user, write verbatim.
+        key=$(_lazy_type_to_key "$PARSED_TYPE") \
+          || die "unknown type: $PARSED_TYPE (try skill|agent|command|plugin|mcp)"
+        nixitem="$PARSED_NAME"
         ;;
+      skill|skills|agent|agents|command|commands|"")
+        # Resource types (or auto-detect): resolve so we know the real
+        # list key + validate the optional <catalog>: tag before writing.
+        local rc=0
+        _lazy_resolve_one "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT" || rc=$?
+        [ "$rc" = 0 ] || { _lazy_explain_rc "$rc" "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT"; exit 1; }
+        key="$RES_TYPE"   # skills|agents|commands (already the nix list key)
+        # Always store the resolved catalog tag ("<catalog>:<name>") even
+        # when the name is currently unique — future-proofs the entry so
+        # a later duplicate in another catalog can't turn this sync into an
+        # ambiguity error.
+        nixitem="$RES_CAT:$PARSED_NAME"
+        ;;
+      *) die "unknown type: $PARSED_TYPE (try skill|agent|command|plugin|mcp)" ;;
     esac
     _project_load_sync
-    local rc=0
-    _project_edit_list "$cfg" add "$key" "$PARSED_NAME" || rc=$?
-    case "$rc" in
+    local rc2=0
+    _project_edit_list "$cfg" add "$key" "$nixitem" || rc2=$?
+    case "$rc2" in
       0)
-        echo "+ $key: $PARSED_NAME (edited claude-kit.nix)"
+        echo "+ $key: $nixitem (edited claude-kit.nix)"
         _project_sync --quiet
         return 0 ;;
-      4) echo "already in claude-kit.nix: $key/$PARSED_NAME"; return 0 ;;
-      *) die "claude-kit.nix edit failed (rc=$rc)" ;;
+      4) echo "already in claude-kit.nix: $key/$nixitem"; return 0 ;;
+      *) die "claude-kit.nix edit failed (rc=$rc2)" ;;
     esac
   fi
 
@@ -99,15 +108,9 @@ _lazy_add() {
   local rc=0
   _lazy_apply_one "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT" || rc=$?
   case "$rc" in
-    0) echo "enabled $PARSED_TYPE: $PARSED_NAME" ;;
-    2) die "already enabled: $PARSED_TYPE/$PARSED_NAME" ;;
-    64) die "not found: $PARSED_TYPE/$PARSED_NAME" ;;
-    65)
-      local matches; matches=$(_lazy_find "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT")
-      echo "lazy: multiple matches:" >&2
-      printf '%s\n' "$matches" | awk '{print "  " $1 "/" }' >&2
-      die "use <catalog>/$PARSED_TYPE/$PARSED_NAME to disambiguate"
-      ;;
+    0) echo "enabled ${RES_TYPE:-$PARSED_TYPE}: $PARSED_NAME" ;;
+    2) die "already enabled: ${PARSED_TYPE:-resource}/$PARSED_NAME" ;;
+    64|65|66) _lazy_explain_rc "$rc" "$PARSED_TYPE" "$PARSED_NAME" "$PARSED_CAT"; exit 1 ;;
     *) die "lazy add: internal error rc=$rc" ;;
   esac
 }

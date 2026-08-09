@@ -8,7 +8,7 @@ _den() {
   local cur prev cmds
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  cmds="new init list ls status add ignore rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version"
+  cmds="new init clone bootstrap list ls status add ignore hide unhide rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
     return 0
@@ -22,6 +22,12 @@ _den() {
       local out series
       out="$(den ls 2>/dev/null | grep -A99 '^patches' | tail -n +2 | sed 's/^  //')"
       COMPREPLY=( $(compgen -W "$out" -- "$cur") );;
+    unhide)
+      local hid
+      hid="$(den ls 2>/dev/null | awk '/^hidden \(/{f=1;next} /:$/{f=0} f{sub(/^  */,"");if(NF)print}')"
+      COMPREPLY=( $(compgen -W "$hid" -- "$cur") );;
+    clone)
+      COMPREPLY=( $(compgen -W "sync drift" -- "$cur") );;
     --devshell)
       local langs
       if [ -n "$DEN_DEV_TEMPLATES_DIR" ] && [ -d "$DEN_DEV_TEMPLATES_DIR" ]; then
@@ -45,7 +51,7 @@ EOF
       cat <<'EOF'
 _den() {
   local cmds
-  cmds=(new init list ls status add ignore rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version)
+  cmds=(new init clone bootstrap list ls status add ignore hide unhide rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version)
   if (( CURRENT == 2 )); then
     _describe 'den command' cmds
     return
@@ -67,6 +73,12 @@ _den() {
       local projects
       projects=( ${(f)"$(den list --plain 2>/dev/null | sed 's/^[* ] //; s/  *.*//')"} )
       _describe 'project' projects;;
+    unhide)
+      local hid
+      hid=( ${(f)"$(den ls 2>/dev/null | awk '/^hidden \(/{f=1;next} /:$/{f=0} f{sub(/^  */,"");if(NF)print}')"} )
+      _describe 'hidden pattern' hid;;
+    clone)
+      local cv=(sync drift); _describe 'clone verb' cv;;
     new)
       if [[ "$words[CURRENT]" == --* ]]; then
         local opts=(--path --from --preset --devshell --no-devshell)
@@ -83,8 +95,12 @@ EOF
     fish)
       cat <<'EOF'
 complete -c den -f
-complete -c den -n "__fish_use_subcommand" -a "new init list ls status add ignore rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version"
+complete -c den -n "__fish_use_subcommand" -a "new init clone bootstrap list ls status add ignore hide unhide rm re-add restore pull clean sync shelf stash apply patches log last-applied reflog generations rollback diff which cd exec activate prompt gc cas config hooks doctor completion help explain version"
 complete -c den -n "__fish_seen_subcommand_from init cd exec sync rollback diff" -a "(den list --plain 2>/dev/null | sed 's/^[* ] //; s/  *.*//')"
+# path-taking subcommands: re-enable file completion (den has -f globally)
+complete -c den -n "__fish_seen_subcommand_from hide add ignore rm re-add restore" -F
+complete -c den -n "__fish_seen_subcommand_from unhide" -a "(den ls 2>/dev/null | awk '/^hidden \\(/{f=1;next} /:\$/{f=0} f{sub(/^  */,\"\");if(NF)print}')"
+complete -c den -n "__fish_seen_subcommand_from clone" -a "sync drift"
 complete -c den -n "__fish_seen_subcommand_from new" -l path -l from -l preset -l devshell -l no-devshell
 complete -c den -n "__fish_seen_subcommand_from new; and __fish_prev_arg_in --devshell" -a "(if test -n \"\$DEN_DEV_TEMPLATES_DIR\"; for d in \$DEN_DEV_TEMPLATES_DIR/*/; test -f \"\$d/flake.nix\"; and basename \$d; end; end)"
 EOF

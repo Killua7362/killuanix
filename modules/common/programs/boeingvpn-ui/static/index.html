@@ -51,6 +51,61 @@
           <div id="error-line" class="error-line"></div>
         </div>
       </div>
+
+      <div id="bastion-window" class="window">
+        <div class="titlebar" id="bastion-titlebar">
+          <span class="title">Boeing Bastion (DB tunnels)</span>
+        </div>
+        <div class="body">
+          <div class="status">
+            <span id="b-status-dot" class="dot dot-grey"></span>
+            <span id="b-status-label">Disconnected</span>
+          </div>
+
+          <div class="buttons">
+            <button id="b-btn-connect">Connect</button>
+            <button id="b-btn-disconnect" disabled>Disconnect</button>
+          </div>
+
+          <div id="b-login" class="login-box" hidden>
+            <div class="login-title">Sign in to continue</div>
+            <div class="login-row">
+              Open <a id="b-login-url" href="#" target="_blank" rel="noreferrer">microsoft.com/device</a>
+            </div>
+            <div class="login-row">
+              Code
+              <span id="b-login-code" class="code-chip">--------</span>
+              <button id="b-copy-code" class="mini-btn" type="button">Copy</button>
+            </div>
+            <div class="login-hint">Waiting for approval…</div>
+          </div>
+
+          <div class="creds" id="b-creds">
+            <div class="cred-group">
+              <div class="cred-head">Oracle</div>
+              <div class="cred-row"><span>Local</span><code id="b-ora-local">—</code></div>
+              <div class="cred-row"><span>User</span><code id="b-ora-user">—</code></div>
+              <div class="cred-row"><span>Pass</span><code id="b-ora-pass" class="secret">—</code></div>
+              <div class="cred-row"><span>URL</span><code id="b-ora-url">—</code></div>
+            </div>
+            <div class="cred-group">
+              <div class="cred-head">Postgres</div>
+              <div class="cred-row"><span>Local</span><code id="b-pg-local">—</code></div>
+              <div class="cred-row"><span>User</span><code id="b-pg-user">—</code></div>
+              <div class="cred-row"><span>Pass</span><code id="b-pg-pass" class="secret">—</code></div>
+              <div class="cred-row"><span>URL</span><code id="b-pg-url">—</code></div>
+            </div>
+            <div class="cred-group">
+              <div class="cred-head">Cosmos</div>
+              <div class="cred-row"><span>Local</span><code id="b-cos-local">—</code></div>
+              <div class="cred-row"><span>Key</span><code id="b-cos-key" class="secret">—</code></div>
+              <div class="cred-row"><span>URL</span><code id="b-cos-url">—</code></div>
+            </div>
+          </div>
+
+          <div id="b-error-line" class="error-line"></div>
+        </div>
+      </div>
     </div>
     <script src="app.js"></script>
   </body>

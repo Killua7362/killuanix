@@ -29,13 +29,15 @@ _lazy_rm() {
     esac
   fi
 
-  # Imperative legacy path.
+  # Imperative legacy path. The list entry may carry a "<catalog>:" tag,
+  # but the symlink lives under the bare name.
   local pdir; pdir=$(_lazy_project_dir)
+  local bare; bare=$(_lazy_barename "$name")
   local target=""
   case "$type" in
-    skill|skills)     target="$pdir/skills/$name" ;;
-    agent|agents)     target="$pdir/agents/$name.md" ;;
-    command|commands) target="$pdir/commands/$name.md" ;;
+    skill|skills)     target="$pdir/skills/$bare" ;;
+    agent|agents)     target="$pdir/agents/$bare.md" ;;
+    command|commands) target="$pdir/commands/$bare.md" ;;
     plugin|plugins)
       local sjson="$pdir/settings.local.json"
       [ -f "$sjson" ] || die "no settings.local.json in $pdir"

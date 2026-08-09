@@ -1,17 +1,17 @@
 # Terminal Module
 
-Home Manager configuration for terminal emulators (wezterm, ghostty, kitty), shared across all platforms. **WezTerm is the primary terminal + multiplexer under Hyprland** — `Super+Return` launches `wezterm connect unix` (see `../desktop/hyprland/lua/keybinds.lua`) and the Hyprland session sets `TERMINAL=wezterm` (see `../desktop/hyprland/lua/env.lua`). It replaces the old tmux + zellij stack: WezTerm's native mux only works when WezTerm is the terminal, so both the emulator and the multiplexer are now the same process. Ghostty and kitty are kept installed as fallback emulators. `tmux.nix` / `zellij.nix` are retained on disk (imports commented) for revert.
+Home Manager configuration for terminal emulators (ghostty, kitty) + the **Zellij** multiplexer, shared across all platforms. **Zellij is the active multiplexer, now hosted in Kitty** — `Super+Return` launches `kitty` (see `../desktop/hyprland/lua/keybinds.lua`) and the Hyprland session sets `TERMINAL=kitty` (see `../desktop/hyprland/lua/env.lua`). Ghostty is still configured and available (it explicitly unbinds the `Ctrl-<letter>` chords zellij needs — see Ghostty multiplexer pass-through); if zellij chord conflicts surface in kitty, mirror those unbinds in `kitty.nix`. WezTerm (previously the primary terminal + native mux) is **disabled** — `wezterm.nix` retained on disk, import commented in `default.nix`, for revert. `tmux.nix` is also retained (import commented).
 
 ## Files
 
 | File | Description |
 |---|---|
-| `default.nix` | Aggregator module; imports `ghostty.nix`, `kitty.nix`, and `wezterm.nix`. `tmux.nix` / `zellij.nix` imports are commented. |
-| `wezterm.nix` | WezTerm terminal + native multiplexer (primary under Hyprland). Gated to chrollo/killua via the `hostName` specialArg. |
-| `ghostty.nix` | Ghostty terminal emulator configuration (fallback). |
-| `kitty.nix` | Kitty terminal emulator configuration (fallback). |
+| `default.nix` | Aggregator module; imports `ghostty.nix`, `kitty.nix`, and `zellij.nix`. `tmux.nix` / `wezterm.nix` imports are commented. |
+| `ghostty.nix` | Ghostty terminal emulator (primary zellij host under Hyprland). |
+| `kitty.nix` | Kitty terminal emulator (fallback). |
+| `zellij.nix` | Zellij multiplexer (active; `programs.zellij.enable = true`, no host gate). |
+| `wezterm.nix` | WezTerm terminal + native mux (disabled — import commented in `default.nix`; retained for revert). Was gated to chrollo/killua via the `hostName` specialArg. |
 | `tmux.nix` | Tmux config (disabled — import commented in `default.nix`; retained for revert). |
-| `zellij.nix` | Zellij config (disabled — import commented in `default.nix`; retained for revert). |
 
 ## Ghostty
 
@@ -35,11 +35,11 @@ Home Manager configuration for terminal emulators (wezterm, ghostty, kitty), sha
 - **Shell**: zsh (set in `extraConfig`).
 - **Window**: No decorations, full opacity, 32px background blur, 12px padding.
 - **Tab bar**: Powerline style, left-aligned.
-- **Keybindings**: Font size controls (`ctrl+plus`/`ctrl+minus`/`ctrl+0`), new window (`ctrl+shift+n`). Several default bindings are explicitly disabled with `no_op` (`ctrl+t`, `ctrl+n`, `ctrl+tab`, `ctrl+shift+tab`, `ctrl+w`) to avoid conflicts with the multiplexer.
+- **Keybindings**: Font size controls (`ctrl+plus`/`ctrl+minus`/`ctrl+0`). Several default bindings are explicitly disabled with `no_op` (`ctrl+t`, `ctrl+n`, `ctrl+tab`, `ctrl+shift+tab`, `ctrl+w`) to avoid conflicts with the multiplexer. `ctrl+shift+n` / `ctrl+shift+o` are also `no_op` (previously `ctrl+shift+n=new_window`) so zellij receives them as MoveTab left/right binds (see Zellij section).
 
-## WezTerm
+## WezTerm (disabled)
 
-HM `programs.wezterm` with `extraConfig` — a raw Lua string written verbatim to `~/.config/wezterm/wezterm.lua`. Palette values are interpolated from `config.theme.palette` (static, same source as kitty/ghostty). **Colemak neio = left/down/up/right** throughout.
+Import commented in `default.nix`; file retained for revert. Below describes the config as-was. HM `programs.wezterm` with `extraConfig` — a raw Lua string written verbatim to `~/.config/wezterm/wezterm.lua`. Palette values are interpolated from `config.theme.palette` (static, same source as kitty/ghostty). **Colemak neio = left/down/up/right** throughout.
 
 - **Enabled** only on `chrollo` + `killua` (`pkgs.stdenv.isLinux && (hostName == "chrollo" || "killua")`). The `hostName` specialArg is passed only for those two NixOS hosts (flake.nix), so it is `null` on archnix/macnix and the module stays disabled there — archnix already symlinks `~/.config/wezterm` from DotFiles (would collide) and macnix uses the Homebrew wezterm.
 - **Appearance**: JetBrainsMono Nerd Font 12, no window decorations, 12px padding, scrollback 1,000,000. Colors + `tab_bar` colors from the palette. **Fancy tab bar** at top (`use_fancy_tab_bar = true`), always shown, no new-tab button, `window_frame` = bold Nerd Font 11 on `zellij_bg`. A `format-tab-title` handler renders each tab as `<index>:<title>` (title = tab title, else foreground process basename, else pane title, truncated), active tab bold; active/inactive backgrounds come from `colors.tab_bar`.
@@ -54,7 +54,7 @@ Two entry styles, mirroring the combined tmux+zellij muscle memory:
 - **Direct `Ctrl-<letter>` modal modes** (zellij-style): `Ctrl-p` pane, `Ctrl-t` tab, `Ctrl-n` resize, `Ctrl-h`/`Ctrl-m` move, `Ctrl-s` copy mode, `Ctrl-g` lock. Each modal table is entered with `prevent_fallback` so stray keys are swallowed (stay in mode); `Escape`/`Enter`/the same `Ctrl-<letter>` pops back.
 - **`C-a` leader prefix binds** (tmux-style): `h` split right, `r` split down, `c` new tab, `x` close pane, `f` zoom, `d` detach (mux), `s`/`p` workspace launcher, `[` copy mode, `R` reload, `v` scrollback→nvim, `1..9` jump to tab.
 
-Direct Alt actions (no mode): `Alt-neio` seamless nav (see below), `Alt-h` new tab, `Alt-f` zoom, `Alt-w` close pane, `Alt-s`/`Alt-p` workspace fuzzy launcher, `Alt-x` QuickSelect, `Alt-[`/`Alt-]` prev/next workspace, `Alt-Shift-i`/`Alt-Shift-o` move tab, `Ctrl-Tab`/`Ctrl-Shift-Tab` cycle tabs.
+Direct Alt actions (no mode): `Alt-neio` seamless nav (see below), `Alt-h` new tab, `Alt-f` zoom, `Alt-w` close pane, `Alt-s`/`Alt-p` workspace fuzzy launcher, `Alt-x` QuickSelect, `Alt-[`/`Alt-]` prev/next workspace, `Alt-Shift-i`/`Alt-Shift-o` move tab (also `Ctrl-Shift-n`/`Ctrl-Shift-o` — the latter overrides WezTerm's default `SpawnWindow`), `Ctrl-Tab`/`Ctrl-Shift-Tab` cycle tabs. `Ctrl-Tab`/`Ctrl-Shift-Tab` go through a `debounced_tab_cycle()` action-callback that drops re-fires within 90ms — WezTerm treats every OS key-repeat as a fresh press, so a slightly-held chord would otherwise autorepeat and cycle through tabs "like a robot". Window is 90ms because Hyprland's default `repeat_rate` (25/s) spams autorepeat every ~40ms while a deliberate double/triple-tap is ~100ms+ apart — the old 200ms window also ate intentional fast taps.
 
 ### Modal key-tables
 
@@ -146,11 +146,11 @@ Palette-driven via `config.theme.palette` (same source as kitty/ghostty/qutebrow
 - `zj-proj` line 22 calls `zellij action new-tab`; adapt to detect `$TMUX` and call `tmux new-window -c "$sel"` instead.
 - `scripts/tmux-sessionizer.sh` is referenced by the `ts` shell alias but doesn't exist yet.
 
-## Zellij (disabled)
+## Zellij (active)
 
-`zellij.nix` is no longer imported in `default.nix`; the file is kept on disk so the previous configuration can be restored by uncommenting one line. Related stragglers left in place: `palette.zellij_bg` (reused as the tmux status bg), the `zboot()` zsh function (now dormant), and `zj-proj` (currently wired into tmux via `display-popup` but still uses zellij commands internally).
+`zellij.nix` is imported in `default.nix` (`programs.zellij.enable = true`, no host gate). Hosted in Ghostty (`Super+Return`). Related wiring back in use: `palette.zellij_bg`, the `zboot()` zsh function (`shells/zsh.nix:353` — boots the `killuanix`/`bdsi`/`mod` sessions, attaches to `killuanix`), and `zj-proj` (project picker; internal zellij commands now fire again). The `../desktop/hyprland/lua` autolock passthrough and nvim `zellij-nav.nvim` binding match zellij again.
 
-**Plugins** (remote-URL WASM, fetched on load — no effect while zellij is disabled):
+**Plugins** (remote-URL WASM, fetched on load):
 - `autolock` (`fresh2dev/zellij-autolock`) — auto-locks on trigger processes, loaded eagerly via `load_plugins`.
 - `zextract` (`codingfragments/zellij-zextract`, v0.4.0+) — tmux-fingers-style hint picker; grabs paths/URLs/hashes/git refs without the mouse. Bound to `Alt-x` (`shared_except "locked"`) → floating popup. Added as the keyboard-copy answer since zellij has no native tmux-style visual-select-yank (maintainer punts to `EditScrollback` → `$EDITOR`, bound `Ctrl-s u`). `fzf-zellij` was evaluated and skipped — no prebuilt wasm, needs a from-source build, and duplicates `zj-proj`.
 

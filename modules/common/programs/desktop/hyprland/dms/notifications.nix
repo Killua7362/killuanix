@@ -4,7 +4,7 @@
     notificationOverlayEnabled = false;
     notificationPopupShadowEnabled = true;
     notificationPopupPrivacyMode = false;
-    notificationCompactMode = false;
+    notificationCompactMode = true;
     notificationPopupPosition = 0; # 0=Top, etc. (SettingsData.Position enum)
     notificationAnimationSpeed = 1;
     notificationCustomAnimationDuration = 400;

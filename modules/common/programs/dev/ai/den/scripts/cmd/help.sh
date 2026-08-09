@@ -15,24 +15,39 @@ Binding lifecycle:
                              the-nix-way/dev-templates (LANG ⇒ template
                              name; --no-devshell skips; default is to
                              prompt on TTY)
-  init <NAME> [.|--path P]   bind cwd to existing project; runs pull
+  init <NAME> [.|--path P]   bind cwd to existing project (no pull — then run
+                             `den bootstrap` for clones + `den pull`)
   clean [--yes]              remove this binding's symlinks; keep host-only files
   list                       projects in Notes/projects/
                              (rename a project dir to .<name> to archive it —
                              hidden from den entirely; rename back to restore)
 
 Files in the binding:
-  ls                         list files (symlinked / host-only / untracked)
+  ls [PATH]                  list files (symlinked / host-only). PATH (or .)
+                             scopes to files at/under it, relative to root
   status [--diff] [--json]   drift report (5 buckets)
   add <path>... [--force] [--as-dir] [--hardlink|--symlink|--kind=KIND]
                              (files inside a git clone are auto-guarded via
                              .git/info/exclude so they can't leak to its remote)
   ignore <path>...           mark host-only
+  hide <path>...             git-exclude from the containing repo WITHOUT
+                             tracking in the vault (recorded in .denhidden,
+                             reasserted by den pull on every host)
+  unhide <path>...           reverse den hide
   rm <path>... [--yes] [-f]  delete from project (refuses unless the target is
                              committed+clean in Notes; -f overrides + skips prompt)
   re-add <path>...           ingest a real file replacing a project link
   restore <path>...          undo `den add` (move file back, keep content here)
   pull [--dry-run] [--ignore-failures] [--resume]
+                             materialize root/non-clone files; a file inside a
+                             registered clone is only wired when that clone is
+                             present with the matching remote (else untouched)
+
+Clone registry (which git repos this project spans):
+  clone                      list clone-registry subcommands
+  clone sync [--dry]         scan for git repos (incl. nested) → upsert clones.json
+  clone drift                report clones.json vs what is cloned on disk
+  bootstrap                  print git clone / mkdir commands for clones.json
 
 Shelf (git-stash-like; per project):
   shelf add <path>...|. [--name N]  shelve (remove) matched den files as one row

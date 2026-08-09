@@ -36,19 +36,20 @@ _lazy_ls() {
   # Specific catalog + type filter.
   if [ -n "$catalog" ] && [ -n "$type_filter" ]; then
     [ -f "$LAZY_DIR/$catalog/catalog.json" ] || die "no such catalog: $catalog"
-    jq -r --arg t "$type_filter" '(.[$t] // []) | .[] | .name' "$LAZY_DIR/$catalog/catalog.json"
+    _lazy_catalog_json "$catalog" | jq -r --arg t "$type_filter" '(.[$t] // []) | .[] | .name'
     return 0
   fi
 
   # Whole catalog (all types).
   if [ -n "$catalog" ]; then
     [ -f "$LAZY_DIR/$catalog/catalog.json" ] || die "no such catalog: $catalog"
+    local cj; cj=$(_lazy_catalog_json "$catalog")
     local t
     for t in skills agents commands plugins; do
-      local n; n=$(_lazy_count "$catalog" "$t")
+      local n; n=$(printf '%s' "$cj" | jq -r --arg t "$t" '(.[$t] // []) | length')
       [ "$n" -gt 0 ] || continue
       echo "=== $catalog/$t ($n) ==="
-      jq -r --arg t "$t" '(.[$t] // []) | .[] | "  " + .name' "$LAZY_DIR/$catalog/catalog.json"
+      printf '%s' "$cj" | jq -r --arg t "$t" '(.[$t] // []) | .[] | "  " + .name'
     done
     return 0
   fi
@@ -57,9 +58,8 @@ _lazy_ls() {
   if [ -n "$type_filter" ]; then
     local c
     for c in $(_lazy_catalogs); do
-      jq -r --arg t "$type_filter" --arg c "$c" \
-        '(.[$t] // []) | .[] | "\($c)/" + .name' \
-        "$LAZY_DIR/$c/catalog.json"
+      _lazy_catalog_json "$c" | jq -r --arg t "$type_filter" --arg c "$c" \
+        '(.[$t] // []) | .[] | "\($c)/" + .name'
     done | sort
   fi
 }

@@ -4,7 +4,8 @@
 # or an empty string — that resource type then surfaces as an empty array.
 #
 # Inputs:
-#   NAME           — catalog name (e.g. ruflo, wshobson, anthropics-skills)
+#   NAME           — accepted for back-compat but NOT emitted; a catalog's
+#                    identity is its directory name (no root `name` field)
 #   SKILLS_DIR     — optional; store path containing one subdir per skill
 #   AGENTS_DIR     — optional; store path containing *.md agent files
 #   COMMANDS_DIR   — optional; store path containing *.md command files
@@ -41,12 +42,10 @@ agents_arr=$(emit_files "${AGENTS_DIR:-}" | jq -s 'sort_by(.name)')
 commands_arr=$(emit_files "${COMMANDS_DIR:-}" | jq -s 'sort_by(.name)')
 
 jq -n \
-  --arg name "$NAME" \
   --argjson skills "$skills_arr" \
   --argjson agents "$agents_arr" \
   --argjson commands "$commands_arr" \
   '{
-    name: $name,
     managed: true,
     skills: $skills,
     agents: $agents,

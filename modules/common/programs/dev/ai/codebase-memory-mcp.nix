@@ -23,7 +23,12 @@
   cbmWrapper = pkgs.writeShellApplication {
     name = "mcp-codebase-memory-mcp";
     text = ''
-      exec "$HOME/.local/bin/codebase-memory-mcp" --ui=true "$@"
+      # Persist server stderr (panics/errors) — Claude Code discards the MCP
+      # subprocess's stderr, so silent crashes leave no trace. Tee to a log while
+      # still forwarding to fd 2 so Claude's transport sees it unchanged.
+      mkdir -p "$HOME/.cache/codebase-memory-mcp"
+      exec "$HOME/.local/bin/codebase-memory-mcp" --ui=true "$@" \
+        2> >(tee -a "$HOME/.cache/codebase-memory-mcp/server.log" >&2)
     '';
   };
 in {

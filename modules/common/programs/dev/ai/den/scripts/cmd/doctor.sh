@@ -68,6 +68,24 @@ den_cmd_doctor() {
       printf '  [info] %d registered clone(s) not present — den pull prints git clone commands\n' "$mc"
     fi
   fi
+  # G3: hide reconcile — each present repo's managed info/exclude block must
+  # match what `.denhidden` (source of truth) currently implies.
+  local hide_stale=0 plan repo top gd want have
+  plan="$("$DEN_HELPER_BIN" hidden-plan \
+    --denhidden "$(_hidden_path "$pd")" --clones "$(_clones_path "$pd")" 2>/dev/null || echo '{}')"
+  while IFS= read -r repo; do
+    [ -n "$repo" ] || continue
+    if [ "$repo" = "." ]; then top="$root"; else top="$root/$repo"; fi
+    [ -e "$top/.git" ] || continue
+    gd="$(_guard_git_dir "$top")" || continue
+    want="$(_hidden_expected_block "$(_hidden_lines_for_repo "$plan" "$repo")")"
+    have="$(sed -n '/^# BEGIN den-hidden/,/^# END den-hidden/p' "$gd/info/exclude" 2>/dev/null || true)"
+    [ "$want" = "$have" ] || hide_stale=$((hide_stale+1))
+  done < <(printf '.\n'; _clones_read "$pd" | jq -r '.clones[]?.path')
+  if [ "$hide_stale" -gt 0 ]; then
+    printf '  [HIDE] %d repo(s) whose info/exclude is out of sync with .denhidden (run: den pull)\n' "$hide_stale"
+    exit_code=$((exit_code + hide_stale))
+  fi
   # I3: anchor missing — lax
   # (placeholder: check each patch has a Den-Anchor trailer)
   local missing_anchor=0

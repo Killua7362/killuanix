@@ -13,7 +13,7 @@ cmd_lazy() {
     new|scaffold)       source "$CLAUDE_KIT_LIB_DIR/cmd/lazy/new.sh";      _lazy_new "$@" ;;
     refresh|reload)     source "$CLAUDE_KIT_LIB_DIR/cmd/lazy/refresh.sh";  _lazy_refresh "$@" ;;
     bundle|bundles)     source "$CLAUDE_KIT_LIB_DIR/cmd/lazy/bundle.sh";   _lazy_bundle "$@" ;;
-    doctor)             source "$CLAUDE_KIT_LIB_DIR/cmd/lazy/doctor.sh";   _lazy_doctor ;;
+    doctor)             source "$CLAUDE_KIT_LIB_DIR/cmd/lazy/doctor.sh";   _lazy_doctor "$@" ;;
     help|-h|--help|"")  _lazy_help ;;
     *) die "lazy: unknown verb '$verb' (try: ls show add rm project new refresh bundle doctor)" ;;
   esac

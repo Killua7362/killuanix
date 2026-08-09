@@ -49,8 +49,9 @@ _do_add() {
     esac
     local rel="${abs#"$root"/}"
 
-    # ignore-check
-    if [ "$force" -ne 1 ] && grep -qF -- "$rel" "$pd/.denignore" 2>/dev/null; then
+    # ignore-check — full gitignore semantics via the helper (not a substring
+    # grep), so `den add` honours `.denignore` the same way status does.
+    if [ "$force" -ne 1 ] && "$DEN_HELPER_BIN" ignore-match --project-dir "$pd" --rel "$rel" 2>/dev/null; then
       _warn "$rel matches .denignore; skipping (use --force to override)"
       continue
     fi

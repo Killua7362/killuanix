@@ -50,6 +50,14 @@ in {
         AZURE_ORACLE_HOST=${config.sops.placeholder."azure/oracle_host"}
         AZURE_ORACLE_PORT=${config.sops.placeholder."azure/oracle_port"}
         AZURE_ORACLE_USERNAME=${config.sops.placeholder."azure/oracle_username"}
+        AZURE_ORACLE_PASSWORD=${config.sops.placeholder."azure/oracle_password"}
+        AZURE_ORACLE_VNET_URL=${config.sops.placeholder."azure/oracle_vnet_url"}
+        AZURE_PG_DB_USER=${config.sops.placeholder."azure/pg_db_user"}
+        AZURE_PG_DB_PASS=${config.sops.placeholder."azure/pg_db_pass"}
+        AZURE_PG_VNET_URL=${config.sops.placeholder."azure/pg_vnet_url"}
+        AZURE_COSMOS_AUTH_KEY=${config.sops.placeholder."azure/cosmos_auth_key"}
+        AZURE_COSMOS_VNET_URL=${config.sops.placeholder."azure/cosmos_vnet_url"}
+        AZURE_DA_SSH_PASSWORD=${config.sops.placeholder."azure/da_ssh_password"}
       '';
       path = "${config.home.homeDirectory}/.config/azure-bastion.env";
     };

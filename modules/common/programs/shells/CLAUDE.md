@@ -50,9 +50,11 @@ Zsh-only:
 
 ## Fish Details
 
+- **Disabled** (`programs.fish.enable = false`): zsh is the login shell on all hosts, so fish is not built. The config below is retained for reference / re-enable. With fish off, the HM fish module no longer forces `programs.man.generateCaches`, so the explicit `false` is a no-op guard (matters only if fish is re-enabled).
 - **Plugins**: All commented out (z, fifc, fzf-fish, nvm).
 - **Shell init**: Runs `starship init fish` and `zoxide init fish` via `shellInit`. Sets fish-specific color variables and disables greeting.
 - **Environment variables**: Set via `set -gx` / `set -x` in `shellInit` rather than HM's `sessionVariables`.
+- **`programs.man.generateCaches = false`**: overrides the `mkDefault true` the HM fish module pulls in for `apropos`. That default rebuilds the mandb whatis index (the slow `man-cache>` derivation, visible during `nix_switch`) whenever man paths change. We don't use `apropos`/`man -k`; fish tab-completions come from `generated_completions` and are unaffected by disabling it.
 
 ## Starship Prompt
 

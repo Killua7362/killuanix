@@ -4,7 +4,7 @@
 CLAUDE_DIR="${HOME}/.claude"
 KIT_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/claude-kit"
 SOURCES_DIR="${KIT_CACHE}/sources"
-LAZY_DIR="${HOME}/killuanix/Notes/claude/lazy"
+LAZY_DIR="${CLAUDE_KIT_LAZY_DIR:-${HOME}/killuanix/Notes/claude/lazy}"
 
 # shellcheck source=lib/common.sh
 source "$CLAUDE_KIT_LIB_DIR/lib/common.sh"
@@ -46,10 +46,14 @@ Per-project lazy catalog (Notes/claude/lazy/)
   lazy rm   <type> <name>             Remove from project scope.
   lazy project [--global]             List project-scope items (--global also shows catalog).
   lazy new <name>                     Scaffold a new sub-catalog dir.
-  lazy refresh <name>                 Regenerate <name>/catalog.json from contents.
+  lazy refresh [--dry] [<name>]       Regenerate catalog.json from contents.
+                                      No <name> = every editable catalog;
+                                      --dry previews the diff without writing.
   lazy bundle ls|show|add|rm|status   Apply/remove named groups in one shot
                                       (e.g. `lazy bundle add ruflo`).
-  lazy doctor                         Validate lazy.json and all catalog.json files.
+  lazy doctor [--strict] [--quiet]    Validate lazy.json + every catalog.json
+                                      (JSON, shape, dead paths, inherit, dups).
+                                      Non-zero exit on error (CI-friendly).
 
 Run a slash command headlessly
   run <command> [args] Execute `claude --print "/<command> args"` in cwd.

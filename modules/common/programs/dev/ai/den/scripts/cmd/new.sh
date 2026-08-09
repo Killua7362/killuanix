@@ -40,6 +40,9 @@ den_cmd_new() {
     [ -f "$from_pd/.denignore" ] && cp "$from_pd/.denignore" "$pd/.denignore"
     [ -f "$from_pd/manifest.toml" ] && cp "$from_pd/manifest.toml" "$pd/manifest.toml"
     [ -d "$from_pd/hooks" ] && rsync -a "$from_pd/hooks/" "$pd/hooks/" 2>/dev/null || true
+    # carry the host-bootstrap registries (which repos to clone + what to hide)
+    [ -f "$from_pd/clones.json" ] && cp "$from_pd/clones.json" "$pd/clones.json"
+    [ -f "$from_pd/.denhidden" ] && cp "$from_pd/.denhidden" "$pd/.denhidden"
   fi
 
   # Resolve dev-shell choice: explicit flag → that lang; --no-devshell → skip;

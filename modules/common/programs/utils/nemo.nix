@@ -58,9 +58,9 @@
         active = true;
       };
 
-      # Terminal integration — open terminal here uses ghostty
+      # Terminal integration — open terminal here uses kitty
       "org/cinnamon/desktop/applications/terminal" = {
-        exec = "ghostty";
+        exec = "kitty";
         exec-arg = "";
       };
 

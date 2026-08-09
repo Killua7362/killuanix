@@ -52,21 +52,22 @@ _do_pull() {
   # Build new links for missing-link entries.
   local errors=0
   local applied=0
-  local missing_clones=0
+  local skipped_clones=0
   while IFS= read -r rel; do
     [ -z "$rel" ] && continue
     local src="$pd/files/$rel"
     local target="$root/$rel"
-    # Clone gate: if this file belongs inside a registered clone that isn't
-    # present yet, skip it (don't create the clone's dirs) and report the
-    # `git clone` to run. Root-scaffolding files (no clone) fall through.
+    # Clone gate: a file inside a registered clone is materialized ONLY when
+    # that clone is properly present — path exists, is a git work tree, and its
+    # origin matches clones.json (empty recorded remote ⇒ any). Otherwise the
+    # path is left completely untouched (missing / empty / non-repo / wrong
+    # remote) so an un-cloned or mismatched dir is never disturbed. No clone
+    # commands are printed here — that's `den bootstrap`'s job. Root/non-clone
+    # files (no owning clone) always fall through.
     local cp
     cp="$(_clone_path_for_rel "$pd" "$rel")"
-    if [ -n "$cp" ] && [ ! -e "$root/$cp/.git" ]; then
-      local rmt; rmt="$(_clone_remote_for_path "$pd" "$cp")"
-      _warn "clone '$cp' not present — clone it, then re-run den pull:"
-      printf '    git clone %s %s\n' "${rmt:-<remote-unknown>}" "$root/$cp" >&2
-      missing_clones=$((missing_clones+1))
+    if [ -n "$cp" ] && ! _clone_present_ok "$root" "$pd" "$cp"; then
+      skipped_clones=$((skipped_clones+1))
       continue
     fi
     mkdir -p "$(dirname "$target")"
@@ -93,12 +94,19 @@ _do_pull() {
   local sym_arr="[]"
   for rel in $(echo "$data" | jq -r '.["missing-link"][]'; echo "$data" | jq -r '.ok[]?'); do
     [ -z "$rel" ] && continue
+    # Skip ledger/guard for rels inside a clone that isn't properly present —
+    # never guard against a wrong-remote repo occupying the path.
+    local cp
+    cp="$(_clone_path_for_rel "$pd" "$rel")"
+    if [ -n "$cp" ] && ! _clone_present_ok "$root" "$pd" "$cp"; then
+      continue
+    fi
     local kind
     kind="$(echo "$kinds" | jq -r --arg r "$rel" '.[$r] // "symlink"')"
     sym_arr="$(echo "$sym_arr" | jq --arg t "$rel" --arg s "files/$rel" --arg k "$kind" \
       '. + [{src: $s, target: $t, mode: "0644", kind: $k}]')"
     # Reassert the leak guard for every present link (idempotent; no-op when
-    # the site isn't inside a git tree, e.g. a clone still missing).
+    # the site isn't inside a git tree).
     _guard_after_link "$root" "$pd" "$rel"
   done
   local mh
@@ -109,6 +117,10 @@ _do_pull() {
 
   local new_drift
   new_drift="$("$DEN_HELPER_BIN" status --cwd "$root" --project-dir "$pd" | jq -r .drift_count)"
+  # Reassert `den hide` git-excludes (paths kept out of foreign repos but not
+  # tracked in the vault) for every hidden rel whose repo is present here.
+  _hidden_reassert_all "$root" "$pd"
+
   _record_lastop "$root" pull "$errors" "$new_drift"
   _record_activity "$proj" pull "$errors" "$new_drift"
   _bindings_add "$proj" "$root"
@@ -121,7 +133,8 @@ _do_pull() {
     _err 1 "pull failed ($errors error(s)); $applied link(s) applied"
   fi
   echo "applied $applied link(s); drift after = $new_drift"
-  if [ "$missing_clones" -gt 0 ]; then
-    echo "note: $missing_clones clone(s) not present — clone them (commands above), then re-run den pull"
+  if [ "$skipped_clones" -gt 0 ]; then
+    echo "note: $skipped_clones file(s) left untouched — their clone isn't present/matching."
+    echo "      run 'den bootstrap' for clone commands, then re-run 'den pull'."
   fi
 }

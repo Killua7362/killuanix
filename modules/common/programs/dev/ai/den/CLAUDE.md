@@ -12,7 +12,7 @@ Originally a single 2944-line `den.nix` with a `writeShellApplication` body and 
 | `scripts/den.sh` | Bash entrypoint. Sets globals (`DEN_NOTES`, `DEN_PROJECTS`, `DEN_STATE`, `DEN_HOST`, `DEN_BINDINGS`, etc.), sources every `lib/*.sh` and `cmd/*.sh`, then dispatches `$1` to `den_cmd_<name>`. Falls back to `den-<name>` on PATH for git-style external subcommands. |
 | `scripts/lib/common.sh` | Error template (`_err`/`_die`/`_warn`/`_info`), tty + yes/no helpers, `_find_binding_root`, `_resolve_target_path`, `_with_lock` (flock 9), `_maybe_zoxide_add`. |
 | `scripts/lib/meta.sh` | `.den/` state-dir helpers (`_den_dir`/`_meta_path`/`_reflog_path`/`_lock_path`/`_meta_file`/`_den_is_bound_dir`/`_den_migrate_if_legacy`), meta I/O (`_meta_init`/`_meta_get`/`_meta_ensure_keys`/`_meta_update`), `_project_dir_for`, binding-context resolvers, activity-log + `lastop` + reflog writers, `_scaffold_project` (presets `bare`, `minimal`, `claude-full`). **`.den/` layout**: all host-side state lives in a single git-style dir at the bound cwd — `.den/meta.json` (marker + ledger), `.den/meta.json.lock`, `.den/reflog.jsonl`, `.den/generations/`. Legacy flat `.den-meta.json`/`.den-generations/` layouts are **auto-migrated** into `.den/` on first bind (`_den_migrate_if_legacy`, idempotent, called from both bind walkers). **Binding context**: `_resolve_bind_ctx` walks cwd upward for the nearest `.den/` binding (or a legacy marker, migrated) and sets globals `BOUND_MODE` (always `plain` — single-mode now), `BOUND_ROOT`/`BOUND_PROJECT`/`BOUND_PD`. `_bind_ctx` is the hard wrapper (aborts exit 64 if unbound — sets globals *in the current shell* so the exit actually propagates, unlike the retired `out="$(_require_bound)"` idiom whose subshell exit was swallowed → empty root treated as `/`); `_try_bind_ctx` is the soft wrapper (returns 1, no abort — used by `activate`/`doctor`/`gc`). Every command reads `$BOUND_ROOT`/`$BOUND_PROJECT` after one of these instead of re-parsing two stdout lines. |
-| `scripts/lib/guard.sh` | **Leak guard + clone registry** (see the section below). Git-tree detection (`_guard_repo_top`/`_guard_git_dir`); `<project>/clones.json` I/O (`_clones_{path,read,record}`, `_clone_path_for_rel`, `_clone_remote_for_path`); guard ops (`_guard_after_link` — exclude the site in its clone + record the clone, no-op off-repo; `_guard_unlink` — drop the exclude entry; `_guard_is_guarded` — leak check for `doctor`). |
+| `scripts/lib/guard.sh` | **Leak guard + clone registry + hide registry** (see the sections below). Git-tree detection (`_guard_repo_top`/`_guard_git_dir`; `_guard_site_repo_top` = leaf-tolerant variant for `hide`); `<project>/clones.json` I/O (`_clones_{path,read,record}`, `_clone_path_for_rel`, `_clone_remote_for_path`; `_clone_present_ok` = pull gate: path present + git work tree + origin matches; `_clones_scan_repos`/`_clones_scan_json` = find git trees under root for `den clone sync`/`drift`); guard ops (`_guard_after_link` — exclude the site in its clone + record the clone, no-op off-repo; `_guard_unlink` — drop the exclude entry; `_guard_is_guarded` — leak check for `doctor`). **Hide registry** (`den hide`, tracked-in-vault-free git-exclude, `.denhidden` = source of truth): `_rel_under_root` (cwd-relative arg → path-from-root), `<project>/.denhidden` I/O (`_hidden_{path,list,record,remove}` — gitignore-syntax patterns), `_hidden_record_clone_for` (record the containing clone for host-2), and the **managed-block reconcile** (`_hidden_reassert_all` → `den-helper hidden-plan` → per-repo `_hidden_write_block`/`_hidden_expected_block`/`_hidden_lines_for_repo`, rewriting a `# BEGIN/END den-hidden` block in each present repo's `info/exclude`). |
 | `scripts/lib/shelf.sh` | **Per-project shelf** (git-stash-like; see the section below). `_shelf_dir`/`_shelf_rows`/`_shelf_row_dir_for_id`; `_shelf_resolve_targets` (path/dir/`.` → den-managed rels from the ledger); `_shelf_add` (destructive remove into a row), `_shelf_materialize` + `_shelf_apply` (copy=apply / move=pop, conflict-aware), `_shelf_drop`/`_shelf_clear`/`_shelf_list`. |
 | `scripts/lib/manifest.sh` | `manifest.toml` helpers — `_load_manifest_kinds` (returns JSON `{rel: kind}`), `_kind_for_rel`, `_set_manifest_kind` (insert/update/remove an entry; setting kind="symlink" deletes the override since symlink is the default), `_link_for_kind` (creates symlink or hardlink, errors on cross-fs hardlink). |
 | `scripts/lib/bindings.sh` | Per-host bindings registry (`$DEN_BINDINGS`) — `_bindings_{init,add,remove,list_for,owner,prune}`. Powers `den cd` / `den which`. |
@@ -20,19 +20,24 @@ Originally a single 2944-line `den.nix` with a `writeShellApplication` body and 
 | `scripts/lib/hooks.sh` | `_run_hook` — dispatches lifecycle events (pre/post-pull/clean/add/sync/stash/apply) to shared (Notes-side) and host-overlay hooks; host hooks must be SHA-trusted via `den hooks trust <event>`. |
 | `scripts/lib/generations.sh` | `_gen_dir`, `_write_generation` — per-cwd snapshots under `<root>/.den/generations/`. |
 | `scripts/lib/devshell.sh` | `_devshell_{list,pick_interactive,resolve,apply,post_pull}` — bootstrap a `the-nix-way/dev-templates` flake into a new project's `files/` and wire it for `nix-direnv`. Used only by `cmd/new.sh`. Reads `$DEN_DEV_TEMPLATES_DIR` (set by the wrapper from the `dev-templates` flake input). Also drops the `claude-kit.nix` + augmented `.envrc` sibling files from `$DEN_CLAUDEKIT_SHIM` so `claude-kit project sync` activates on the next direnv reload. |
-| `templates/claude-kit.nix` | Project-scoped Claude resources schema (pure attrset: `envVars`, `skills`, `agents`, `commands`, `plugins`, `mcp`). Copied next to the dev-template `flake.nix` by `_devshell_apply`. Consumed by `claude-kit project sync` / `claude-kit project envrc`. |
+| `templates/claude-kit.nix` | Project-scoped Claude resources schema (pure attrset: `envVars`, `skills`, `agents`, `commands`, `plugins`, `mcp`, `inheritCatalogs`, plus the exclude/permission/hook/`restrictToDirs` hardening attrs). Copied next to the dev-template `flake.nix` by `_devshell_apply`. Consumed by `claude-kit project sync` / `claude-kit project envrc`. `inheritCatalogs` pulls whole lazy catalogs into the project (include/exclude granular control; `inherit` is a nix keyword so the attr is spelled out). |
 | `templates/envrc` | `.envrc` that wires `use flake` together with `eval "$(claude-kit project envrc)"` and `claude-kit project sync --quiet`. Replaces the bare one-line `use flake` previously written by `_devshell_apply`. |
-| `scripts/cmd/<name>.sh` | One file per subcommand. Each defines `den_cmd_<name>` (and any private `_do_<name>` helpers). Exact subcommand set (matches the dispatcher in `den.sh`): `help`, `version` + `explain` (in `help.sh`), `list`, `ls`, `status`, `new`, `init`, `clean`, `pull`, `add`, `ignore`, `rm`, `re-add`, `restore`, `sync`, `shelf`, `stash`, `apply`, `patches`, `which`, `cd`, `exec`, `activate`, `prompt`, `log`, `last-applied`, `reflog`, `generations`, `rollback`, `diff`, `gc`, `cas`, `config`, `hooks`, `doctor`, `completion`. |
+| `scripts/cmd/<name>.sh` | One file per subcommand. Each defines `den_cmd_<name>` (and any private `_do_<name>` helpers). Exact subcommand set (matches the dispatcher in `den.sh`): `help`, `version` + `explain` (in `help.sh`), `list`, `ls`, `status`, `new`, `init`, `clone`, `bootstrap`, `clean`, `pull`, `add`, `ignore`, `hide`, `unhide`, `rm`, `re-add`, `restore`, `sync`, `shelf`, `stash`, `apply`, `patches`, `which`, `cd`, `exec`, `activate`, `prompt`, `log`, `last-applied`, `reflog`, `generations`, `rollback`, `diff`, `gc`, `cas`, `config`, `hooks`, `doctor`, `completion`. |
+| `scripts/cmd/init.sh` | `den init <NAME>` — binds cwd to an existing vault project and **stops** (no `pull`). Prints next-steps (`den bootstrap` + `den pull` when clones are registered, else just `den pull`). Materialization is deliberately separate so a fresh host can clone repos between bind and pull. |
+| `scripts/cmd/clone.sh` | `den clone <verb>` dispatcher for the clone registry (`clones.json`). Bare/`help` → subcommand list; `sync [--dry]` → scan the bound tree for git repos (incl. nested) via `_clones_scan_json` + `den-helper clone-plan`, upsert new `{path,remote}` (unique paths; same remote at a new path appends), report conflicts (path present with a different remote) + no-remote entries in bulk (exit 1, partial apply OK); `drift` → report `clones.json` vs disk (untracked repos / missing clones / remote-drift / no-remote), non-mutating. |
+| `scripts/cmd/bootstrap.sh` | `den bootstrap` — read-only **reconcile-to-actions**: compares cwd's structure against `clones.json` + the file ledger and prints ONLY the differences — `git clone <remote> <path>` (missing/empty path + remote), `mkdir -p <path>` (remote-less entry), warnings for occupied/mismatched paths — plus a `den pull` hint **only when there is drift pull can actually fix** (`_clone_present_ok`-gated missing-link count). Clean → "nothing to do". Never runs anything. Works both for a scratch checkout and for a mid-life drift / a new `clones.json` entry synced from another host. |
 | `scripts/cmd/shelf.sh` | `den shelf <verb>` dispatcher (`add`/`list`/`apply`/`pop`/`drop`/`clear`; bare `den shelf` → `list`, so nothing is shelved by accident). `add` prompts for a non-blank name on a TTY (or `--name`); arg parsing + name prompt live here, mechanics in `lib/shelf.sh`. |
-| `helper/main.py` | argparse dispatcher for `den-helper`. Subcommands: `walk`, `manifest-hash`, `status`, `render-status`, `append-jsonl`, `read-jsonl`, `parse-toml`, `write-toml`. |
+| `helper/main.py` | argparse dispatcher for `den-helper`. Subcommands: `walk`, `manifest-hash`, `status`, `render-status`, `append-jsonl`, `read-jsonl`, `parse-toml`, `write-toml`, `hidden-plan`, `ignore-match`, `clone-plan`. |
 | `helper/lib/toml_io.py` | Minimal flat-table TOML serializer + `tomllib`/`tomli` re-export. |
-| `helper/lib/ignore.py` | `.denignore` parser + gitignore-style matcher. |
+| `helper/lib/ignore.py` | `.denignore` → compiled `pathspec` **gitwildmatch** spec (`load_ignore_spec`). Full gitignore semantics (`**`, `!` negation, `/`-anchoring, `*` not crossing `/`, `[...]`, trailing-`/` dir match). Backed by the `pathspec` lib wired into `den-helper`'s python env in `default.nix`. |
 | `helper/lib/manifest.py` | Sorted recursive `_walk_files` and `_sha256_file`. |
 | `helper/cmd/walk.py` | `walk` — list files under `--root`. |
 | `helper/cmd/manifest_hash.py` | `manifest-hash` — sha256 over (path, content-sha) pairs of `<root>/files/`. |
-| `helper/cmd/status.py` | `status` (5-bucket drift compute) + `render-status` (pretty-print, exit 1 on drift). |
+| `helper/cmd/status.py` | `status` (5-bucket drift compute; `.denignore` via `load_ignore_spec`) + `render-status` (pretty-print, exit 1 on drift). |
 | `helper/cmd/jsonl.py` | `append-jsonl` (auto-stamps `ts`) + `read-jsonl` (with `--tail`). |
 | `helper/cmd/toml.py` | `parse-toml` → JSON; `write-toml` ← JSON on stdin. |
+| `helper/cmd/hidden.py` | `hidden-plan` — maps each `.denhidden` gitignore pattern to the repo it applies to (root repo `.` or a registered clone path) and re-anchors it into that repo's frame, emitting `{repo: [lines]}` for the Bash managed-block writer. `ignore-match` — exit 0/1 on whether `<rel>` matches `.denignore` (used by `den add`'s ignore-check). |
+| `helper/cmd/clones.py` | `clone-plan` — reconciles a disk scan of git repos (JSON `[{path,remote}]` on stdin) against `clones.json`, emitting `{add, conflicts, noRemote, unchanged, missing, untracked}` for `den clone sync`/`drift`. Enforces the invariant: unique paths, remotes may repeat. |
 
 ## Env-var contract
 
@@ -97,12 +102,15 @@ This is what a fresh host needs to know which repos to `git clone`.
 - `den add` (`_add_one`) — after the initial link. Prints `+ <rel> (guarded)` when the
   site is inside a repo.
 - `den pull` (`_do_pull`) — reasserts the guard for every present link on each pull, and
-  **gates materialization**: `_clone_path_for_rel` maps each missing-link rel to its
-  registered clone; if that clone isn't present (`$root/$path/.git` absent) the file is
-  skipped and the exact `git clone <remote> <root>/<path>` is printed. This is the host-2
-  bootstrap — pull materializes the root/non-clone files, tells you which repos to clone,
-  and on the next pull (after cloning) wires + guards the in-clone files. Missing clones
-  are a note, not a pull failure.
+  **gates materialization** via `_clone_present_ok`: a missing-link rel owned by a
+  registered clone is wired **only** when that clone is properly present — the path exists,
+  is a git work tree, and its origin matches `clones.json` (empty recorded remote ⇒ any).
+  Otherwise the path is left **completely untouched** (missing / empty / non-repo / wrong
+  remote) — no dirs created, no guard written, and (deliberately) **no `git clone` command
+  printed**; that moved to `den bootstrap`. Root/non-clone files always materialize. So a
+  host-2 setup is: `den init` → `den pull` (root files) → `den bootstrap` (clone commands)
+  → clone what you need → `den pull` again (wires just the now-present clones). You need not
+  clone everything at once; each pull only touches clones that are present + matching.
 - `den re-add` (`_do_re_add`) — after re-ingesting an edited file.
 
 `den rm` (`_do_rm`) calls `_guard_unlink` to drop the site's `info/exclude` entry.
@@ -119,8 +127,103 @@ real file and would be committed to the foreign remote, so prefer the default sy
 in-clone files.)
 
 Two-host flow: edit → obsidian-git commits the vault (carrying `files/` + `clones.json`) →
-on host 2, pull the vault, `den init <name>` the working root, `git clone` the repos den
-reports, `den pull` to wire + guard everything.
+on host 2, pull the vault, `den init <name>` the working root (**bind only, no pull**),
+`den pull` (root/non-clone files), `den bootstrap` (prints the `git clone`/`mkdir`
+commands), clone what you want, `den pull` again to wire + guard the now-present clones.
+
+### Clone registry commands (`den clone`, `den bootstrap`)
+
+`clones.json` is maintained declaratively; **removal is always manual** (edit the file). The
+invariant is enforced everywhere: **paths are unique, remotes may repeat** (the same remote
+cloned to two paths is fine; the same path twice is not).
+
+- **`den clone sync [--dry]`** (`cmd/clone.sh` → `den-helper clone-plan`) — scan the bound
+  tree for every git work tree (incl. nested, via `_clones_scan_json`) and **upsert**: a
+  repo whose path is new is appended (even if its remote already exists elsewhere); a path
+  already registered with the **same** remote is a no-op; a path registered with a
+  **different** remote is a **conflict** (reported, never auto-changed — fix by editing the
+  repo's remote or `clones.json`); a present repo with **no origin**, or a `clones.json`
+  entry that **lacks a remote** whose path is present, is a **no-remote** error. Conflicts +
+  no-remote are shown in bulk and exit non-zero; the non-conflicting adds still apply
+  (partial sync). `--dry` reports the same plan without writing.
+- **`den clone drift`** — non-mutating report of `clones.json` vs disk: **untracked** (repo
+  on disk, not registered → `den clone sync`), **missing** (registered, not cloned here →
+  `den bootstrap`), **remote-drift**, **no-remote**.
+- **`den bootstrap`** (`cmd/bootstrap.sh`) — read-only, **reconcile-to-actions** (not just a
+  scratch-setup command — run it any time cwd drifts from `clones.json`, e.g. after another
+  host adds a clone). Prints **only the actionable differences**: `git clone <remote> <path>`
+  when the path is **missing or an empty dir** and has a remote; `mkdir -p <path>` when the
+  entry has **no remote**; warnings (stderr, left untouched) for a path that is **non-empty
+  with a different origin** or **non-empty and not a git repo**. A `den pull` line is printed
+  **only** when it would do something — after any clone/mkdir, or when there is
+  **pullable drift** (missing-link files whose owning clone is already present + matching, or
+  root/non-clone files). If nothing differs it prints `nothing to do — cwd matches this
+  project.`. Skips `.` (the binding root is already present).
+
+## Hide (`den hide`) — git-exclude a path without tracking it
+
+`den add` solves "hide *and* version-control this file". `den hide` solves the
+other half: **hide a path from a foreign repo's `git status` without moving it
+into the vault** — for locally-generated artifacts (a tool's `.claude/` dir,
+a build cache, an IDE folder) you never want committed to the corporate remote
+*and* never want pushed into your Notes vault either.
+
+**`.denhidden` is the source of truth** — a gitignore-syntax file in the project
+dir (Notes-side → travels), patterns interpreted **relative to the binding
+root**. den never mutates `info/exclude` ad-hoc; it **reconciles** each repo's
+`info/exclude` to match `.denhidden` on every `den pull` (and after
+`hide`/`unhide`). Mechanism (`lib/guard.sh` + `helper/cmd/hidden.py`):
+
+- **`den hide <path|pattern>...`** (`cmd/hide.sh` → `_do_hide`) — resolves each
+  arg **cwd-relative** via `_rel_under_root` (so `den hide .claude` from a subdir
+  targets *that* subdir's `.claude`), appends it to `.denhidden` as a
+  **root-anchored pattern** (`/legacy/bdsi/.claude` — so only that one location
+  is excluded, and a nested `.claude` never collides with a root-level one),
+  records the containing clone (`_hidden_record_clone_for`) for host-2, then runs
+  the reconcile. A quoted glob (`den hide '*.log'`) is anchored under your cwd.
+  For repo-wide/unanchored patterns, hand-edit `.denhidden` (e.g. add `*.log` or
+  `build/`) — `den pull` reconciles them identically.
+- **`den unhide <path|pattern>...`** (`cmd/unhide.sh`) — drops the matching line
+  from `.denhidden` (tries both the exact string and the resolved `/rel` form),
+  then reconciles. The path reappears in `git status`.
+- **The reconcile** (`_hidden_reassert_all`): `den-helper hidden-plan` maps each
+  `.denhidden` pattern to the repo it applies to (root repo `.` or a registered
+  clone) and re-anchors it into that repo's frame — a nested clone is a *separate*
+  gitignore scope, so a root-level `*.log` does **not** reach inside it. For every
+  present repo (root + each registered clone), den rewrites a `# BEGIN/END
+  den-hidden` **managed block** in its `.git/info/exclude` to exactly the mapped
+  lines (empty → block removed). Your own non-block lines in `info/exclude` are
+  preserved; stale den lines are dropped. Idempotent, declarative.
+- **Cross-host**: host-2 pulls the vault (carrying `.denhidden` + `clones.json`),
+  `git clone` the repos den reports, `den pull` → blocks reconciled for every
+  repo present.
+- **`den ls`** shows a `hidden (git-excluded, not tracked):` section listing the
+  `.denhidden` patterns (scope-filtered, leading `/` stripped for the match).
+- **`den doctor`** `[HIDE]` check: for each present repo, recomputes the expected
+  managed block from `.denhidden` and compares it to the one in `info/exclude`;
+  any mismatch counts toward the non-zero exit (fix: `den pull`).
+- **Cross-project seeding**: `den new <NEW> --from <EXISTING>` and `den sync
+  <OTHER>` copy `.denhidden` **and** `clones.json` alongside
+  `files/`/`.denignore`/`hooks/`, so a project spun up from another starts with
+  the same hide + clone registries (then `den pull` reconciles). Neither carries
+  `patches/`/`.activity/`.
+
+Both `.denhidden` and `.denignore` are **full gitignore syntax** (`**`, `!`
+negation, `/`-anchoring, `[...]`, trailing-`/`) — `.denignore` via the `pathspec`
+matcher in the walker, `.denhidden` because its patterns are forwarded verbatim
+into git's own `info/exclude` (which *is* gitignore).
+
+Contrast the three "keep it out of the foreign repo" tools:
+
+| Command | Moves file into vault `files/`? | Edits foreign `.git/info/exclude`? | Cross-host record |
+|---|---|---|---|
+| `den add` | yes (symlink/hardlink back) | yes (auto-guard) | `clones.json` + `files/` |
+| `den hide` | **no** | yes | `.denhidden` |
+| `den ignore` | no | **no** (den-internal only) | `.denignore` (den's own walk) |
+
+`den ignore` marks a path host-only for **den's** drift accounting — it does NOT
+touch git, so the path still shows in the foreign repo's `git status`. Use
+`den hide` when the goal is a clean `git status` in a repo you don't own.
 
 ## Archived (hidden) projects
 

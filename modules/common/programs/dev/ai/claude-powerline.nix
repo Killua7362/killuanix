@@ -29,10 +29,11 @@
 # Schema reference (Owloops/claude-powerline):
 #   - top-level: theme, display{padding,style,charset,lines[]}, colors.custom
 #   - segments per line: model, thinking, context, git, directory, block, …
-#   - style options: minimal | powerline | capsule | tui. We use `minimal` —
-#     closest to ccstatusline's plain text mode. `│` separator between
-#     segments is only available in `tui` (grid mode); flip `display.style`
-#     and add `tui.separator.column = " │ "` if that look is wanted.
+#   - style options: minimal | powerline | capsule | tui. We use `powerline`
+#     (filled color blocks + `▶` arrow caps; needs a Nerd Font). Was `minimal`
+#     (plain text, no separators). Swap `display.style` back to `minimal` and
+#     the segments' `bg` to `transparent` to revert; `capsule` = rounded pills,
+#     `tui` = a bordered grid panel with `tui.separator.column`.
 #   - per-segment colors only honour hex when `theme = "custom"`.
 {
   pkgs,
@@ -113,11 +114,22 @@
       # invoke it here so claude-powerline's segments and caveman's badge
       # share one row (Claude Code renders each stdout line as a status
       # row — emitting on a second line would create a vertical gap).
-      caveman_script="$HOME/.claude/plugins/marketplaces/caveman/hooks/caveman-statusline.sh"
+      # Upstream caveman restructured its plugin tree — the statusline script
+      # moved from `.../caveman/hooks/` to `.../caveman/src/hooks/`. Probe both
+      # (newest layout first) so a future move doesn't silently kill the badge
+      # again. The script reads the mode + savings flags from
+      # `''${CLAUDE_CONFIG_DIR:-$HOME/.claude}` itself, so per-session isolation
+      # (overlay dir) is preserved — we just need to find the script under the
+      # real ~/.claude/plugins tree.
       caveman_badge=""
-      if [ -r "$caveman_script" ]; then
-        caveman_badge=$(bash "$caveman_script" 2>/dev/null || true)
-      fi
+      for caveman_script in \
+        "$HOME/.claude/plugins/marketplaces/caveman/src/hooks/caveman-statusline.sh" \
+        "$HOME/.claude/plugins/marketplaces/caveman/hooks/caveman-statusline.sh"; do
+        if [ -r "$caveman_script" ]; then
+          caveman_badge=$(bash "$caveman_script" 2>/dev/null || true)
+          break
+        fi
+      done
       if [ -n "$caveman_badge" ]; then
         printf '%s %s\n' "$trimmed" "$caveman_badge"
       else
@@ -137,7 +149,11 @@
     context = palette.color13; # soft pink
     branch = palette.color10; # mint
     cwd = palette.color4; # accent blue
+    metrics = palette.color12; # soft violet — activity (duration + lines ±)
     block = palette.color9; # muted red — usage/limit semantics
+    # Dark segment foreground for the powerline style — text sits on the
+    # filled colored block, so it must contrast against the pastel bg.
+    ink = palette.bg; # #131313
   };
 
   # Hand-rolled JSON. claude-powerline iterates `segments` in JS insertion
@@ -145,14 +161,21 @@
   # and silently re-order the bar. Edit this template — keep the trailing
   # commas correct and the segment block in the desired left-to-right order.
   #
-  # Layout:
-  #   model · thinking · context % · git branch · cwd · usage block
+  # Layout (powerline style — filled blocks with `▶` arrow caps between them;
+  # needs a Nerd Font in the terminal, which wezterm/kitty ship here):
+  #   model · thinking · context % · git(branch+tree+upstream) · cwd ·
+  #   metrics(duration + lines ±) · usage block
+  #
+  # Powerline draws each arrow in the *background* colour of the segment it
+  # leaves, so every segment sets `bg` = its palette colour and `fg` = the
+  # dark `ink` (#131313). transparent bgs (the old `minimal` style) would make
+  # the arrows render in the terminal default and look broken.
   configJson = ''
     {
       "theme": "custom",
       "display": {
         "padding": 1,
-        "style": "minimal",
+        "style": "powerline",
         "charset": "unicode",
         "lines": [
           {
@@ -160,8 +183,9 @@
               "model":     {"enabled": true},
               "thinking":  {"enabled": true, "showEnabled": false, "showEffort": true},
               "context":   {"enabled": true, "showPercentageOnly": true, "displayStyle": "text", "percentageMode": "used"},
-              "git":       {"enabled": true, "showSha": false, "showWorkingTree": false},
+              "git":       {"enabled": true, "showSha": false, "showWorkingTree": true, "showUpstream": true},
               "directory": {"enabled": true, "style": "full"},
+              "metrics":   {"enabled": true, "showDuration": true, "showLinesAdded": true, "showLinesRemoved": true, "showResponseTime": false, "showLastResponseTime": false, "showMessageCount": false},
               "block":     {"enabled": true, "displayStyle": "text"}
             }
           }
@@ -169,12 +193,13 @@
       },
       "colors": {
         "custom": {
-          "model":     {"bg": "transparent", "fg": "${c.model}", "bold": true},
-          "thinking":  {"bg": "transparent", "fg": "${c.effort}"},
-          "context":   {"bg": "transparent", "fg": "${c.context}"},
-          "git":       {"bg": "transparent", "fg": "${c.branch}"},
-          "directory": {"bg": "transparent", "fg": "${c.cwd}"},
-          "block":     {"bg": "transparent", "fg": "${c.block}"}
+          "model":     {"bg": "${c.model}",   "fg": "${c.ink}", "bold": true},
+          "thinking":  {"bg": "${c.effort}",  "fg": "${c.ink}"},
+          "context":   {"bg": "${c.context}", "fg": "${c.ink}"},
+          "git":       {"bg": "${c.branch}",  "fg": "${c.ink}"},
+          "directory": {"bg": "${c.cwd}",     "fg": "${c.ink}"},
+          "metrics":   {"bg": "${c.metrics}", "fg": "${c.ink}"},
+          "block":     {"bg": "${c.block}",   "fg": "${c.ink}"}
         }
       }
     }

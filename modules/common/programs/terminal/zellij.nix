@@ -128,10 +128,11 @@ in {
               }
               // U = scrollback in nvim, capped to the last 20000 lines (EditScrollback
               // has no line limit — it would dump the whole buffer, up to the 1,000,000
-              // scroll_buffer_size). DumpScreen full=true writes the entire buffer, then
+              // scroll_buffer_size). DumpScreen "true" (positional full flag; zellij
+              // 0.44 dropped the old full=true named arg) writes the entire buffer, then
               // tail trims to the most recent 20000 and pipes into nvim (in place).
               bind "U" {
-                  DumpScreen "/tmp/zj-full.txt" full=true;
+                  DumpScreen "/tmp/zj-full.txt" "true";
                   Run "sh" "-c" "tail -n 20000 /tmp/zj-full.txt | nvim -; rm -f /tmp/zj-full.txt" {
                       in_place true
                       close_on_exit true
@@ -220,6 +221,8 @@ in {
                   SwitchToMode "locked";
               }
               bind "Alt Shift p" { ToggleGroupMarking; }
+              bind "Ctrl Shift n" { MoveTab "left"; }
+              bind "Ctrl Shift o" { MoveTab "right"; }
               bind "Ctrl q" { Quit; }
               bind "Alt t" { ToggleFloatingPanes; }
               bind "Ctrl tab" { GoToNextTab; }

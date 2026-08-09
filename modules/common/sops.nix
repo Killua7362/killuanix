@@ -27,6 +27,14 @@
       "azure/oracle_host" = {};
       "azure/oracle_port" = {};
       "azure/oracle_username" = {};
+      "azure/oracle_password" = {};
+      "azure/oracle_vnet_url" = {};
+      "azure/pg_db_user" = {};
+      "azure/pg_db_pass" = {};
+      "azure/pg_vnet_url" = {};
+      "azure/cosmos_auth_key" = {};
+      "azure/cosmos_vnet_url" = {};
+      "azure/da_ssh_password" = {};
     };
   };
 }
