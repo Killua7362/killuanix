@@ -89,10 +89,10 @@
       set -gx XDG_CONFIG_HOME "$HOME/.config"
       set -gx XDG_DATA_DIRS "$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
-      set -x PATH "$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$HOME/.local/bin:$PATH"
-      # set -x JAVA_HOME "$HOME/Documents/Boeing/java/jdk1.8.0_291"
-      #set -x JAVA_HOME "/home/killua/Documents/Boeing/jdk1.8.0_291/"
-      set -x JAVA_HOME "/home/killua/Downloads/java/jdk1.8.0_291"
+      set -x PATH "$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:${pkgs.jdk25}/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$HOME/.local/bin:$PATH"
+      # Default JDK 25 (nix). jdk1.8.0_291 no longer global — jdtls registers a
+      # JavaSE-1.8 runtime for the one Java-8 project (bdsi-commerce-code).
+      set -x JAVA_HOME "${pkgs.jdk25}/lib/openjdk"
       set -x JBOSS_HOME "/home/killua/Documents/Boeing/jboss-eap-7.2"
       set -x JBOSS_ROOT "/home/killua/Documents/Boeing/jboss-eap-7.2"
       set -x EAR_LOC "/home/killua/Documents/Boeing/jboss-eap-7.2/data/EAR"

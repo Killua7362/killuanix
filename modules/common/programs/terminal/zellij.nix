@@ -223,7 +223,7 @@ in {
               bind "Alt Shift p" { ToggleGroupMarking; }
               bind "Ctrl Shift n" { MoveTab "left"; }
               bind "Ctrl Shift o" { MoveTab "right"; }
-              bind "Ctrl q" { Quit; }
+              unbind "Ctrl q"
               bind "Alt t" { ToggleFloatingPanes; }
               bind "Ctrl tab" { GoToNextTab; }
               bind "Ctrl Shift tab" { GoToPreviousTab; }

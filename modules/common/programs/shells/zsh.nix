@@ -69,7 +69,11 @@
       LG_CONFIG_FILE = "$HOME/.config/lazygit/config.yml";
       XDG_CONFIG_HOME = "$HOME/.config";
 
-      JAVA_HOME = "/home/killua/Downloads/java/jdk1.8.0_291";
+      # Default JDK is 25 (nix-managed). Legacy jdk1.8.0_291 is NOT global
+      # anymore — the only Java-8 consumer (bdsi-commerce-code) is served by
+      # neovim/jdtls registering a JavaSE-1.8 runtime; see
+      # modules/common/programs/editors/neovim/lua/plugins/java.lua.
+      JAVA_HOME = "${pkgs.jdk25}/lib/openjdk";
       JBOSS_HOME = "/home/killua/Documents/jboss-eap-7.2";
       JBOSS_ROOT = "/home/killua/Documents/jboss-eap-7.2";
       EAR_LOC = "/home/killua/Documents/jboss-eap-7.2/data/EAR";
@@ -102,7 +106,7 @@
         fpath=(/usr/share/zsh/site-functions /usr/share/zsh/functions/Completion/{Linux,Unix} $fpath)
 
         # PATH modifications
-        export PATH="$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:/home/killua/Downloads/java/jdk1.8.0_291/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$HOME/.local/bin:$PATH"
+        export PATH="$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:${pkgs.jdk25}/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$HOME/.local/bin:$PATH"
         export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
         autoload -Uz compinit

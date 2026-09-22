@@ -234,11 +234,14 @@ return {
 					java = {
 						configuration = {
 							runtimes = (function()
-								-- Read the JEP execution-environment name from
-								-- $JAVA_HOME/release so jdtls labels the runtime
-								-- as the version actually on PATH (e.g.
-								-- "JavaSE-25" when direnv loads JDK 25 in the
-								-- Boeing tree).
+								-- Register every JDK jdtls may need to COMPILE against
+								-- and let it pick per-project by matching the project's
+								-- required execution environment against these names:
+								--   * $JAVA_HOME (nix JDK 25) -> "JavaSE-25", the default
+								--   * legacy jdk1.8.0_291      -> "JavaSE-1.8"
+								-- jdtls itself runs under the nix jdt-language-server
+								-- wrapper's own JDK; these entries are only the
+								-- compile/classpath runtimes it offers projects.
 								local function detect_java_name(java_home)
 									local release = java_home .. "/release"
 									if vim.fn.filereadable(release) ~= 1 then
@@ -250,9 +253,13 @@ return {
 									end
 									local name = "JavaSE-21"
 									for line in f:lines() do
-										local v = line:match('^JAVA_VERSION="?(%d+)')
-										if v then
-											name = "JavaSE-" .. v
+										local ver = line:match('^JAVA_VERSION="?([%d%.]+)')
+										if ver then
+											-- Java 8 reports "1.8.0…" -> EE name "JavaSE-1.8";
+											-- 9+ report a plain major (25 -> "JavaSE-25").
+											local legacy = ver:match("^1%.(%d+)")
+											name = legacy and ("JavaSE-1." .. legacy)
+												or ("JavaSE-" .. ver:match("^(%d+)"))
 											break
 										end
 									end
@@ -272,25 +279,55 @@ return {
 									return home ~= nil and home ~= "" and vim.fn.filereadable(home .. "/release") == 1
 								end
 
-								-- Resolve the real JDK home. On NixOS $JAVA_HOME points
-								-- at the wrapper derivation (.../openjdk-25.x) whose
-								-- bin/ and release actually live under lib/openjdk, so
-								-- descend there; otherwise fall back to the java on PATH.
-								local java_home = vim.env.JAVA_HOME
-								if not is_jdk(java_home) then
-									if is_jdk((java_home or "") .. "/lib/openjdk") then
-										java_home = java_home .. "/lib/openjdk"
-									else
-										local java_exec = vim.fn.resolve(vim.fn.exepath("java") or "")
-										if java_exec ~= "" then
-											java_home = vim.fn.fnamemodify(java_exec, ":h:h")
-										end
+								-- Resolve a candidate to a real JDK home. On NixOS a
+								-- JAVA_HOME may point at the wrapper derivation
+								-- (.../openjdk-25.x) whose bin/ and release actually live
+								-- under lib/openjdk, so descend there.
+								local function resolve_home(candidate)
+									if is_jdk(candidate) then
+										return candidate
+									end
+									if is_jdk((candidate or "") .. "/lib/openjdk") then
+										return candidate .. "/lib/openjdk"
+									end
+									return nil
+								end
+								
+								-- Default runtime = $JAVA_HOME (nix JDK 25), falling back
+								-- to the java on PATH.
+								local default_home = resolve_home(vim.env.JAVA_HOME)
+								if not default_home then
+									local java_exec = vim.fn.resolve(vim.fn.exepath("java") or "")
+									if java_exec ~= "" then
+										default_home = resolve_home(vim.fn.fnamemodify(java_exec, ":h:h"))
 									end
 								end
-								if is_jdk(java_home) then
-									return {
-										{ name = detect_java_name(java_home), path = java_home, default = true },
-									}
+								
+								local runtimes = {}
+								local seen = {}
+								local function add(home, is_default)
+									home = resolve_home(home)
+									if not home then
+										return
+									end
+									local nm = detect_java_name(home)
+									if seen[nm] then
+										return
+									end
+									seen[nm] = true
+									table.insert(runtimes, { name = nm, path = home, default = is_default or nil })
+								end
+								
+								add(default_home, true)
+								-- Legacy Java 8 for bdsi-commerce-code (Eclipse project
+								-- targeting JavaSE-1.8). Registered as a NON-default runtime
+								-- so jdtls uses it only for Java-8 projects while everything
+								-- else uses JDK 25 — this is what keeps neovim working in
+								-- bdsi-commerce-code after JAVA_HOME moved to JDK 25.
+								add("/home/killua/Downloads/java/jdk1.8.0_291", false)
+								
+								if #runtimes > 0 then
+									return runtimes
 								end
 								return {
 									{ name = "JavaSE-21", path = "/usr/lib/jvm/java-21-openjdk", default = true },

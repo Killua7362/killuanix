@@ -39,8 +39,11 @@ The scripts source `$BASTION_ENV_FILE` (default `~/.config/azure-bastion.env`) a
 | `AZURE_PROD_SUBSCRIPTION_ID` | `azure/prod_subscription_id` | ssh (prod) |
 | `AZURE_BASTION_SUBSCRIPTION_ID` | `azure/bastion_subscription_id` | ssh, sql, pg, cosmos |
 | `AZURE_ORACLE_HOST` / `_PORT` / `AZURE_ORACLE_USERNAME` | `azure/oracle_host` / `_port` / `_username` | sql |
+| `AZURE_ORACLE_PASSWORD` | `azure/oracle_password` | `oracle-sqlcl-seed` |
 
-`login` uses none (hardcoded tenant + proxychains only). `azure/oracle_password` was dropped from `sops.nix` — no script uses it since the SQL-Developer clipboard-copy was removed (the value still exists in `secrets/personal.yaml`; re-add the decl if you want it rendered).
+`login` uses none (hardcoded tenant + proxychains only). `AZURE_ORACLE_PASSWORD` feeds `oracle-sqlcl-seed` (`DotFiles/scripts/boeing/`), which seeds SQLcl saved connections `beastg1..beastg6` non-interactively for the `oracle-sqlcl` MCP server — SQLcl's `~/.dbtools/connections.json` wallets the password (machine-keyed), so it can't be `sops.templates`-rendered directly; the seeder is the sops path. Run it once per host after `bastion sql` is up (`connect -save` opens a live session).
+
+**Postgres/Cosmos MCP creds are deliberately NOT in this env file.** Those servers (`../../dev/ai/{postgres,cosmos}-mcp.nix`) connect as **read-only** principals distinct from bastion's full-access creds — Postgres via a GRANT-restricted role `azure/pg_ro_{user,pass}`, Cosmos via the account's read-only key `azure/cosmos_ro_key` — each rendered into its own `sops.templates` env file (`pg-mcp.env` / `cosmos-mcp.env`). bastion's own `azure/pg_db_*` + `azure/cosmos_auth_key` stay full-access for interactive `bastion pg` / `bastion cosmos` work.
 
 On nix: edit the underlying secrets (`sops secrets/personal.yaml`, `azure:` block), then `nix_switch` re-renders the env file. On other Linux: `cp bastion.d/azure-bastion.env.example ~/.config/azure-bastion.env`, `chmod 600`, fill in.
 

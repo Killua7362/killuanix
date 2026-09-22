@@ -397,7 +397,7 @@ _project_sync() {
       local tmp; tmp=$(mktemp)
       jq --argjson prev "$prev_sl" '
         # Strip plugin keys we previously force-disabled.
-        (($prev.excludePlugins // []) | reduce .[] as $p (.; del(.enabledPlugins[$p])))
+        reduce (($prev.excludePlugins // [])[]) as $p (.; del(.enabledPlugins[$p]))
         # Strip allowedTools we previously added.
         | (.permissions.allow //= [])
         | .permissions.allow = (.permissions.allow - ($prev.permissionsAllow // []))
@@ -473,7 +473,7 @@ _project_sync() {
        --argjson rdirs "$restrict_dirs" \
        --argjson hooks "$project_hooks" '
       # Force-disable excluded plugins (last wins over any prior true).
-      ($xplugs | reduce .[] as $p (.; .enabledPlugins[$p] = false))
+      reduce ($xplugs[]) as $p (.; .enabledPlugins[$p] = false)
       # Append allowedTools / deniedTools (deduped).
       | (if ($allow | length) > 0
            then .permissions.allow = ((.permissions.allow // []) + $allow | unique)

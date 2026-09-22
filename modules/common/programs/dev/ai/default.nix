@@ -18,9 +18,16 @@
     ./kindly-web-search.nix
     ./libreoffice-mcp-launcher.nix
     ./oracle-sqlcl-mcp.nix
+    ./postgres-mcp.nix
+    ./cosmos-mcp.nix
+    ./apify-mcp.nix
+    ./youtube-mcp.nix
+    ./youtube-trends-mcp.nix
+    ./kinocut-mcp.nix
     ./serena-mcp.nix
     ./codebase-memory-mcp.nix
     ./freshrss-mcp
+    ./fileshare-mcp
     ./den
   ];
 }

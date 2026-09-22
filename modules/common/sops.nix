@@ -32,9 +32,25 @@
       "azure/pg_db_user" = {};
       "azure/pg_db_pass" = {};
       "azure/pg_vnet_url" = {};
+      # Read-only DB creds dedicated to the MCP servers (postgres/cosmos), kept
+      # separate from the full-access bastion creds above so an LLM-driven MCP
+      # can only read. Postgres: a GRANT-restricted role. Cosmos: the account's
+      # read-only primary key (Keys → Read-only Keys in the portal).
+      "azure/pg_ro_user" = {};
+      "azure/pg_ro_pass" = {};
+      "azure/cosmos_ro_key" = {};
       "azure/cosmos_auth_key" = {};
       "azure/cosmos_vnet_url" = {};
       "azure/da_ssh_password" = {};
+      # Apify API token for the Content Rewards campaign-scraper MCP
+      # (modules/common/programs/dev/ai/apify-mcp.nix). apify.com → Settings →
+      # Integrations → API token.
+      "apify/token" = {};
+      # YouTube clipping MCPs (modules/common/programs/dev/ai/youtube-mcp.nix,
+      # youtube-trends-mcp.nix). YouTube Data API v3 key (Google Cloud) +
+      # free trendsmcp.ai key (https://www.trendsmcp.ai/account).
+      "youtube/data_api_key" = {};
+      "trends/api_key" = {};
     };
   };
 }
