@@ -89,7 +89,7 @@
       set -gx XDG_CONFIG_HOME "$HOME/.config"
       set -gx XDG_DATA_DIRS "$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
-      set -x PATH "$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:${pkgs.jdk25}/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$HOME/.local/bin:$PATH"
+      set -x PATH "$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:${pkgs.jdk25}/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$PATH:$HOME/.local/bin"
       # Default JDK 25 (nix). jdk1.8.0_291 no longer global — jdtls registers a
       # JavaSE-1.8 runtime for the one Java-8 project (bdsi-commerce-code).
       set -x JAVA_HOME "${pkgs.jdk25}/lib/openjdk"

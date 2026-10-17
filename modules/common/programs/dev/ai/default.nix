@@ -21,6 +21,7 @@
     ./postgres-mcp.nix
     ./cosmos-mcp.nix
     ./apify-mcp.nix
+    ./gitlab-mcp.nix
     ./youtube-mcp.nix
     ./youtube-trends-mcp.nix
     ./kinocut-mcp.nix

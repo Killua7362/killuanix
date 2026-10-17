@@ -4,7 +4,7 @@
 # used against the bastion tunnels. The bastion helper scripts themselves are
 # NOT built here — they live in the DotFiles submodule under
 # `DotFiles/scripts/boeing/`, fronted by a single `bastion` dispatcher on PATH
-# (`bastion ssh|sql|login|pg|cosmos`). They read secrets from ONE env file at
+# (`bastion ssh|sql|login|pg|cosmos|logs`). They read secrets from ONE env file at
 # `~/.config/azure-bastion.env` (override `$BASTION_ENV_FILE`) so they run on
 # any Linux. This module's nix-specific jobs:
 #   1. put their runtime deps (az, proxychains, ssh) on PATH, and
@@ -31,6 +31,8 @@ in {
       azCli
       pkgs.proxychains-ng # bastion SOCKS routing (BASTION_SSH_VIA_SOCKS=1)
       pkgs.openssh # bastion sql/pg/cosmos: ssh -L over the bastion tunnel
+      pkgs.jq # bastion logs: ARM / Log Analytics JSON
+      pkgs.curl # bastion logs --stream: Container Apps logstream endpoint
       sqldeveloper
       pkgs.jetbrains.datagrip
       pkgs.sqlcl

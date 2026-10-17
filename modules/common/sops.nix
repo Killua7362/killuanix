@@ -12,6 +12,9 @@
       "boeing/git_name" = {};
       "boeing/git_email" = {};
       "boeing/vpn_userid" = {};
+      # Read-only git PATs, used only inside Claude's sandbox (see dev/git.nix).
+      "boeing/gitlab_token" = {};
+      "boeing/azure_token" = {};
       "das/git_name" = {};
       "das/git_email" = {};
       "realdebrid_token" = {};

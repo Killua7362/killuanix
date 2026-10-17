@@ -13,6 +13,12 @@
 # the trailing `/<db>`: same RO creds, same `bastion pg` tunnel (127.0.0.1:5433),
 # same uv-resolved env. Add/remove a database by editing `pgDatabases` below.
 #
+# ONE SET PER ENVIRONMENT. dev/qa/uat each host the same databases behind
+# their own local tunnel port (`pgEnvs` below). Dev keeps the bare
+# `postgres-<db>` names (existing claude-kit.nix opt-ins keep working); other
+# envs get an `-<env>` suffix → `postgres-kitting-qa`, `postgres-kitting-uat`.
+# All envs share the same RO creds.
+#
 # Read-only by design: connects as the GRANT-restricted `azure/pg_ro_*` role
 # (separate from the full-access bastion `azure/pg_db_*` creds) AND runs with
 # `--access-mode=restricted` (read-only transactions), so an LLM can inspect
@@ -40,6 +46,24 @@
     "kitting_db"
     "contract_db"
     "bin_db"
+    "collab_db"
+  ];
+
+  # Environment → local tunnel port. `suffix` is appended to the server name;
+  # dev has none so its names predate (and match) the single-env layout.
+  pgEnvs = [
+    {
+      suffix = "";
+      port = 5433;
+    }
+    {
+      suffix = "-qa";
+      port = 5434;
+    }
+    {
+      suffix = "-uat";
+      port = 5435;
+    }
   ];
 
   shortName = db: lib.removeSuffix "_db" db;
@@ -47,9 +71,9 @@
   # `sslmode=require`: the ssh -L leg is plain TCP but the Azure PG endpoint
   # negotiates TLS end-to-end; `require` (not verify-full) tolerates the
   # 127.0.0.1 hostname mismatch the tunnel introduces.
-  mkWrapper = db: envPath:
+  mkWrapper = name: envPath:
     pkgs.writeShellApplication {
-      name = "mcp-postgres-${shortName db}";
+      name = "mcp-${name}";
       runtimeInputs = [pkgs.uv];
       text = ''
         export UV_CACHE_DIR="''${XDG_CACHE_HOME:-$HOME/.cache}/mcp-postgres/uv-cache"
@@ -65,17 +89,18 @@
       '';
     };
 
-  mkDb = db: let
-    envName = "pg-mcp-${shortName db}.env";
+  mkDb = env: db: let
+    name = "postgres-${shortName db}${env.suffix}";
+    envName = "pg-mcp-${shortName db}${env.suffix}.env";
   in {
     sops.templates.${envName}.content = ''
-      DATABASE_URI=postgresql://${config.sops.placeholder."azure/pg_ro_user"}:${config.sops.placeholder."azure/pg_ro_pass"}@127.0.0.1:5433/${db}?sslmode=require
+      DATABASE_URI=postgresql://${config.sops.placeholder."azure/pg_ro_user"}:${config.sops.placeholder."azure/pg_ro_pass"}@127.0.0.1:${toString env.port}/${db}?sslmode=require
     '';
-    local.extraMcpServers."postgres-${shortName db}" = {
-      command = lib.getExe (mkWrapper db config.sops.templates.${envName}.path);
+    local.extraMcpServers.${name} = {
+      command = lib.getExe (mkWrapper name config.sops.templates.${envName}.path);
       optional = true;
     };
   };
 in {
-  config = lib.mkIf pkgs.stdenv.isLinux (lib.mkMerge (map mkDb pgDatabases));
+  config = lib.mkIf pkgs.stdenv.isLinux (lib.mkMerge (lib.concatMap (env: map (mkDb env) pgDatabases) pgEnvs));
 }

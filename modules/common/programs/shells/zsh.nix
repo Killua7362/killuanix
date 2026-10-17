@@ -106,7 +106,7 @@
         fpath=(/usr/share/zsh/site-functions /usr/share/zsh/functions/Completion/{Linux,Unix} $fpath)
 
         # PATH modifications
-        export PATH="$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:${pkgs.jdk25}/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$HOME/.local/bin:$PATH"
+        export PATH="$HOME/killuanix/DotFiles/scripts/personal:$HOME/killuanix/DotFiles/scripts/boeing:${pkgs.jdk25}/bin:$HOME/.npm-global/bin:$HOME/killuanix/DotFiles/scripts/v1:$PATH:$HOME/.local/bin"
         export XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
 
         autoload -Uz compinit

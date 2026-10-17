@@ -6,6 +6,7 @@ The bastion helper scripts themselves **are not built by nix**. They live in the
 
 ```
 bastion ssh <dev|prod|migrate>   bastion sql   bastion pg   bastion cosmos   bastion login
+bastion logs <app terms...> [-n N] [-s 1h] [--errors] [-g pat] [--system] [--stream]
 ```
 
 `bastion <sub>` execs `DotFiles/scripts/boeing/bastion.d/bastion-<sub>` (auto-discovered — add a new `bastion.d/bastion-<x>` and `bastion x` just works). Only the top-level `bastion` is on PATH; the `bastion.d/` subscripts are not directly invocable. See `DotFiles/scripts/boeing/` for the scripts and their shared `bastion.d/_lib.sh` (`load_env`, `require_vars`, `make_pxconf`).
@@ -16,7 +17,7 @@ bastion ssh <dev|prod|migrate>   bastion sql   bastion pg   bastion cosmos   bas
 
 | File | Purpose |
 |---|---|
-| `default.nix` | Installs `azure-cli.withExtensions [ssh bastion]` + the scripts' runtime deps (`proxychains-ng`, `openssh`), all gated by `pkgs.stdenv.isLinux`. Also installs `pkgs.sqlcl` (Oracle SQLcl CLI — `sql` on PATH) for the `oracle-sqlcl` MCP server (`../../dev/ai/oracle-sqlcl-mcp.nix`), `pkgs.jetbrains.datagrip`, the vendored `sqldeveloper`, and `pkgs.azure-storage-azcopy`. Renders `~/.config/azure-bastion.env` via `sops.templates` from the `azure/*` keys. Sets `home.sessionVariables.BASTION_SSH_VIA_SOCKS = "1"`. |
+| `default.nix` | Installs `azure-cli.withExtensions [ssh bastion]` + the scripts' runtime deps (`proxychains-ng`, `openssh`), all gated by `pkgs.stdenv.isLinux`. Also installs `pkgs.sqlcl` (Oracle SQLcl CLI — `sql` on PATH) for the `oracle-sqlcl` MCP server (`../../dev/ai/oracle-sqlcl-mcp.nix`), `pkgs.jetbrains.datagrip`, the vendored `sqldeveloper`, and `pkgs.azure-storage-azcopy`. Renders `~/.config/azure-bastion.env` via `sops.templates` from the `azure/*` keys. Also puts `jq` + `curl` on PATH for `bastion logs`. Sets `home.sessionVariables.BASTION_SSH_VIA_SOCKS = "1"`. |
 
 The scripts fronted by `bastion` (in `DotFiles/scripts/boeing/bastion.d/`):
 
@@ -26,6 +27,7 @@ The scripts fronted by `bastion` (in `DotFiles/scripts/boeing/bastion.d/`):
 | `sql` | `bastion-sql` | Oracle DB tunnel (dev). `az network bastion tunnel` → jump VM → `ssh -L 1521`. Stage switch via Oracle SERVICE_NAME (`beastg1..beastg6`) in the client, not the tunnel. |
 | `pg` | `bastion-pg` | Postgres twin of `sql` (`ssh -L` the Azure PG host). Target overridable via `PGHOST`/`PGPORT`/`LOCAL_PG_PORT`. |
 | `cosmos` | `bastion-cosmos` | Cosmos gateway tunnel (`ssh -L :443`, forces gateway mode). Needs a `/etc/hosts` entry for SNI — see the script's banner. |
+| `logs` | `bastion-logs` | Azure **Container Apps** logs for any app in any env (dev/qa/uat) — see below. No secrets. |
 | `login` | `bastion-login` | Refreshes the `az` token through the boeingvpn-ui SOCKS tunnel (device-code) so Conditional Access sees a Boeing source IP. Use on AADSTS53003. No secrets. |
 
 ## Secrets — the env file
@@ -59,6 +61,17 @@ BASTION_SSH_VIA_SOCKS=1 bastion ssh dev   # (already the default; empty value = 
 ```
 
 Useful when full-tunnel GlobalProtect isn't running but you still need DA-network routing for Conditional Access (error 53003 from Azure AD).
+
+## Container Apps logs (`bastion logs`)
+
+Reads console/system logs of the `bdce-*-{dev,qa,uat}-eastus-01` container apps (kitting, order, catalog, contract, customer, usermgmt, binmgmt, collab, datasync, web-bff, mobile-bff, …). Prereq: boeingvpn-ui green + `bastion login`.
+
+- **App selection by name terms**: `bastion logs kitting qa` → every term must be a case-insensitive substring of the app name; exactly one match required (else lists matches, exit 2). When several match, an app whose name has every term as a whole dash-token wins (`order dev` → `bdce-order-api-dev…`, not `bdce-ecomorderapi-dev…`). `bastion logs --list [terms]` lists apps.
+- **App cache**: `~/.cache/bastion/containerapps.tsv` (name, resource id) built from every subscription in `az account list`; `--refresh` rebuilds it. ARM paginates `containerApps` lists via `nextLink` — page 1 alone misses all UAT apps, so the builder follows pages.
+- **Log source**: the `bdce-cae-*` environments use `appLogsConfiguration.destination = azure-monitor` + a diagnostic setting into workspace `bdsi-dev-5c1b0-oms`, so logs land in the **resource-specific** tables `ContainerAppConsoleLogs` / `ContainerAppSystemLogs` (columns without `_s`). The script resolves the workspace per app (env → diagnostic settings → workspace `customerId`); a `log-analytics`-destination env uses the legacy `_CL` tables instead; no workspace → falls back to `--stream`.
+- **Output**: parses Spring logstash JSON, daprd logfmt and NestJS (ANSI-stripped) lines into `ts LEVEL [logger] msg  trace=…` with stack traces indented. `/actuator/health` probe lines hidden unless `--all`; `--raw` prints the unparsed `Log` column. `--errors` = ERROR/WARN/FATAL only. `--system` = restarts / OOM (exit 137) / probe failures / scaling.
+- **`--stream`**: same API `az containerapp logs show` uses (ARM `getAuthToken` → `eventStreamEndpoint/.../logstream?follow=false`), per replica+container of the latest ready revision. Real-time but only the recent tail.
+- Uses only `az rest` — the `containerapp`, `log-analytics` and `resource-graph` az extensions are not installed and can't be pip-installed into the nix az.
 
 ## Why no dyn/admin / browser tunnel here
 

@@ -242,6 +242,18 @@
     text = ''
       src="$HOME/.claude"
 
+      # Which claude to run inside the sandbox: the newest native build
+      # (kept current by Claude Code's own updater under
+      # ~/.local/share/claude/versions/) when present, else the nix-pinned
+      # pkgs.claude-code. Never via ~/.local/bin/claude — that symlink is the
+      # updater's, and running it directly would skip this wrapper (and so
+      # the bwrap secret mask + sandbox-only env). Name filter skips partial
+      # downloads.
+      claude_bin=${pkgs.claude-code}/bin/claude
+      _native=$(find "$HOME/.local/share/claude/versions" -maxdepth 1 -type f -perm -u+x 2>/dev/null \
+        | grep -E '/[0-9]+(\.[0-9]+)+$' | sort -V | tail -n1 || true)
+      [ -n "$_native" ] && claude_bin=$_native
+
       if [ -n "''${CLAUDE_CONFIG_DIR:-}" ] && [ -d "$CLAUDE_CONFIG_DIR" ]; then
         if [ -e "$CLAUDE_CONFIG_DIR/settings.json" ] \
            && { [ -L "$CLAUDE_CONFIG_DIR/settings.json" ] || [ ! -w "$CLAUDE_CONFIG_DIR/settings.json" ]; }; then
@@ -362,9 +374,13 @@
             # the out-of-namespace broker. Only affects claude, not the user shell.
             _mask_args+=(--setenv PATH "${lib.concatStringsSep ":" config.local.claudeExtraPath}:$PATH")
           ''}
-          ${pkgs.bubblewrap}/bin/bwrap "''${_mask_args[@]}" -- ${pkgs.claude-code}/bin/claude "$@"
+          ${lib.concatStrings (lib.mapAttrsToList (name: value: ''
+              _mask_args+=(--setenv ${lib.escapeShellArg name} ${lib.escapeShellArg value})
+            '')
+            config.local.claudeExtraEnv)}
+          ${pkgs.bubblewrap}/bin/bwrap "''${_mask_args[@]}" -- "$claude_bin" "$@"
         ''
-        else ''${pkgs.claude-code}/bin/claude "$@"''
+        else ''"$claude_bin" "$@"''
       }
     '';
   };
@@ -417,6 +433,15 @@ in {
     description = "Dirs prepended to PATH inside Claude's bwrap sandbox only.";
   };
 
+  # Env vars set *inside Claude's bwrap sandbox only* (via overlayClaude's
+  # --setenv), never in the user's shell. Used by git.nix to give claude
+  # read-only git credentials that the user's own git never sees.
+  options.local.claudeExtraEnv = lib.mkOption {
+    type = lib.types.attrsOf lib.types.str;
+    default = {};
+    description = "Env vars set inside Claude's bwrap sandbox only.";
+  };
+
   config = {
     programs.claude-code = {
       enable = true;
@@ -446,7 +471,7 @@ in {
       # you want stricter behavior. `skip*PermissionPrompt` suppress the
       # first-run opt-in dialogs for auto and bypass modes.
       settings = {
-        model = "claude-opus-4-8";
+        model = "claude-opus-5-5";
         effortLevel = "high";
         skipAutoPermissionPrompt = true;
         skipDangerousModePermissionPrompt = true;
@@ -485,13 +510,12 @@ in {
           "Edit(secrets/**)"
         ];
 
-        # Pin to the nix-managed binary. Claude Code's built-in updater
-        # drops a fresh `claude` into ~/.local/bin/ on each launch, which
-        # shadows ~/.nix-profile/bin/claude on PATH and bypasses the
-        # `--plugin-dir` wrapper that loads our .mcp.json bundle (so MCP
-        # servers silently disappear). Disabling auto-updates keeps the
-        # flake-pinned `pkgs.claude-code` authoritative; bump it via
-        # `nix flake update` instead.
+        # NB: does NOT stop the native updater — ~/.claude.json's
+        # `autoUpdatesProtectedForNative` keeps it installing new builds
+        # into ~/.local/share/claude/versions/ (+ a ~/.local/bin/claude
+        # symlink). That's fine: overlayClaude runs the newest native build
+        # inside bwrap, and the shells put ~/.local/bin *after*
+        # ~/.nix-profile/bin so bare `claude` always hits this wrapper.
         autoUpdates = false;
 
         # Use the flicker-free alt-screen renderer so the live conversation

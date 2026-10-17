@@ -45,7 +45,7 @@ Zsh-only:
 - **Completion**: `compinit` loaded manually in `initContent`; completion disabled via HM (`enableCompletion = false`). Custom `zstyle` rules for case-insensitive matching and fzf-tab preview with `eza`.
 - **History**: 10000 entries, dedup enabled, shared across sessions.
 - **Key bindings**: vi-insert mode bindings for Home/End, Ctrl+Right/Left word movement, Ctrl+C break. `fzf_history_search` is rebound after `zsh-vi-mode` init via `zvm_after_init`.
-- **Init order**: HM session vars sourced first, then PATH additions, then `starship init zsh` and `zoxide init zsh`.
+- **Init order**: HM session vars sourced first, then PATH additions, then `starship init zsh` and `zoxide init zsh`. `~/.local/bin` is **appended** after `$PATH` (not prepended) so `~/.nix-profile/bin/claude` (the sandboxing wrapper) beats the native Claude Code updater's `~/.local/bin/claude` symlink; see `dev/ai/CLAUDE.md` → `/effort overlay wrapper`.
 - **WezTerm autolock hook**: when `$WEZTERM_PANE` is set, a `preexec`/`precmd` pair emits an OSC 1337 `WEZTERM_PROG` user var naming the running foreground command (cleared at the prompt). WezTerm's modal-chord passthrough (see `terminal/CLAUDE.md` → WezTerm → Autolock) reads it — this is the only per-command signal that crosses the `wezterm connect unix` mux. forgit aliases are marked `fzf` by inspecting `type` output so their fzf UI locks like nvim does.
 
 ## Fish Details
