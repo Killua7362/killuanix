@@ -81,7 +81,7 @@ Previously bundled an `avd-chrome` browser + dynamic SOCKS (`ssh -D`) on the sam
 
 ## Non-secrets kept inline
 
-The resource-group naming (`bdsi-stageapplication{NN}-eastus-rg`, `bdsi-prodapplication-eastus-rg`, etc.), bastion-host names (`daa-azure-bastion-...`), and the VM-role lookup tables live in `DotFiles/scripts/boeing/bastion.d/bastion-ssh` directly — they are derived/published values, not secrets, and pulling them through sops would just add noise. Same goes for the prod service-account usernames.
+The resource-group naming (`bdsi-stgapplication{NN}-eastus-rg` / legacy `bdsi-stageapplication{NN}-eastus-rg`, `bdsi-prodapplication-eastus-rg`, etc.), bastion-host names (`daa-azure-bastion-...`), and the VM-role lookup tables live in `DotFiles/scripts/boeing/bastion.d/bastion-ssh` directly — they are derived/published values, not secrets, and pulling them through sops would just add noise. Same goes for the prod service-account usernames.
 
 ## Runbook (per PDF)
 
@@ -101,3 +101,7 @@ Imported by:
 - `killua/home.nix` (handheld)
 
 Not in `modules/cross-platform/default.nix` — macnix/archnix don't get azure-cli installed.
+
+## Jump VM resolution (stage rebuild, Nov 2026)
+
+Stages were rebuilt under new naming (`bdsi-stg{NN}-<role>-vm` in `bdsi-stgapplication{NN}-eastus-rg`); legacy `bdsi-stage02..05-*` VMs are kept but **deallocated** — a bastion tunnel to them opens, then ssh hangs to `ConnectTimeout`. `_lib.sh` `resolve_jump_vm` (sql/pg/cosmos/all) and `pick_running_vm` (ssh dev) do one batched `az vm get-instance-view --ids` (~3s) and pick the first *running* VM, new naming before legacy; default stage order `6 1 5 2 3 4`. Overrides: `BASTION_SQL_JUMP_STAGE=<1-6>`, `BASTION_JUMP_VM_ID=<resource id>`. From the new stg subnets Postgres (dev/qa/uat) works, but the legacy Oracle DB `bdsi-stage-db-01-vm` (10.55.46.132) is NSG-blocked; the legacy DB subnet `snet-bdsi-stagedb-01` also carries a deny-all `bdsi-networkstage-emergency` NSG. The new Oracle is `bdsi-stage-db-02-vm` (10.55.46.180:1521) hosting only `beastg1` + `beastg6` (`beastg2-5` → ORA-12514); the `CORE` user works on `beastg6`. Point `azure/oracle_{host,username,password}` in sops at it.
