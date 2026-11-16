@@ -2,7 +2,7 @@
 #
 # A full buildNpmPackage would pull ruflo's entire closure at eval time. We
 # instead expose a thin shell wrapper that lazy-installs ruflo on first run
-# under $XDG_CACHE_HOME/ruflo/ using the system `nodejs_20` (already in
+# under $XDG_CACHE_HOME/ruflo/ using the system `nodejs_22` (already in
 # devPackages). Subsequent invocations are instant — no Nix-store bloat, no
 # build-time npm evaluation.
 #
@@ -21,7 +21,7 @@
 
   ruflo = pkgs.writeShellApplication {
     name = "ruflo";
-    runtimeInputs = [pkgs.nodejs_20];
+    runtimeInputs = [pkgs.nodejs_22];
     text = ''
       export NPM_CONFIG_CACHE="''${XDG_CACHE_HOME:-$HOME/.cache}/ruflo/npm-cache"
       export NPM_CONFIG_PREFIX="''${XDG_CACHE_HOME:-$HOME/.cache}/ruflo/npm-prefix"

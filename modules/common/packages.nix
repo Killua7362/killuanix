@@ -30,7 +30,7 @@
       nix-prefetch-github
       nix-script
       update-nix-fetchgit
-      nodejs_20
+      nodejs_22
       tree-sitter
       sops
       age
@@ -72,7 +72,7 @@
     ];
 
   # Desktop packages (Linux specific)
-  desktopPackages = pkgs:
+  desktopPackages = pkgs: inputs:
     with pkgs; [
       # pcmanfm — replaced by nemo (configured in utils/nemo.nix)
       unetbootin
@@ -119,12 +119,26 @@
       wl-clipboard
       cliphist
       libreoffice-qt6-fresh
-      sublime4
+      # Sublime Text 4 stable build 4215. nixpkgs still ships 4200 (the old
+      # Python 3.3 plug-in host + EOL OpenSSL 1.1), so build the newer
+      # release from nixpkgs' own sublime/4/common.nix — for >=4205 it wires
+      # the Python 3.14 plug-in host against openssl_3_5, no insecure pkgs.
+      # Bump buildVersion + hashes on upgrade; drop once nixpkgs catches up.
+      ((pkgs.callPackage (import "${pkgs.path}/pkgs/applications/editors/sublime/4/common.nix" {
+          buildVersion = "4215";
+          x64sha256 = "wVP0GNOrJrkOzOjAKoLk6WECXtemX34lBgpUV9Q+iNk=";
+          aarch64sha256 = "0xRmWkJy8zVRUDQyNyo0UW27WpoS3OKkcELBlC9m7nk=";
+        }))
+        {})
       loupe
       mpv
       papers
       vial
       dbeaver-bin # GUI DB client
+      # DroidCam Linux client (phone-as-webcam/mic over USB-adb or Wi-Fi).
+      # Provides `droidcam` (GTK GUI) + `droidcam-cli`. Needs the NixOS side
+      # too: v4l2loopback (video sink) + snd-aloop (mic sink) kernel modules.
+      droidcam
     ];
 
   # Development packages

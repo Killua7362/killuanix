@@ -88,10 +88,6 @@
           "launcherButton"
           "workspaceSwitcher"
           "focusedWindow"
-          {
-            id = "activitySim";
-            enabled = true;
-          }
         ];
         centerWidgets = [
           "clock"

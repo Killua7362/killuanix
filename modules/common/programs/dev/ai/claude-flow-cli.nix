@@ -22,7 +22,7 @@
 
   claude-flow = pkgs.writeShellApplication {
     name = "claude-flow";
-    runtimeInputs = [pkgs.nodejs_20];
+    runtimeInputs = [pkgs.nodejs_22];
     text = ''
       export NPM_CONFIG_CACHE="''${XDG_CACHE_HOME:-$HOME/.cache}/claude-flow/npm-cache"
       export NPM_CONFIG_PREFIX="''${XDG_CACHE_HOME:-$HOME/.cache}/claude-flow/npm-prefix"

@@ -8,12 +8,12 @@
 }: let
   firefoxCSS = builtins.fetchGit {
     url = "https://github.com/greeeen-dev/natsumi-browser.git";
-    rev = "c65ef3744952664b69a83196f01754d2677b5aa8";
+    rev = "3f50ef91d6b322a80c3ae5a2cede9915928d93dc"; # natsumi 6.11.0 "Moonlight"
   };
 
   fschromeconfig = builtins.fetchGit {
     url = "https://github.com/MrOtherGuy/fx-autoconfig";
-    rev = "76232083171a8d609bf0258549d843b0536685e1";
+    rev = "dfdab5684faffc112b76ccb1d8cab7f75da0102c";
   };
 
   # Bitwarden desktop app native-messaging manifest. Bitwarden's desktop
@@ -652,7 +652,7 @@ in {
           // Sandbox needs to be disabled in release and Beta versions
           user_pref("general.config.sandbox_enabled", false);
           user_pref("accessibility.force_disabled",1);
-          user_pref("natsumi.theme.type", "colorful");
+          user_pref("natsumi.theme.type", "default");
           user_pref("natsumi.urlbar.do-not-float", true);
           user_pref("natsumi.urlbar.always-expanded", true);
           user_pref("sidebar.verticalTabs", true);

@@ -52,6 +52,39 @@ end
 
 A.layout = function(msg) return hl.dsp.layout(msg) end
 
+-- Pinned-scratchpad toggle. The window is a pinned float (see rules.lua), so it
+-- follows across workspace switches; hiding unpins it and parks it on
+-- `special:<name>`, a stash that is never toggled into view.
+--
+-- Deliberately NOT toggle_special: Hyprland clears a monitor's special
+-- workspace on every workspace change, so a special-ws scratchpad vanishes the
+-- moment you switch desktops.
+--
+-- `class` here is matched **literally** by hl.get_windows — not a regex, unlike
+-- hl.window_rule's match table. A `^(…)$` pattern silently returns 0 windows,
+-- which makes every press relaunch the app instead of toggling it.
+A.scratchpad = function(name, class, cmd)
+  local stash = "special:" .. name
+  return { fn = function()
+    local w = hl.get_windows({ class = class })[1]
+    if not w then
+      hl.dispatch(hl.dsp.exec_cmd(cmd))
+      return
+    end
+    local ws = w.workspace
+    if ws and ws.special then
+      -- Show: pull onto the workspace in front of the user, then re-pin.
+      hl.dispatch(hl.dsp.window.move({ window = w, workspace = hl.get_active_workspace().id }))
+      if not w.pinned then hl.dispatch(hl.dsp.window.pin(w)) end
+      hl.dispatch(hl.dsp.focus({ window = w }))
+    else
+      -- Hide: unpin first — Hyprland refuses to move a pinned window.
+      if w.pinned then hl.dispatch(hl.dsp.window.pin(w)) end
+      hl.dispatch(hl.dsp.window.move({ window = w, workspace = stash, follow = false }))
+    end
+  end }
+end
+
 -- Dispatchers that are rare or have ambiguous lua signatures: defer to hyprctl.
 A.cycle_next         = function() return hctl("cyclenext") end
 A.cycle_prev         = function() return hctl("cyclenext prev") end
@@ -76,7 +109,7 @@ M.binds = {
   { keys = "Super, Period",                  desc = "Emoji >> clipboard",     bindd = true, action = A.global("quickshell:overviewEmojiToggle") },
   { keys = "Super, A",                       desc = "Toggle left sidebar",    bindd = true, action = A.global("quickshell:sidebarLeftToggle") },
   { keys = "Super, Slash",                   desc = "Toggle cheatsheet",      bindd = true, action = A.global("quickshell:cheatsheetToggle") },
-  { keys = "Super, M",                       desc = "Toggle media controls",  bindd = true, action = A.global("quickshell:mediaControlsToggle") },
+  { keys = "Super, M",                       desc = "Audio mixer (scratchpad)", bindd = true, action = A.scratchpad("mixer", "com.saivert.pwvucontrol", "uwsm-app -- pwvucontrol") },
   { keys = "Ctrl+Alt, Delete",               desc = "Toggle session menu",    bindd = true, action = A.global("quickshell:sessionToggle") },
   { keys = "Super, J",                       desc = "Toggle bar",             bindd = true, action = A.global("quickshell:barToggle") },
   { keys = "Ctrl+Super, T",                  desc = "Toggle wallpaper picker",bindd = true, action = A.global("quickshell:wallpaperSelectorToggle") },

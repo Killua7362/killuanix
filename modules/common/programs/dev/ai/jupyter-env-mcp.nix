@@ -80,7 +80,11 @@
   # the frontend only picks up changes on reload.
   jupyterlab-rtc = pkgs.python3.withPackages (ps: [
     ps.jupyterlab
-    ps.jupyter-collaboration
+    # jupyter-collaboration's checkPhase fails under nixpkgs 70ce234: its tests
+    # call `UndoManager(doc=...)` but the bundled pycrdt dropped that kwarg
+    # (upstream API drift) → 32 test failures. Runtime is unaffected; skip the
+    # stale tests. Drop the override once nixpkgs fixes the test suite.
+    (ps.jupyter-collaboration.overridePythonAttrs (_: {doCheck = false;}))
     ps.ipykernel
     ps.jupyterlab-lsp
     ps.python-lsp-server

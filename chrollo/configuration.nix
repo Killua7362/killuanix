@@ -19,6 +19,7 @@ in {
     ../modules/containers
     ../modules/vms/system.nix
     ../modules/nixos/claude-sudo.nix
+    ../modules/nixos/droidcam.nix
   ];
 
   virtualisation.docker = {
@@ -60,17 +61,16 @@ in {
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Kernel pinned to the rev that originally matched the cached
-  # virtualbox-modules-7.2.4-6.12.67. VBox itself is gone now
-  # (vms.virtualbox.enable = false below; Oracle 19c moved to KVM),
-  # so this pin is no longer load-bearing — keeping it deliberate to
-  # avoid a same-PR kernel bump; unpin later if/when we want to update.
-  boot.kernelPackages =
-    (import inputs.nixpkgs-kernel {
-      inherit (pkgs.stdenv.hostPlatform) system;
-      config.allowUnfree = true;
-    })
-    .linuxPackages;
+  # Kernel UNPINNED (was `inputs.nixpkgs-kernel.legacyPackages.linuxPackages`,
+  # 6.12.67, originally matched the since-removed cached virtualbox-modules
+  # build). That kernel derivation predates attributes the current nixpkgs'
+  # NixOS modules read unconditionally — `kernel.target` (top-level.nix's
+  # `system.boot.loader.kernelFile` default) and `kernel.buildDTBs`
+  # (device-tree.nix) — so after the nixpkgs bump it failed to even evaluate.
+  # Tracking the main nixpkgs kernel fixes both and the pin had no remaining
+  # purpose. The `nixpkgs-kernel` input is now unused (sublime4 moved to a
+  # 4215 build off main nixpkgs) and can be dropped from flake.nix.
+  boot.kernelPackages = pkgs.linuxPackages;
 
   services.tailscale = {
     enable = false; # disabled for now; re-enable when tailnet needed again
@@ -273,17 +273,14 @@ in {
 
   programs.java = {
     enable = true;
-    package = pkgs.zulu8;
+    package = pkgs.jdk25;
   };
 
   environment.systemPackages = with pkgs; [
     bluez-tools
     git
     moonlight-qt
-    zulu8
-    #    javaPackages.compiler.openjdk8
-    #    jdk17_headless
-    #jdk21_headless
+    jdk25
     distrobox
     docker-compose
     #globalprotect-openconnect
@@ -292,10 +289,15 @@ in {
     ocproxy
     hubstaff
     distrobox
-    inputs.iloader.packages.${pkgs.system}.default
+    # iloader DISABLED: its build tool bun2nix (built via IFD) has a broken
+    # Cargo.lock (git dep apple-codesign with no outputHashes) so it cannot
+    # build from source; it only ever worked from a cached drv, which the
+    # flake update invalidated. Re-enable once upstream bun2nix fixes the hash.
+    # inputs.iloader.packages.${pkgs.system}.default
   ];
 
-  # iOS sideloading daemon — required by iloader to talk to a plugged iPhone.
+  # iOS sideloading daemon — was required by iloader (now disabled). Harmless
+  # idle daemon; left enabled so re-enabling iloader needs no config change.
   services.usbmuxd.enable = true;
 
   system.stateVersion = "25.11";
@@ -318,6 +320,15 @@ in {
         "qtwebengine-5.15.19"
       ];
     };
+  };
+
+  # Determinate Nixd auto-GCs in 1 GB passes whenever disk is "low"; a pass
+  # holds the GC lock and stalls nix builds/switches for many minutes. The
+  # upstream NixOS module has no option for this (only nix-darwin does), so
+  # write the config file directly. Re-check if `determinate.edgeCacheSubstituters`
+  # is ever set — the module would then also claim this file.
+  environment.etc."determinate/config.json".text = builtins.toJSON {
+    garbageCollector.strategy = "disabled";
   };
 
   nix = let
@@ -430,11 +441,6 @@ in {
     nerd-fonts.jetbrains-mono
     nerd-fonts.hack
   ];
-
-  # Oracle DB 19c moved off VirtualBox onto QEMU/KVM (see modules/vms/oracle-19c-vm.nix),
-  # so we drop VBox here and let kvm_intel load. Also skips the per-rebuild
-  # virtualbox-modules-<vbox>-<kernel> source build.
-  vms.virtualbox.enable = false;
 
   services.dbus.packages = [pkgs.blueman pkgs.openvpn3];
   services.udev.packages = [pkgs.vial];

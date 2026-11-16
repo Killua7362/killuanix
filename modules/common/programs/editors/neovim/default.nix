@@ -161,6 +161,14 @@ in {
         extra = {
           jdtls = "${pkgs.jdt-language-server}/share/java/jdtls";
           lombok = "${pkgs.lombok}/share/java/lombok.jar";
+          # JDK homes registered as jdtls `runtimes` so a single jdtls (which
+          # runs on its own bundled JDK) can compile projects targeting any of
+          # these levels. The default runtime is chosen at attach time from
+          # $JAVA_HOME (see java.lua): JDK 25 everywhere, JDK 8 inside the
+          # Boeing bdsi tree where direnv pins JAVA_HOME → ~/.local/jvm/jdk8.
+          jdk8 = "${pkgs.zulu8}";
+          jdk21 = "${pkgs.jdk21.home}";
+          jdk25 = "${pkgs.jdk25.home}";
           java_debug_adapter = "${pkgs.vscode-extensions.vscjava.vscode-java-debug}/share/vscode/extensions/vscjava.vscode-java-debug";
           java_test = "${pkgs.vscode-extensions.vscjava.vscode-java-test}/share/vscode/extensions/vscjava.vscode-java-test";
           python = "${pkgs.python3.withPackages (ps: [ps.debugpy])}/bin/python";

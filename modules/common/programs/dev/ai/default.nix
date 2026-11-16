@@ -13,7 +13,7 @@
     ./claude-flow-cli.nix
     ./ccr.nix
     ./ccmanager.nix
-    ./claude-powerline.nix
+    ./claude-statusline
     ./jupyter-env-mcp.nix
     ./kindly-web-search.nix
     ./libreoffice-mcp-launcher.nix

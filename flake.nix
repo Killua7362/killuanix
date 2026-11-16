@@ -26,12 +26,10 @@
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixpkgs-virtualbox.url = "github:NixOS/nixpkgs/346dd96ad74dc4457a9db9de4f4f57dab2e5731d";
     # Pinned to a nixos-unstable rev that ships kernel 6.12.67 — the exact
     # version the chrollo system was last activated against. Kept here so
     # `boot.kernelPackages` produces the same derivation as the activated
-    # one, letting the cached `virtualbox-modules-7.2.4-6.12.67` be reused
-    # instead of being rebuilt for a newer kernel.
+    # one (avoids an incidental chrollo kernel rebuild).
     nixpkgs-kernel.url = "github:NixOS/nixpkgs/b92182d173b65ba3055156c5366a0344c802360c";
     homemanager = {
       url = "github:rycee/home-manager/master";
@@ -157,8 +155,13 @@
     claude-code.url = "github:sadjow/claude-code-nix";
 
     # iloader — Tauri iOS sideloader (install SideStore / import IPAs + pairing
-    # files). Ships its own flake exposing packages.<system>.default. Pulled
-    # into chrollo + killua system packages; runtime needs services.usbmuxd.
+    # files). Ships its own flake exposing packages.<system>.default.
+    # CURRENTLY UNUSED: the package refs in chrollo/killua configuration.nix are
+    # commented out because iloader builds bun2nix via IFD, and bun2nix's
+    # Cargo.lock has a git dep (apple-codesign) with no outputHashes — it can't
+    # build from source, only from a cached drv, which flake updates invalidate.
+    # Input kept (lazy: not fetched/built while unused) so re-enabling is a
+    # one-line uncomment. Re-enable once upstream bun2nix fixes outputHashes.
     iloader = {
       url = "github:nab138/iloader";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -255,15 +258,23 @@
 
     # Handheld / MSI Claw
     # Pinned to a specific rev (not the floating `release` branch) so that
-    # `nix flake update` does not bump the cachyos kernel. Bumping has two
-    # costs on killua: (1) upstream variant attrs occasionally rename/remove
-    # (e.g. plain `bore` was dropped in favour of variants like
-    # `bore-lto-x86_64-v3`), risking an unbootable config; (2) every kernel
-    # rev change re-derives `virtualbox-modules-<vbox>-<kernel>`, which is
-    # NOT on any public cache and forces a ~3-5 min local build. Bump
-    # explicitly when you want a new kernel by changing the rev here.
+    # `nix flake update` does not bump the cachyos kernel. Bumping can rename/
+    # remove upstream variant attrs (e.g. plain `bore` → `bore-lto-x86_64-v3`),
+    # risking an unbootable config, so bump explicitly by changing the rev here.
+    # The `overlays.pinned` overlay pins the kernel to xddxdd's own nixpkgs, so
+    # the built kernel matches the author's binary cache regardless of our
+    # nixpkgs — the built variants are substitutable from the Lantian attic
+    # (`https://attic.xuyh0120.win/lantian`, already in nixConfig above), so a
+    # rev bump downloads rather than compiles.
+    #
+    # 2026-08-10: bumped ae5bc76 → d3fe12a. The nixpkgs `nix flake update`
+    # (main nixpkgs f61125a → 70ce234) changed the kernel builder so the old
+    # overlay no longer exposed `kernel.target`, breaking
+    # `config.boot.kernelPackages.kernel.target` eval on killua. d3fe12a is
+    # compatible with the new nixpkgs. The new kernel rev is UNTESTED on
+    # hardware — keep a known-good boot generation to roll back to.
     nix-cachyos-kernel = {
-      url = "github:xddxdd/nix-cachyos-kernel/ae5bc7641fb4178e4d9582ea49cab201f60f7869";
+      url = "github:xddxdd/nix-cachyos-kernel/d3fe12a5e8a845e35770a3f4796a59bffb16f31a";
     };
     jovian = {
       url = "github:Jovian-Experiments/Jovian-NixOS";

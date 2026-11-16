@@ -90,7 +90,14 @@ hl.window_rule({ match = { class = "^(org\\.pulseaudio\\.pavucontrol)$" }, float
 hl.window_rule({ match = { class = "^(org\\.pulseaudio\\.pavucontrol)$" }, size = "45% 45%" })
 hl.window_rule({ match = { class = "^(org\\.pulseaudio\\.pavucontrol)$" }, center = 1 })
 
+-- pwvucontrol is a pinned scratchpad (Super+M → keybinds.lua A.scratchpad).
+-- `pin` is what makes it survive a workspace switch — a special workspace does
+-- not: Hyprland clears the monitor's special ws on every workspace change.
+-- Hiding parks it on `special:mixer` instead, which is never toggled into view.
 hl.window_rule({ match = { class = "^(com\\.saivert\\.pwvucontrol)$" }, float = 1 })
+hl.window_rule({ match = { class = "^(com\\.saivert\\.pwvucontrol)$" }, pin = 1 })
+-- Backdrop: dims everything behind it while focused (strength = decoration.dim_around).
+hl.window_rule({ match = { class = "^(com\\.saivert\\.pwvucontrol)$" }, dim_around = 1 })
 hl.window_rule({ match = { class = "^(com\\.saivert\\.pwvucontrol)$" }, size = "45% 45%" })
 hl.window_rule({ match = { class = "^(com\\.saivert\\.pwvucontrol)$" }, center = 1 })
 

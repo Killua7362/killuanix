@@ -135,7 +135,7 @@
   }:
     pkgs.writeShellApplication {
       name = "mcp-${name}";
-      runtimeInputs = [pkgs.nodejs_20];
+      runtimeInputs = [pkgs.nodejs_22];
       text = ''
         export NPM_CONFIG_CACHE="''${XDG_CACHE_HOME:-$HOME/.cache}/${cacheNamespace}/npm-cache"
         export NPM_CONFIG_PREFIX="''${XDG_CACHE_HOME:-$HOME/.cache}/${cacheNamespace}/npm-prefix"
@@ -388,8 +388,8 @@
   # Wrap upstream claude-code so its bin/claude resolves to overlayClaude.
   # `cp -as` mirrors the upstream tree as symlinks so future additions to the
   # package (man pages, completions, …) flow through; only bin/claude is
-  # swapped. Inherits version/meta so `claude --version`, claude-powerline, and
-  # any other consumer reading cfg.finalPackage.{version,meta} stay accurate.
+  # swapped. Inherits version/meta so `claude --version` and any other consumer
+  # reading cfg.finalPackage.{version,meta} stay accurate.
   claudeWithOverlay =
     pkgs.runCommand "claude-code-${pkgs.claude-code.version}-overlay" {
       inherit (pkgs.claude-code) version meta;
@@ -524,15 +524,13 @@ in {
         # scrollback on demand.
         tui = "fullscreen";
 
-        # Status line — declarative config lives in `claude-powerline.nix` and
-        # is rendered to ~/.config/claude-powerline/config.json. The shim lazy-
-        # compiles upstream into a Bun-native single binary on first run and
-        # exec's it on every refresh after that (no per-render Node boot).
-        # PATH lookup works for plain `claude` and for `claude-launchers.nix`
-        # wrappers. `refreshInterval` honoured on Claude Code >= 2.1.97.
+        # Status line — a two-row bash script defined in `claude-statusline/`
+        # (no npm/bun runtime; one jq call per render). PATH lookup works for
+        # plain `claude` and for `claude-launchers.nix` wrappers.
+        # `refreshInterval` honoured on Claude Code >= 2.1.97.
         statusLine = {
           type = "command";
-          command = "claude-powerline";
+          command = "claude-statusline";
           padding = 0;
           refreshInterval = 10;
         };
@@ -616,7 +614,7 @@ in {
     # of the form `⛏ Nk`. Bypasses upstream `caveman-stats.js` (which would
     # render the same lifetime total in every concurrent session). Lifetime /
     # 5h-block aggregation lives separately in `caveman`. `node`
-    # resolves from PATH (provided by nodejs_20 in ruflo-cli.nix /
+    # resolves from PATH (provided by nodejs_22 in ruflo-cli.nix /
     # claude-flow-cli.nix). Savings ratio: caveman `full`-mode benchmark
     # (~65% mean per-task token reduction; only mode with benchmark data).
     local.extraHooks.Stop = [

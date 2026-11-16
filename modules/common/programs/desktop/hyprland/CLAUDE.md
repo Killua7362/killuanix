@@ -67,6 +67,23 @@ Old keybinds.nix had one list per hyprlang variant. In `lua/keybinds.lua` every 
 | `bindm`  | `drag = true` (mouse drag) | `{ drag }` |
 | `binde`  | `repeating = true` | `{ repeating }` |
 
+## Scratchpads
+
+`A.scratchpad(name, class, cmd)` in `lua/keybinds.lua` is the generic toggle. It needs a matching `hl.window_rule{ float = 1 }` + `{ pin = 1 }` pair in `lua/rules.lua` — **both halves are required**.
+
+- No window → exec `cmd` (the rules make it a pinned float, visible immediately).
+- Visible → unpin, then move to `special:<name>`.
+- On `special:<name>` → move to the active workspace, re-pin, focus.
+
+Two non-obvious constraints drove this shape, both verified against Hyprland 0.56:
+
+- **`toggle_special` is the wrong primitive.** Hyprland clears a monitor's special workspace on *every* workspace change, so a special-ws scratchpad vanishes the moment you switch desktops. `pin` is what makes it follow you; the special workspace is used only as an off-screen stash that is never toggled into view. (A pinned window also can't be moved — hence the unpin-before-stash step.)
+- **`hl.get_windows{class=…}` matches literally, not as a regex** — unlike `hl.window_rule`'s `match` table, which does. Passing `^(com\.saivert\.pwvucontrol)$` there returns 0 windows, so every press re-execs instead of toggling.
+
+Backdrop is the `dim_around = 1` window rule — Hyprland dims the rest of the monitor behind the window. Strength is the **global** `decoration.dim_around` (default 0.4; not set in `lua/layout.lua`, so bumping it affects every `dimaround` rule). It only dims while the window is **focused**: click another window and the backdrop drops while the pinned mixer stays put.
+
+Current: `Super, M` → pwvucontrol (it previously toggled `quickshell:mediaControlsToggle`, now unbound). Add another by copying the two rules + a bind entry; size/center rules still apply.
+
 ## Leader submap
 
 Adding a new submap: extend the `submaps` list in `lua/leader.lua` (set `name`, `trigger`, `slots`) and add a matching entry to `leaderHudMetadata` in `default.nix` (icon + display name + activator key + `slots = [{key,label}…]` for the cheatsheet overlay). Slot keys must stay in sync between the lua list (where they're bound) and the nix metadata (where they're displayed).

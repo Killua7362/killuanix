@@ -8,7 +8,7 @@
   userConfig = inputs.self.commonModules.user.userConfig;
   commonPackages = inputs.self.commonModules.packages.commonPackages pkgs inputs;
   terminalPackages = inputs.self.commonModules.packages.terminalPackages pkgs;
-  desktopPackages = inputs.self.commonModules.packages.desktopPackages pkgs;
+  desktopPackages = inputs.self.commonModules.packages.desktopPackages pkgs inputs;
   devPackages = inputs.self.commonModules.packages.devPackages pkgs;
   macPackages = inputs.self.commonModules.packages.macPackages pkgs;
 in {
@@ -144,6 +144,7 @@ in {
 
     fonts.fontconfig.enable = true;
     home.pointerCursor = {
+      enable = true;
       gtk.enable = true;
       # x11.enable = true;
       package = pkgs.bibata-cursors;
@@ -210,7 +211,7 @@ in {
     chaotic.nyx = {
       cache.enable = true;
     };
-    services.vicinae = {
+    programs.vicinae = {
       enable = true;
       systemd = {
         enable = true;
@@ -254,7 +255,9 @@ in {
         };
       };
       extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
-        bluetooth
+        # bluetooth  # REMOVED — the `nix flake update` bump of vicinae-extensions
+        #              dropped this extension attr (no bluetooth extension in the set
+        #              anymore). Re-add if upstream reintroduces it.
         # nix  # DISABLED — upstream extension refs pkgs/development/web/nodejs/symlink.nix,
         #        removed in vicinae-extensions' pinned nixpkgs (64c08a7) → eval fails.
         #        Re-enable after `nix flake update vicinae-extensions` ships a compatible build.

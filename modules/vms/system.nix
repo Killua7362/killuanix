@@ -1,30 +1,8 @@
 # Shared NixOS system-level VM configuration
 # Imported by both chrollo/configuration.nix and killua/configuration.nix
-{
-  inputs,
-  pkgs,
-  lib,
-  config,
-  ...
-}: let
-  pinnedVBOX = import inputs.nixpkgs-virtualbox {
-    system = "x86_64-linux";
-    config.allowUnfree = true;
-  };
-  cfg = config.vms.virtualbox;
-in {
-  options.vms.virtualbox.enable = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-    description = ''
-      Whether to enable the VirtualBox host (kernel modules + extpack).
-      Disabled on killua (handheld) because the Oracle DB 19c image runs
-      under QEMU/KVM instead — dropping VBox eliminates the per-rebuild
-      virtualbox-modules-<vbox>-<kernel> source build (~3-5 min, never
-      on any public cache).
-    '';
-  };
-
+{pkgs, ...}: {
+  # VirtualBox removed entirely (2026-08-10): Oracle DB 19c runs under
+  # QEMU/KVM now (modules/vms/oracle-19c-vm.nix). Only libvirt/qemu remain.
   config = {
     boot.extraModprobeConfig = "options kvm-intel nested=1";
 
@@ -39,13 +17,6 @@ in {
     };
 
     programs.virt-manager.enable = true;
-
-    virtualisation.virtualbox.host = lib.mkIf cfg.enable {
-      enable = true;
-      enableExtensionPack = true;
-      package = pinnedVBOX.virtualbox;
-    };
-    users.extraGroups.vboxusers.members = lib.mkIf cfg.enable ["killua"];
 
     # Autostart the default NAT network for VMs
     systemd.services.libvirtd-default-network = {

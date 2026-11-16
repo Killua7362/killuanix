@@ -22,23 +22,33 @@
     ../modules/containers
     ../modules/vms/system.nix
     ../modules/nixos/claude-sudo.nix
+    ../modules/nixos/droidcam.nix
   ];
 
   # ── CachyOS BORE kernel, LTO + x86_64-v3 microarch ──
   # MSI Claw 8 AI+ is Intel Lunar Lake (Core Ultra Series 2 / Xe2). Lunar Lake
   # supports x86_64-v3 baseline (AVX2/BMI/FMA) but NOT AVX512, so -v4/-zen4
-  # variants won't run. LTO + v3 = fastest variant compatible with this SoC.
-  # Deckify (prior choice) was AMD Steam Deck targeted and embedded
-  # amd_iommu=off / amdgpu.* in CONFIG_CMDLINE — wrong hw, sourced the
-  # repeated freezes. Cached on lantian attic — no local compile.
-  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-bore-lto-x86_64-v3;
+  # CachyOS "deckify" edition (Steam Deck / handheld tuned: full PREEMPT,
+  # HZ=300, low-latency). Re-adopted 2026-08-10 after the nix-cachyos-kernel
+  # bump to d3fe12a: the current upstream deckify config (CachyOS 972d31fe) has
+  # `# CONFIG_CMDLINE_BOOL is not set` — i.e. NO baked-in kernel command line,
+  # unlike the older rev that embedded amd_iommu=off / amdgpu.* and froze this
+  # Intel Claw. It also builds DRM_XE + DRM_I915 (Intel GPU) and
+  # X86_INTEL_PSTATE, so it's Intel-compatible; amdgpu is just an unused module.
+  # Using the NON-LTO variant on purpose — `deckify-lto` has no binary cache
+  # (would compile locally), while plain `deckify` is on the Lantian attic.
+  # If freezes recur, roll back to `linuxPackages-cachyos-bore-lto-x86_64-v3`.
+  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-deckify;
+
+  # CachyOS kernel derivation lacks the `buildDTBs` attribute that newer nixpkgs'
+  # hardware/device-tree.nix reads for `hardware.deviceTree.enable`'s default
+  # (`config.boot.kernelPackages.kernel.buildDTBs`), so eval crashes with
+  # "attribute 'buildDTBs' missing". x86 handheld has no device tree — force off
+  # to short-circuit the default.
+  hardware.deviceTree.enable = false;
 
   # ── Virtualisation: Docker (rootful), Podman/Quadlet, libvirtd (no VirtualBox) ──
-  # VirtualBox disabled here — Oracle DB 19c image runs under QEMU/KVM instead.
-  # Dropping vbox kills the per-rebuild virtualbox-modules-<vbox>-<kernel>
-  # source build (3-5 min, never on any public cache).
-  vms.virtualbox.enable = false;
-
+  # VirtualBox removed entirely — Oracle DB 19c image runs under QEMU/KVM instead.
   virtualisation.docker = {
     enable = true;
     daemon.settings = {
@@ -195,6 +205,14 @@
   };
   programs.zsh.enable = true;
 
+  # System default Java is JDK 25. Legacy Java-8 projects (Boeing
+  # bdsi-commerce-code) override JAVA_HOME per-project via direnv; see
+  # modules/common/programs/shells/zsh.nix.
+  programs.java = {
+    enable = true;
+    package = pkgs.jdk25;
+  };
+
   # ── Scheduler: scx_lavd (latency-aware, optimized for handhelds) ──
   services.scx = {
     enable = true;
@@ -245,10 +263,15 @@
     hubstaff
     distrobox
     docker-compose
-    inputs.iloader.packages.${pkgs.system}.default
+    # iloader DISABLED: its build tool bun2nix (built via IFD) has a broken
+    # Cargo.lock (git dep apple-codesign with no outputHashes) so it cannot
+    # build from source; it only ever worked from a cached drv, which the
+    # flake update invalidated. Re-enable once upstream bun2nix fixes the hash.
+    # inputs.iloader.packages.${pkgs.system}.default
   ];
 
-  # iOS sideloading daemon — required by iloader to talk to a plugged iPhone.
+  # iOS sideloading daemon — was required by iloader (now disabled). Harmless
+  # idle daemon; left enabled so re-enabling iloader needs no config change.
   services.usbmuxd.enable = true;
 
   # ── Fonts ──
@@ -290,6 +313,14 @@
 
   # ── Nix settings ──
   nixpkgs.config.allowUnfree = true;
+  # Determinate Nixd auto-GCs in 1 GB passes whenever disk is "low"; a pass
+  # holds the GC lock and stalls nix builds/switches for many minutes. The
+  # upstream NixOS module has no option for this (only nix-darwin does), so
+  # write the config file directly. Re-check if `determinate.edgeCacheSubstituters`
+  # is ever set — the module would then also claim this file.
+  environment.etc."determinate/config.json".text = builtins.toJSON {
+    garbageCollector.strategy = "disabled";
+  };
   nix = let
     flakeInputs = lib.filterAttrs (n: v: lib.isType "flake" v && n != "self") inputs;
   in {

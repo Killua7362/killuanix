@@ -25,7 +25,7 @@
       intel-media-driver # VA-API (iHD driver)
       vpl-gpu-rt # Intel Quick Sync Video
       intel-compute-runtime # OpenCL
-      gst_all_1.gst-vaapi # GStreamer VA-API plugin
+      gst_all_1.gst-plugins-bad # GStreamer VA plugin (replaces removed gst-vaapi in GStreamer 1.28)
     ];
   };
 
